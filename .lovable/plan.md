@@ -1,135 +1,136 @@
-# Templates 2.0 — A 10× Library
+# Phase 1.5 — Lead data safety, audit & full-history export
 
-A single page where any agent on the team can find, preview, edit, build, and send any email or SMS template in seconds — with shared folders, tags, favorites, real usage analytics, and an AI assistant that helps you find or write the right template.
-
----
-
-## What changes for users
-
-### One library, two channels
-A single Templates page with an **Email / SMS** segmented switch at the top. Same layout, same shortcuts, same muscle memory.
-
-### A real "find anything" experience
-- **Cmd/Ctrl+K command palette** — type to instantly jump to any template by name, subject, body content, tag, or folder.
-- **Smart search bar** — fuzzy match across name + subject + body + tags + project.
-- **Filters that stack**: Source (Mine / Team / Presale) · Folder · Tag · Channel (Email/SMS) · Favorited · Recently used.
-- **Ask AI**: "find me a follow-up after a showing for a Mandarin-speaking buyer" → AI ranks the best matches.
-- **Saved views** per agent (e.g. "My hot-lead replies") stored locally.
-
-### Organize the way real teams work
-- **Folders** (e.g. "Cold outreach", "Showings", "Closing", "Nurture") — drag a template in, or create a new folder inline. Folders are team-shared.
-- **Color tags** — multi-select chips on a template (e.g. `urgent`, `mandarin`, `langley`). Click a tag to filter the library.
-- **Favorites** — star any template to pin it to the top of your personal view.
-- **Recent** — your last 10 used templates surface in a dedicated rail at the top.
-
-### Sharing & roles (Full library + analytics)
-- **Mine** — only you can see/edit. One-click **"Share with team"** promotes it to the team library.
-- **Team** — anyone on the team can use; only the author or an admin can edit.
-- **Featured** — admins can mark a team template as ⭐ Featured so new agents see the gold standards first.
-- **Locked** — admins can lock a Featured template to prevent edits.
-
-### Per-template analytics
-Live stats panel on every template:
-- Total sends · Last sent
-- Open rate · Reply rate · Click rate (email) · Reply rate (SMS)
-- Sparkline of sends over the last 30 days
-- Top performers section on the empty-search state ("Most-replied-to last 30 days")
-
-### Create & edit faster
-- **New template** dialog asks 3 things: channel, name, "start blank / from existing / from AI prompt".
-- AI prompt path: "Write a friendly first-touch email for an investor lead in Surrey BC who downloaded a floor plan" → generated draft (subject + body) you can accept, tweak, or regenerate.
-- **Inline edit** opens a side editor (no page jump): subject, body (rich text for email, plain for SMS), merge-tag picker, MMS attachments for SMS, preview against a sample lead.
-- **Version history** is preserved (already exists) — accessible from a "History" button.
-
-### Preview that mirrors the real send
-- Right-side preview pane renders the template **with sample data merged** (lead name, agent signature, etc.) — what the recipient actually sees.
-- "Preview as…" dropdown lets you swap the sample lead with a real one to sanity-check merge tags.
-- **Send button** opens the canonical composer (`ComposeEmailDialog` / `SendTextDialog`) pre-loaded with the template — no surprises.
-
-### Mobile-friendly
-List view collapses to single column, preview pane becomes a bottom sheet, search bar pins to top, FAB-free (per pill-nav rule).
+Three independent workstreams, all admin-gated for destructive/export actions.
 
 ---
 
-## Layout
+## 1. Soft-delete + Trash + 30-day purge (crm_contacts)
 
-```text
-┌─────────────────────────────────────────────────────────────┐
-│  Templates           [Email | SMS]   [+ New]  [Cmd+K]       │
-│  342 templates · 28 favorites                               │
-├──────────┬──────────────────────────────┬───────────────────┤
-│ RAIL     │  TOOLBAR  search · sort      │  PREVIEW          │
-│          ├──────────────────────────────┤                   │
-│ ⭐ Favs  │  ┌──────────────────────────┐│  Subject line…    │
-│ 🕐 Recent│  │ Template card            ││  ─────────────    │
-│          │  │ name · subject snippet   ││  [Rendered HTML]  │
-│ FOLDERS  │  │ tags · sends · last used ││                   │
-│  Cold    │  └──────────────────────────┘│  ─────────────    │
-│  Showing │  ┌──────────────────────────┐│  Stats            │
-│  Closing │  │ Template card            ││  ▾ 248 sends      │
-│  + new   │  │ ...                      ││  ▾ 42% open       │
-│          │  └──────────────────────────┘│  ▾ 18% reply      │
-│ TAGS     │                              │                   │
-│  urgent  │                              │  [Edit] [Send]    │
-│  mandarin│                              │  [History] [···]  │
-│  langley │                              │                   │
-└──────────┴──────────────────────────────┴───────────────────┘
+### Schema
+- Add `deleted_at timestamptz` + `deleted_by uuid` to `crm_contacts`.
+- Index: `crm_contacts_deleted_at_idx` on `(deleted_at) where deleted_at is not null`.
+- Update `crm_can_see_contact_id(uuid)` to return `false` for soft-deleted rows when caller is **not** `is_crm_admin_or_owner()`. Admins can see + restore + hard-delete.
+- All existing list/search RPCs (`crm_search_leads`, kanban queries, segment counts, dashboards, exports, mass-send recipient resolution) get `deleted_at IS NULL` filters. Audit hits via `rg "from\\('crm_contacts'\\)"`.
+
+### RPCs (SECURITY DEFINER)
+- `crm_soft_delete_contacts(_ids uuid[]) returns int` — admin-only; sets `deleted_at=now(), deleted_by=auth.uid()`. Writes one bulk-op audit row.
+- `crm_restore_contacts(_ids uuid[]) returns int` — admin-only; sets `deleted_at=NULL, deleted_by=NULL`. Audit row.
+- `crm_hard_delete_contacts(_ids uuid[]) returns int` — admin-only; only allowed on rows already soft-deleted. Audit row (snapshot of basic fields before delete).
+
+### Trash UI
+- New segment `trash` in `/crm/leads` (admin-only chip in segment row, hidden for agents).
+- Reuses LeadsTable; row actions become **Restore** / **Delete forever** (confirm dialog).
+- Bulk bar gains the same two actions when segment=trash.
+- Empty state: "Leads stay in Trash for 30 days, then are permanently removed."
+
+### 30-day purge cron
+- New edge fn `crm-purge-trash` — service role; deletes contacts where `deleted_at < now() - interval '30 days'`. Writes one audit row per run with affected_count.
+- pg_cron daily at 03:15 UTC (insert tool, not migration — contains anon key).
+
+---
+
+## 2. Audit log — mutations + bulk ops
+
+### Schema
 ```
+crm_audit_log (
+  id uuid pk,
+  occurred_at timestamptz default now(),
+  actor_id uuid,                    -- auth.uid() at time of write
+  actor_label text,                 -- denormalized crm_team display_name
+  action text not null,             -- 'insert'|'update'|'delete'|'soft_delete'|'restore'|'hard_delete'|'bulk_reassign'|'bulk_import'|'bulk_tag'|'bulk_delete'|'purge'
+  table_name text not null,         -- 'crm_contacts' for now
+  record_id uuid,                   -- null for bulk
+  before jsonb,                     -- null for insert / bulk
+  after  jsonb,                     -- null for delete / bulk
+  changed_fields text[],            -- diff keys for updates
+  bulk_job_id uuid,                 -- groups a bulk operation
+  bulk_op text,                     -- mirrors action for bulk
+  affected_count int,
+  filter_snapshot jsonb,            -- segment/search/ids that drove the bulk op
+  meta jsonb default '{}'
+);
+```
+- RLS: SELECT for `is_crm_admin_or_owner()` OR `actor_id = auth.uid()` OR (record_id maps to a contact the caller can see). INSERT only via SECURITY DEFINER helpers (no direct client writes).
+
+### Triggers
+- `crm_audit_contacts_trg` AFTER INSERT/UPDATE/DELETE on `crm_contacts`. Skips when `current_setting('app.skip_audit', true) = 'on'` (matches existing `app.skip_touch` precedent so import jobs can opt out where appropriate). Diff = keys whose values differ; PII columns (email, phone, address) recorded as before/after.
+
+### Bulk-op logging
+- Helper `crm_log_bulk_op(_action text, _affected int, _filter jsonb, _meta jsonb default '{}')` SECURITY DEFINER.
+- Wired into existing bulk RPCs/edge fns: bulk reassign, bulk tag, bulk delete (soft+hard), import, purge cron, mass send is **not** included (owns its own send log).
+
+### Surfacing
+- Lead Detail timeline (v2): new `crm_lead_timeline_v2` source row type `audit` — renders as compact "Field X: A → B by Sarb · 3m ago" entries. Included only for admins (agents already see their own changes via existing activity).
+- Admin-only `/admin/audit` page: paginated table with filters (actor, action, date range). Reuses existing admin layout primitives — no new design tokens.
 
 ---
 
-## Implementation plan (technical)
+## 3. Full-history export
 
-### 1. Schema additions (one migration)
+### Per-lead CSV (everyone with view access)
+- Edge fn `crm-export-lead` — input `{contact_id}`. Validates `crm_can_see_contact_id`. Pulls profile + crm_notes + crm_email_log + crm_sms_log + crm_call_log + crm_showings + crm_activity_events + audit rows. Returns multi-section CSV (one CSV file with `## section` separators — single download, fits the answered "Single CSV per lead").
+- Button in Lead Detail header overflow menu → triggers download.
+- Audit row written: `action='export_lead'`.
 
-- `crm_template_folders` — `id, name, color, sort_order, created_by, channel ('email'|'sms'|'both')`. Team-shared, RLS: any CRM member reads, members create, only owner/admin updates/deletes.
-- `crm_template_folder_items` — `template_id, template_kind ('email'|'sms'), folder_id`. Composite PK; ON DELETE CASCADE.
-- `crm_template_tags` — `id, label, color`. Team-shared.
-- `crm_template_tag_items` — `template_id, template_kind, tag_id`. Composite PK.
-- `crm_template_favorites` — `template_id, template_kind, user_id`. Composite PK; per-agent.
-- `crm_sms_templates`: add `is_favorite_legacy boolean default false` removed in favor of new table. Add `owner_scope text`, `owner_agent_slug text`, `is_featured boolean`, `is_locked boolean` to mirror email schema.
-- `crm_email_templates`: add `is_featured boolean default false`, `is_locked boolean default false`.
-- View: `crm_template_stats` — joins `crm_email_log` / `crm_sms_log` for sends/open/click/reply per template, last 30 days sparkline as JSON array.
-
-### 2. Hooks (new + extended)
-
-- `src/hooks/useUnifiedTemplates.ts` — single hook returning `{ items: UnifiedTemplate[] }` merging email + SMS + presale bridge; supports filters `{ search, channel, folderId, tagIds, favoritedOnly, source }`.
-- `src/hooks/useTemplateFolders.ts` — CRUD + reorder.
-- `src/hooks/useTemplateTags.ts` — CRUD + assign/unassign.
-- `src/hooks/useTemplateFavorites.ts` — toggle.
-- `src/hooks/useTemplateStats.ts` — pull `crm_template_stats` for one or many template ids.
-- Extend `useTemplateAI.ts` with `searchByIntent(prompt)` action calling the existing `template-ai-assist` edge fn (new `mode: 'rank'`).
-
-### 3. Components (new under `src/components/crm/templates/`)
-
-- `TemplatesPageV2.tsx` (replaces page body of `CrmTemplatesPage.tsx`).
-- `TemplateRail.tsx` — Favorites · Recent · Folders · Tags.
-- `TemplateGrid.tsx` — virtualized card list (50 per page, infinite scroll).
-- `TemplateCard.tsx` — name, channel pill, snippet, tag chips, sends/last-used micro-stats.
-- `TemplatePreviewPane.tsx` — iframe-rendered email or SMS bubble preview, sample-lead picker, stats accordion, action bar.
-- `TemplateCommandPalette.tsx` — Cmd+K dialog using `cmdk`.
-- `NewTemplateDialog.tsx` — channel + start mode (blank / clone / AI).
-- `TemplateEditorDrawer.tsx` — inline editor (right-side `Sheet`), reuses `VariablePicker` + `AIAssistMenu`.
-- `MoveToFolderMenu.tsx`, `TagPickerPopover.tsx`, `ShareWithTeamDialog.tsx`.
-
-### 4. Existing wiring preserved
-
-- "Send" button still hands off to `ComposeEmailDialog` / `SendTextDialog` (per Composer Architecture v2).
-- Presale bridge templates still appear via `useBridgeTemplates`, sourced as `presale` and read-only.
-- Edit-in-Agent-Hub for Presale assets remains a one-click deep link.
-- Per-agent ownership rules from the existing Per-agent Template Ownership memory are unchanged.
-
-### 5. Out of scope for this pass
-
-- Drag-and-drop to reorder folders (use sort_order for now, drag in v2).
-- A/B testing variants.
-- Template marketplace / external import.
+### Workspace ZIP (admin-only)
+- New private storage bucket `crm-exports` (no public read; signed URL only).
+- Edge fn `crm-export-workspace` — admin-gated. Streams: one folder per non-deleted contact with the same files as per-lead, plus root `contacts.csv`, `audit_log.csv`, `team.csv`. Uses `jsr:@zip-js/zip-js` (already pattern-compatible with edge runtime; if unavailable, fall back to a hand-rolled ZIP via `Deno.readAll` of in-memory entries).
+- Uploads to `crm-exports/{yyyy-mm-dd}/{job_id}.zip`, returns 7-day signed URL.
+- Admin Settings → Data → "Export workspace history" button. Shows progress toast; on completion, copies signed URL + sends in-app notification to caller.
+- Audit row: `action='export_workspace'` with `affected_count`.
 
 ---
 
-## Rollout
+## Permissions matrix
+| Action | Agent | Admin/Owner |
+|---|---|---|
+| View own leads | yes | yes (all) |
+| Soft-delete | no | yes |
+| See Trash segment | no | yes |
+| Restore | no | yes |
+| Hard-delete | no | yes |
+| Per-lead CSV export | yes (their leads) | yes |
+| Workspace ZIP export | no | yes |
+| Audit log page | no | yes |
 
-1. Migration for folders/tags/favorites/featured + stats view.
-2. Hooks + new components, page swapped behind a `?v=2` flag for one preview cycle, then made default.
-3. Seed each of the 21 existing email templates into a default "Inbox" folder so nothing looks empty on day one.
-4. Memory note added: `templates-v2` describing the new architecture so future work follows the same pattern.
+---
+
+## Tests
+- Vitest: CSV builder for per-lead export (sections render, escape commas/newlines, empty sections OK).
+- Deno: 
+  - `crm_soft_delete_contacts` — non-admin returns 0/raises; admin sets timestamps; restore clears them.
+  - `crm_hard_delete_contacts` — refuses on rows that aren't soft-deleted.
+  - Trigger: update on contact writes audit row with diff; `app.skip_audit=on` suppresses it.
+  - `crm-purge-trash` deletes only rows older than 30d.
+
+---
+
+## Out of scope (explicitly)
+- No new design tokens, fonts, libraries — Trash segment, audit timeline, exports reuse `<Pill>`, ResponsiveDialog, existing admin table primitives, sonner toasts.
+- Mass-send log is unchanged.
+- No read-of-PII auditing (you picked mutation+bulk only).
+- No undo for hard-delete.
+
+---
+
+## Files (new)
+- migration: `add_soft_delete_and_audit_to_crm_contacts.sql`
+- migration: `crm_audit_log_table_and_triggers.sql`
+- migration: `crm_trash_rpcs_and_can_see_update.sql`
+- migration: `crm_exports_bucket.sql`
+- insert-tool: `pg_cron crm-purge-trash daily`
+- edge fns: `crm-purge-trash/`, `crm-export-lead/`, `crm-export-workspace/`
+- frontend: `src/components/crm/leads/TrashSegmentActions.tsx`, `src/pages/admin/AuditLog.tsx`, `src/components/crm/lead/ExportLeadButton.tsx`, `src/components/settings/data/WorkspaceExportCard.tsx`
+- hooks: `useSoftDeleteContacts`, `useRestoreContacts`, `useHardDeleteContacts`, `useExportLead`, `useExportWorkspace`, `useAuditLog`
+- tests: `src/lib/lead-export-csv.test.ts`, `supabase/functions/_shared/audit_test.ts`
+
+## Files (edited)
+- `crm_can_see_contact_id` (migration) — exclude soft-deleted for non-admins.
+- `useLeadsList`, `useKanbanLeads`, `useSegmentCounts`, mass-send recipient resolver — add `deleted_at IS NULL` (or rely on RLS).
+- `LeadsHeader` segment row — add Trash chip behind admin gate.
+- `LeadDetailHeader` — Export + Soft-delete actions in overflow menu.
+- `LeadTimelineV2` — new `audit` row renderer (admin-only).
+- `mem://index.md` + new memory `mem://features/crm/data-safety-and-audit-v1`.
+
+Approve and I'll ship it in this order: migrations → RPCs/triggers → edge fns → cron → UI → tests → memory.

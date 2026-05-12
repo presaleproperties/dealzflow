@@ -413,6 +413,60 @@ export type Database = {
         }
         Relationships: []
       }
+      crm_audit_log: {
+        Row: {
+          action: string
+          actor_id: string | null
+          actor_label: string | null
+          affected_count: number | null
+          after: Json | null
+          before: Json | null
+          bulk_job_id: string | null
+          bulk_op: string | null
+          changed_fields: string[] | null
+          filter_snapshot: Json | null
+          id: string
+          meta: Json
+          occurred_at: string
+          record_id: string | null
+          table_name: string
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          actor_label?: string | null
+          affected_count?: number | null
+          after?: Json | null
+          before?: Json | null
+          bulk_job_id?: string | null
+          bulk_op?: string | null
+          changed_fields?: string[] | null
+          filter_snapshot?: Json | null
+          id?: string
+          meta?: Json
+          occurred_at?: string
+          record_id?: string | null
+          table_name: string
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          actor_label?: string | null
+          affected_count?: number | null
+          after?: Json | null
+          before?: Json | null
+          bulk_job_id?: string | null
+          bulk_op?: string | null
+          changed_fields?: string[] | null
+          filter_snapshot?: Json | null
+          id?: string
+          meta?: Json
+          occurred_at?: string
+          record_id?: string | null
+          table_name?: string
+        }
+        Relationships: []
+      }
       crm_automation_enrollments: {
         Row: {
           automation_id: string
@@ -873,6 +927,8 @@ export type Database = {
           co_buyer_phone: string | null
           contact_type: string
           created_at: string | null
+          deleted_at: string | null
+          deleted_by: string | null
           email: string | null
           email_secondary: string | null
           engagement_score: number
@@ -944,6 +1000,8 @@ export type Database = {
           co_buyer_phone?: string | null
           contact_type?: string
           created_at?: string | null
+          deleted_at?: string | null
+          deleted_by?: string | null
           email?: string | null
           email_secondary?: string | null
           engagement_score?: number
@@ -1015,6 +1073,8 @@ export type Database = {
           co_buyer_phone?: string | null
           contact_type?: string
           created_at?: string | null
+          deleted_at?: string | null
+          deleted_by?: string | null
           email?: string | null
           email_secondary?: string | null
           engagement_score?: number
@@ -6132,6 +6192,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      crm_audit_actor_label: { Args: { _uid: string }; Returns: string }
       crm_backfill_orphan_activity: {
         Args: { _contact_id: string }
         Returns: number
@@ -6219,6 +6280,7 @@ export type Database = {
         Args: { _channel: string; _contact_id: string; _message_at?: string }
         Returns: string
       }
+      crm_hard_delete_contacts: { Args: { _ids: string[] }; Returns: number }
       crm_has_perm: {
         Args: { _perm: string; _user_id: string }
         Returns: boolean
@@ -6244,6 +6306,16 @@ export type Database = {
           title: string
         }[]
       }
+      crm_log_bulk_op: {
+        Args: {
+          _action: string
+          _affected: number
+          _filter?: Json
+          _job_id?: string
+          _meta?: Json
+        }
+        Returns: string
+      }
       crm_match_contact_by_phone: {
         Args: { _phone: string }
         Returns: {
@@ -6262,6 +6334,7 @@ export type Database = {
       crm_my_presale_slug: { Args: never; Returns: string }
       crm_normalize_email: { Args: { _v: string }; Returns: string }
       crm_normalize_phone: { Args: { _v: string }; Returns: string }
+      crm_purge_trash: { Args: { _older_than?: string }; Returns: number }
       crm_recipients_for_contact: {
         Args: { _assigned_to: string }
         Returns: string[]
@@ -6288,6 +6361,7 @@ export type Database = {
           matched_value: string
         }[]
       }
+      crm_restore_contacts: { Args: { _ids: string[] }; Returns: number }
       crm_revert_template_version: {
         Args: { _kind: string; _template_id: string; _version: number }
         Returns: undefined
@@ -6314,6 +6388,7 @@ export type Database = {
         }
         Returns: number
       }
+      crm_soft_delete_contacts: { Args: { _ids: string[] }; Returns: number }
       crm_stitch_orphan_behavior: { Args: never; Returns: Json }
       crm_team_admin_update_member: {
         Args: {
