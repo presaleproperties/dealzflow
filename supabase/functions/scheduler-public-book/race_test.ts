@@ -10,8 +10,9 @@ import { assertEquals, assert } from "https://deno.land/std@0.224.0/assert/mod.t
 const AGENT_USER_ID = "77754636-c2c5-4207-874d-a205954d9507";
 const EVENT_TYPE_ID = "d3297727-191a-4d58-81c3-0f932476f8a7";
 // Far-future timestamp unique to this test run — avoids polluting real bookings.
-const START_AT = `2099-01-01T${String(new Date().getUTCMinutes()).padStart(2, "0")}:${String(new Date().getUTCSeconds()).padStart(2, "0")}:00Z`;
-const END_AT = "2099-01-01T23:30:00Z";
+const _suffix = `${String(new Date().getUTCMinutes()).padStart(2, "0")}${String(new Date().getUTCSeconds()).padStart(2, "0")}`.slice(-2);
+const START_AT = `2099-01-01T12:${_suffix}:00Z`;
+const END_AT = `2099-01-01T13:${_suffix}:00Z`;
 
 async function attemptInsert(): Promise<{ ok: boolean; sqlstate: string | null; stderr: string }> {
   const sql = `
