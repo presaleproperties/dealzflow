@@ -1072,6 +1072,17 @@ export function ComposeEmailDialog({ contact, open, onOpenChange, initialSubject
                     <FallbackSenderNotice />
                   </div>
                 )}
+                {sendBridge.error && (
+                  <div
+                    role="alert"
+                    className="my-1.5 flex items-start gap-2 rounded-md border border-destructive/40 bg-destructive/10 text-destructive px-3 py-2 text-[12px] leading-snug"
+                  >
+                    <span className="font-semibold shrink-0">Last send failed:</span>
+                    <span className="break-words">
+                      {(sendBridge.error as Error).message || 'Unknown error from Gmail.'}
+                    </span>
+                  </div>
+                )}
                 <RecipientRow
                   label="To"
                   trailing={

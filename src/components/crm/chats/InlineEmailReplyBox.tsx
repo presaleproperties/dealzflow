@@ -154,6 +154,15 @@ export function InlineEmailReplyBox({ contact, lastSubject, onOpenFull }: Props)
     <div className="sticky bottom-0 border-t border-border bg-background/95 backdrop-blur px-3 pt-2 pb-[calc(env(safe-area-inset-bottom,0px)+max(var(--keyboard-offset,0px),var(--keyboard-inset-bottom,0px))+10px)]">
       <div className="rounded-2xl border border-border bg-background shadow-sm overflow-hidden">
         {gmailConnected === false && <FallbackSenderNotice variant="inline" />}
+        {sendBridge.error && (
+          <div
+            role="alert"
+            className="px-3 py-1.5 text-[11px] text-destructive bg-destructive/10 border-b border-destructive/30"
+          >
+            <span className="font-semibold">Send failed:</span>{' '}
+            {(sendBridge.error as Error).message || 'Unknown error from Gmail.'}
+          </div>
+        )}
         {/* Subject row */}
         <div className="flex items-center gap-2 px-3 h-9 border-b border-border/60">
           <span className="text-[11px] uppercase tracking-wide text-muted-foreground font-semibold">Subject</span>
