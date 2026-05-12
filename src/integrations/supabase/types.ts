@@ -3042,6 +3042,7 @@ export type Database = {
           cancelled_by: string | null
           contact_id: string | null
           created_at: string
+          deleted_at: string | null
           duration_min: number
           end_at: string
           event_type_id: string
@@ -3081,6 +3082,7 @@ export type Database = {
           cancelled_by?: string | null
           contact_id?: string | null
           created_at?: string
+          deleted_at?: string | null
           duration_min: number
           end_at: string
           event_type_id: string
@@ -3120,6 +3122,7 @@ export type Database = {
           cancelled_by?: string | null
           contact_id?: string | null
           created_at?: string
+          deleted_at?: string | null
           duration_min?: number
           end_at?: string
           event_type_id?: string
