@@ -113,6 +113,8 @@ export function TopNav() {
   const [openSection, setOpenSection] = useState<string | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [signOutOpen, setSignOutOpen] = useState(false);
+  const [pushDialogOpen, setPushDialogOpen] = useState(false);
+  const { isSubscribed, isSupported } = usePushNotifications();
   const closeTimerRef = useRef<number | null>(null);
 
   const requestSignOut = () => setSignOutOpen(true);
