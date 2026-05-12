@@ -121,8 +121,6 @@ export function useBridgeSendEmail() {
       if (data?.scheduled) {
         toast.success('Email scheduled');
       } else if (data?.queued) {
-        // Queued path almost always means the sender's Gmail isn't connected.
-        // Surface the real reason + CTA instead of a vague "server busy" line.
         if (data?.reason === 'inbox_not_connected') {
           toast.warning('Email queued — connect your inbox', {
             description: data?.message
@@ -133,11 +131,28 @@ export function useBridgeSendEmail() {
               onClick: () => { window.location.href = '/crm/settings?tab=email'; },
             },
           });
+        } else if (data?.reason === 'no_email_provider') {
+          toast.warning('Email queued — no provider available', {
+            description: data?.message
+              || 'Connect your Gmail in Settings → Email, or ask an admin to configure the Resend fallback.',
+            duration: 10000,
+            action: {
+              label: 'Connect Gmail',
+              onClick: () => { window.location.href = '/crm/settings?tab=email'; },
+            },
+          });
         } else {
           toast.success('Email queued', {
             description: data?.message || 'It will send on the next queue cycle.',
           });
         }
+      } else if (data?.sent_via === 'resend' || data?.sent_via === 'resend_fallback') {
+        toast.success('Email sent via fallback', {
+          description: data?.sent_via === 'resend_fallback'
+            ? 'Sent from noreply@dealzflow.ca because Gmail send failed. Replies will still come to you.'
+            : 'Sent from noreply@dealzflow.ca. Connect your Gmail in Settings → Email to send from your own address.',
+          duration: 6000,
+        });
       } else {
         toast.success('Email sent');
       }
@@ -157,6 +172,20 @@ export function useBridgeSendEmail() {
       qc.invalidateQueries({ queryKey: ['crm-kpi-cards'] });
       qc.invalidateQueries({ queryKey: ['command-center-stats'] });
     },
-    onError: (err: Error) => toast.error(err.message || 'Send failed'),
+    onError: (err: Error) => {
+      const msg = err.message || 'Send failed';
+      if (/gmail.*expired|reconnect/i.test(msg)) {
+        toast.error('Gmail reconnect needed', {
+          description: msg,
+          duration: 10000,
+          action: {
+            label: 'Reconnect',
+            onClick: () => { window.location.href = '/crm/settings?tab=email'; },
+          },
+        });
+      } else {
+        toast.error(msg);
+      }
+    },
   });
 }
