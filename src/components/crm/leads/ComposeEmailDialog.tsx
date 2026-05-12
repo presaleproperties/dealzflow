@@ -121,6 +121,7 @@ export function ComposeEmailDialog({ contact, open, onOpenChange, initialSubject
   const massSend = useMassSendEmail();
   const createTemplate = useCreateTemplate();
   const { data: emailSettings } = useEmailSettings();
+  const { data: gmailConnected } = useGmailConnected();
   const { data: signatures = [] } = useEmailSignatures();
   const upsertSignature = useUpsertEmailSignature();
   const { data: localTemplates = [] } = useCrmEmailTemplates();

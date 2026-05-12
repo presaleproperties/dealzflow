@@ -4,6 +4,8 @@ import { useAuth } from '@/hooks/useAuth';
 import { useEmailSettings } from '@/hooks/useEmailSettings';
 import { useEmailSignatures, pickSignatureForKind } from '@/hooks/useEmailSignatures';
 import { useBridgeSendEmail } from '@/hooks/useBridgeEmail';
+import { useGmailConnected } from '@/hooks/useGmailConnected';
+import { FallbackSenderNotice } from '@/components/crm/email/FallbackSenderNotice';
 import { renderForRecipient } from '@/lib/emailVariables';
 import { toast } from 'sonner';
 
@@ -42,6 +44,7 @@ export function InlineEmailReplyBox({ contact, lastSubject, onOpenFull }: Props)
   const { data: emailSettings } = useEmailSettings();
   const { data: signatures = [] } = useEmailSignatures();
   const sendBridge = useBridgeSendEmail();
+  const { data: gmailConnected } = useGmailConnected();
 
   const [expanded, setExpanded] = useState(false);
   const [subject, setSubject] = useState('');
@@ -150,6 +153,7 @@ export function InlineEmailReplyBox({ contact, lastSubject, onOpenFull }: Props)
   return (
     <div className="sticky bottom-0 border-t border-border bg-background/95 backdrop-blur px-3 pt-2 pb-[calc(env(safe-area-inset-bottom,0px)+max(var(--keyboard-offset,0px),var(--keyboard-inset-bottom,0px))+10px)]">
       <div className="rounded-2xl border border-border bg-background shadow-sm overflow-hidden">
+        {gmailConnected === false && <FallbackSenderNotice variant="inline" />}
         {/* Subject row */}
         <div className="flex items-center gap-2 px-3 h-9 border-b border-border/60">
           <span className="text-[11px] uppercase tracking-wide text-muted-foreground font-semibold">Subject</span>
