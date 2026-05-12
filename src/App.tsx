@@ -272,6 +272,8 @@ const App = () => (
                     <Route path="/admin/projects" element={<AdminRoute><AdminProjectsPage /></AdminRoute>} />
                     <Route path="/admin/webhook-validation" element={<AdminRoute><WebhookValidationPage /></AdminRoute>} />
                     <Route path="/admin/presale-webhooks" element={<AdminRoute><PresaleWebhookLogPage /></AdminRoute>} />
+                    <Route path="/admin/audit" element={<AdminRoute><AuditLogPage /></AdminRoute>} />
+                    <Route path="/crm/trash" element={<ProtectedRoute><CrmLayout requireRole={['owner', 'admin']}><CrmTrashPage /></CrmLayout></ProtectedRoute>} />
                     <Route path="/agent/profile" element={<ProtectedRoute><AgentProfilePage /></ProtectedRoute>} />
                     <Route path="/agent/compose" element={<ProtectedRoute><AgentComposePage /></ProtectedRoute>} />
                     <Route path="/dev/responsive" element={<ProtectedRoute><ResponsiveChecklistPage /></ProtectedRoute>} />
