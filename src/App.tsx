@@ -64,6 +64,7 @@ const PresaleWebhookLogPage = lazy(() => import("./pages/admin/PresaleWebhookLog
 const AdminProjectsPage = lazy(() => import("./pages/admin/AdminProjectsPage"));
 const WebhookValidationPage = lazy(() => import("./pages/admin/WebhookValidationPage"));
 const AuditLogPage = lazy(() => import("./pages/admin/AuditLogPage"));
+const ZaraSettingsPage = lazy(() => import("./pages/admin/ZaraSettingsPage"));
 const CrmTrashPage = lazy(() => import("./pages/crm/CrmTrashPage"));
 const AgentProfilePage = lazy(() => import("./pages/agent/AgentProfilePage"));
 const AgentComposePage = lazy(() => import("./pages/agent/AgentComposePage"));
