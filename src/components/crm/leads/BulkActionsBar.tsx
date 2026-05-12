@@ -5,7 +5,6 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Trash2, UserCheck, Tag, ArrowRightLeft, X, Mail, MessageSquare, Zap } from 'lucide-react';
 import {
   useBulkUpdateContacts,
-  useBulkDeleteContacts,
   useBulkAddTagsToContacts,
   useCrmContacts,
   LEAD_STATUSES,
@@ -17,11 +16,8 @@ import { InlineLibraryPicker } from './InlineLibraryPicker';
 import { SendTextDialog } from './SendTextDialog';
 import { ComposeEmailDialog } from '@/components/crm/leads/ComposeEmailDialog';
 import { EnrollInAutomationDialog } from '@/components/crm/automations/EnrollInAutomationDialog';
+import { DeleteLeadsConfirmDialog } from './DeleteLeadsConfirmDialog';
 import { formatContactName } from '@/lib/format';
-import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
 
 interface BulkActionsBarProps {
   selectedIds: string[];
@@ -30,7 +26,6 @@ interface BulkActionsBarProps {
 
 export function BulkActionsBar({ selectedIds, onClearSelection }: BulkActionsBarProps) {
   const bulkUpdate = useBulkUpdateContacts();
-  const bulkDelete = useBulkDeleteContacts();
   const bulkAddTags = useBulkAddTagsToContacts();
   const { data: tagLib = [] } = useCrmTags();
   const { data: agents = [] } = useTeamAgents();
@@ -71,11 +66,10 @@ export function BulkActionsBar({ selectedIds, onClearSelection }: BulkActionsBar
     // Keep selection so the user can chain more updates on the same set.
   };
 
-  const handleDelete = () => {
-    bulkDelete.mutate(selectedIds);
-    onClearSelection();
-    setShowDelete(false);
-  };
+  // Soft-delete is now handled inside <DeleteLeadsConfirmDialog />, which
+  // runs the type-to-confirm gate, calls crm_soft_delete_contacts_with_undo,
+  // logs the audit row, and toasts the result. We just clear selection on
+  // success.
 
   return (
     <>
@@ -183,18 +177,12 @@ export function BulkActionsBar({ selectedIds, onClearSelection }: BulkActionsBar
         </Button>
       </div>
 
-      <AlertDialog open={showDelete} onOpenChange={setShowDelete}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete {count} contact{count > 1 ? 's' : ''}?</AlertDialogTitle>
-            <AlertDialogDescription>This action cannot be undone.</AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Delete</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <DeleteLeadsConfirmDialog
+        open={showDelete}
+        onOpenChange={setShowDelete}
+        contactIds={selectedIds}
+        onDeleted={() => onClearSelection()}
+      />
 
       {/* Mass text — opens the canonical SendTextDialog with the first
           selected lead as primary and the rest as extras. >1 recipient routes
