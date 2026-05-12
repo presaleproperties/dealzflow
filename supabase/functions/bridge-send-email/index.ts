@@ -267,11 +267,64 @@ Deno.serve(async (req) => {
       upstreamJson = { sent_via: "gmail", results: sendResults };
       if (!upstreamOk) {
         const firstErr = sendResults.find((s) => !s.ok)?.error ?? "Gmail send failed";
+        const isAuth = /invalid_grant|unauthorized|401|403|insufficient/i.test(firstErr);
         console.error("agent Gmail send failed", { userId, firstErr, results: sendResults });
-        return json({ error: firstErr, status: upstreamStatus || 502 }, 502);
+
+        // Try Resend fallback if available before giving up.
+        if (resendApiKey) {
+          const resendRes = await sendViaResend({
+            apiKey: resendApiKey,
+            to: toArr,
+            cc: body.cc,
+            bcc: body.bcc,
+            subject: body.subject,
+            html: trackedHtml,
+            replyTo: teamRow?.email ?? undefined,
+            fromName: settings?.sender_name ?? "DealzFlow",
+          });
+          if (resendRes.ok) {
+            upstreamOk = true;
+            upstreamJson = { sent_via: "resend_fallback", resend_id: resendRes.id, gmail_error: firstErr };
+          } else {
+            return json({
+              error: isAuth
+                ? "Your Gmail connection has expired or lost permission. Reconnect it in Settings → Email."
+                : `Gmail send failed: ${firstErr}. Resend fallback also failed: ${resendRes.error}`,
+              reason: isAuth ? "gmail_auth_expired" : "gmail_and_resend_failed",
+            }, 502);
+          }
+        } else {
+          return json({
+            error: isAuth
+              ? "Your Gmail connection has expired or lost permission. Reconnect it in Settings → Email."
+              : `Gmail send failed: ${firstErr}`,
+            reason: isAuth ? "gmail_auth_expired" : "gmail_send_failed",
+          }, 502);
+        }
       }
+    } else if (useResendFallback) {
+      // Direct Resend send for agents without Gmail (and not owner).
+      const resendRes = await sendViaResend({
+        apiKey: resendApiKey!,
+        to: toArr,
+        cc: body.cc,
+        bcc: body.bcc,
+        subject: body.subject,
+        html: trackedHtml,
+        replyTo: teamRow?.email ?? undefined,
+        fromName: settings?.sender_name ?? "DealzFlow",
+      });
+      if (!resendRes.ok) {
+        console.error("Resend send failed", resendRes.error);
+        return json({
+          error: `Email send failed: ${resendRes.error}. Connect your Gmail in Settings → Email for a more reliable inbox.`,
+          reason: "resend_failed",
+        }, 502);
+      }
+      upstreamOk = true;
+      upstreamJson = { sent_via: "resend", resend_id: resendRes.id };
     } else {
-      // Fallback: route through Presale's bridge (info@presaleproperties.com)
+      // Owner identity (info@presaleproperties.com) — route through Presale's bridge
       const upstream = await fetch(`${PRESALE_FUNCTIONS_URL}/bridge-send-email`, {
         method: "POST",
         headers: {
@@ -299,7 +352,7 @@ Deno.serve(async (req) => {
       if (!upstreamOk) {
         console.error("Presale bridge-send-email failed", upstream.status, upstreamText);
         return json(
-          { error: upstreamJson?.error ?? "Send failed", status: upstream.status },
+          { error: upstreamJson?.error ?? `Presale bridge returned ${upstream.status}`, reason: "presale_bridge_failed" },
           502,
         );
       }
