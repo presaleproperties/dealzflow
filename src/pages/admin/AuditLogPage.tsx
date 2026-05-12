@@ -99,7 +99,12 @@ export default function AuditLogPage() {
                 <td className="px-3 py-2 text-muted-foreground tabular-nums whitespace-nowrap">
                   {format(new Date(r.occurred_at), 'MMM d, HH:mm:ss')}
                 </td>
-                <td className="px-3 py-2">{r.actor_label ?? '—'}</td>
+                <td className="px-3 py-2">
+                  <div className="text-foreground">{r.actor_label ?? '—'}</div>
+                  {r.actor_email && (
+                    <div className="text-[11px] text-muted-foreground">{r.actor_email}</div>
+                  )}
+                </td>
                 <td className={`px-3 py-2 font-medium ${ACTION_TONE[r.action] ?? 'text-foreground'}`}>{r.action}</td>
                 <td className="px-3 py-2 text-muted-foreground font-mono text-xs">
                   {r.record_id ? (
