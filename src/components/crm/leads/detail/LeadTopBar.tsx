@@ -76,6 +76,9 @@ export function LeadTopBar({ contact, navInfo, onNavigate, onTask, onShowing, on
             </button>
           </>
         )}
+
+        <div className="h-5 w-px bg-border mx-1" />
+        <LeadActionsMenu contactId={contact.id} contactName={formatContactName(contact.first_name, contact.last_name)} />
       </div>
     </div>
   );
