@@ -31,6 +31,7 @@ Deno.serve(async (req) => {
     const {
       team_slug, event_slug, start_at, invitee,
       timezone, answers, utm, referrer,
+      stripe_session_id, stripe_payment_intent,
     } = body || {};
 
     if (!team_slug || !event_slug || !start_at || !invitee?.name || (!invitee?.email && !invitee?.phone)) {
