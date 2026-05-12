@@ -43,6 +43,7 @@ export default function AuditLogPage() {
       if (!ql) return true;
       return (
         (r.actor_label ?? '').toLowerCase().includes(ql) ||
+        (r.actor_email ?? '').toLowerCase().includes(ql) ||
         r.action.toLowerCase().includes(ql) ||
         (r.record_id ?? '').toLowerCase().includes(ql) ||
         (r.changed_fields ?? []).some((f) => f.toLowerCase().includes(ql))
