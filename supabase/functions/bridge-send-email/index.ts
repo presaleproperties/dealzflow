@@ -158,48 +158,50 @@ Deno.serve(async (req) => {
     // Gmail mailbox (Zara → admin@, Sarb → sarb@, Ravish → ravish@). The
     // Presale bridge sends from info@presaleproperties.com, so it is ONLY a
     // valid fallback when the caller IS the owner identity (info@). For every
-    // other agent we queue for retry instead of silently sending under the
-    // wrong identity.
+    // other agent without Gmail we surface a clear error instead of silently
+    // sending under the wrong identity.
     const [{ data: gmailToken }, { data: teamRow }] = await Promise.all([
       supabase.from("gmail_tokens").select("gmail_email").eq("user_id", userId).maybeSingle(),
-      supabase.from("crm_team").select("role,email").eq("user_id", userId).maybeSingle(),
+      supabase.from("crm_team").select("role,email,display_name").eq("user_id", userId).maybeSingle(),
     ]);
     const useAgentGmail = !!gmailToken?.gmail_email;
     const isOwnerIdentity =
       teamRow?.role === "owner" &&
       (teamRow?.email ?? "").toLowerCase() === "info@presaleproperties.com";
-    // Resend fallback flag — set when we route through noreply@dealzflow.ca
-    // because the agent hasn't connected Gmail and isn't the owner identity.
-    let useResendFallback = false;
-    const resendApiKey = Deno.env.get("RESEND_API_KEY");
+
+    // Helper: log a failed-send row so the activity feed and debug tools can
+    // see what went wrong. Best-effort — never throws.
+    async function logFailure(reason: string, errorMessage: string) {
+      if (!body.contact_id) return;
+      try {
+        await supabase.from("crm_email_log").insert({
+          contact_id: body.contact_id,
+          user_id: userId,
+          direction: "outbound",
+          subject: body.subject,
+          body: body.html,
+          cc: ccStr,
+          bcc: bccStr,
+          sent_at: new Date().toISOString(),
+          status: "failed",
+          failed_at: new Date().toISOString(),
+          error_message: `[${reason}] ${errorMessage}`.slice(0, 1000),
+        });
+      } catch (e) {
+        console.warn("crm_email_log failure-insert failed", e);
+      }
+    }
 
     if (!useAgentGmail && !isOwnerIdentity) {
-      if (resendApiKey) {
-        // Resend fallback path — send via noreply@dealzflow.ca below.
-        useResendFallback = true;
-      } else {
-        // No Gmail, not owner, no Resend key configured → queue for retry
-        // and tell the user exactly what's wrong.
-        const toArrFallback = Array.isArray(body.to) ? body.to : [body.to];
-        await supabase.from("crm_email_schedule").insert({
-          contact_id: body.contact_id ?? null,
-          template_id: body.template_id ?? null,
-          to_emails: toArrFallback,
-          cc: body.cc ?? null,
-          bcc: body.bcc ?? null,
-          subject: body.subject,
-          body_html: body.html,
-          send_at: new Date(Date.now() + 60_000).toISOString(),
-          status: "pending",
-          created_by: userId,
-          error_message: "No email provider available — Gmail not connected and Resend fallback not configured.",
-        });
-        return json({
-          queued: true,
-          reason: "no_email_provider",
-          message: "No email provider available. Connect your Gmail in Settings → Email, or ask an admin to configure the Resend fallback.",
-        }, 202);
-      }
+      const msg =
+        `${teamRow?.display_name ?? "This agent"}'s Gmail is not connected. ` +
+        `Connect Gmail in Settings → Email before sending.`;
+      console.error("bridge-send-email: agent Gmail not connected", { userId, email: teamRow?.email });
+      await logFailure("gmail_not_connected", msg);
+      return json({
+        error: msg,
+        reason: "gmail_not_connected",
+      }, 400);
     }
 
     // Fetch sender's brand logo settings so 1:1 emails carry the same banner
@@ -230,7 +232,6 @@ Deno.serve(async (req) => {
 
     let upstreamJson: any = {};
     let upstreamOk = false;
-    let upstreamStatus = 0;
 
     if (useAgentGmail) {
       // Send through gmail-actions using the agent's connected mailbox.
@@ -261,7 +262,6 @@ Deno.serve(async (req) => {
           ? (detailMsg ? `${j.error}: ${detailMsg}` : j.error)
           : (r.ok ? undefined : `Gmail returned ${r.status}`);
         sendResults.push({ ok: r.ok && !j.error, gmail_message_id: j.gmail_message_id, error: errMsg });
-        if (!r.ok) upstreamStatus = r.status;
       }
       upstreamOk = sendResults.every((s) => s.ok);
       upstreamJson = { sent_via: "gmail", results: sendResults };
@@ -269,60 +269,15 @@ Deno.serve(async (req) => {
         const firstErr = sendResults.find((s) => !s.ok)?.error ?? "Gmail send failed";
         const isAuth = /invalid_grant|unauthorized|401|403|insufficient/i.test(firstErr);
         console.error("agent Gmail send failed", { userId, firstErr, results: sendResults });
-
-        // Try Resend fallback if available before giving up.
-        if (resendApiKey) {
-          const resendRes = await sendViaResend({
-            apiKey: resendApiKey,
-            to: toArr,
-            cc: body.cc,
-            bcc: body.bcc,
-            subject: body.subject,
-            html: trackedHtml,
-            replyTo: teamRow?.email ?? undefined,
-            fromName: settings?.sender_name ?? "DealzFlow",
-          });
-          if (resendRes.ok) {
-            upstreamOk = true;
-            upstreamJson = { sent_via: "resend_fallback", resend_id: resendRes.id, gmail_error: firstErr };
-          } else {
-            return json({
-              error: isAuth
-                ? "Your Gmail connection has expired or lost permission. Reconnect it in Settings → Email."
-                : `Gmail send failed: ${firstErr}. Resend fallback also failed: ${resendRes.error}`,
-              reason: isAuth ? "gmail_auth_expired" : "gmail_and_resend_failed",
-            }, 502);
-          }
-        } else {
-          return json({
-            error: isAuth
-              ? "Your Gmail connection has expired or lost permission. Reconnect it in Settings → Email."
-              : `Gmail send failed: ${firstErr}`,
-            reason: isAuth ? "gmail_auth_expired" : "gmail_send_failed",
-          }, 502);
-        }
-      }
-    } else if (useResendFallback) {
-      // Direct Resend send for agents without Gmail (and not owner).
-      const resendRes = await sendViaResend({
-        apiKey: resendApiKey!,
-        to: toArr,
-        cc: body.cc,
-        bcc: body.bcc,
-        subject: body.subject,
-        html: trackedHtml,
-        replyTo: teamRow?.email ?? undefined,
-        fromName: settings?.sender_name ?? "DealzFlow",
-      });
-      if (!resendRes.ok) {
-        console.error("Resend send failed", resendRes.error);
+        await logFailure(isAuth ? "gmail_auth_expired" : "gmail_send_failed", firstErr);
         return json({
-          error: `Email send failed: ${resendRes.error}. Connect your Gmail in Settings → Email for a more reliable inbox.`,
-          reason: "resend_failed",
+          error: isAuth
+            ? `Gmail connection expired or lost permission. Reconnect ${teamRow?.email ?? "your Gmail"} in Settings → Email.`
+            : `Gmail send failed: ${firstErr}`,
+          reason: isAuth ? "gmail_auth_expired" : "gmail_send_failed",
+          detail: firstErr,
         }, 502);
       }
-      upstreamOk = true;
-      upstreamJson = { sent_via: "resend", resend_id: resendRes.id };
     } else {
       // Owner identity (info@presaleproperties.com) — route through Presale's bridge
       const upstream = await fetch(`${PRESALE_FUNCTIONS_URL}/bridge-send-email`, {
@@ -347,12 +302,13 @@ Deno.serve(async (req) => {
       const upstreamText = await upstream.text();
       try { upstreamJson = JSON.parse(upstreamText); } catch {/* ignore */}
       upstreamOk = upstream.ok;
-      upstreamStatus = upstream.status;
 
       if (!upstreamOk) {
+        const errMsg = upstreamJson?.error ?? `Presale bridge returned ${upstream.status}`;
         console.error("Presale bridge-send-email failed", upstream.status, upstreamText);
+        await logFailure("presale_bridge_failed", errMsg);
         return json(
-          { error: upstreamJson?.error ?? `Presale bridge returned ${upstream.status}`, reason: "presale_bridge_failed" },
+          { error: errMsg, reason: "presale_bridge_failed", detail: upstreamText.slice(0, 400) },
           502,
         );
       }
@@ -371,6 +327,7 @@ Deno.serve(async (req) => {
           bcc: bccStr,
           sent_at: new Date().toISOString(),
           tracking_id: trackingId,
+          status: "sent",
         });
       } catch (e) {
         console.warn("crm_email_log insert failed", e);
@@ -392,48 +349,3 @@ function json(obj: unknown, status: number) {
   });
 }
 
-/**
- * Send via Resend from noreply@dealzflow.ca. Used as a fallback when the
- * agent has no Gmail connected (and isn't the owner identity), or when
- * agent Gmail send fails. Reply-To is set to the agent's real email so
- * inbound replies still reach them.
- */
-async function sendViaResend(opts: {
-  apiKey: string;
-  to: string | string[];
-  cc?: string | string[];
-  bcc?: string | string[];
-  subject: string;
-  html: string;
-  replyTo?: string;
-  fromName?: string;
-}): Promise<{ ok: true; id: string } | { ok: false; error: string }> {
-  try {
-    const fromName = (opts.fromName ?? "DealzFlow").replace(/[<>"]/g, "").trim() || "DealzFlow";
-    const payload: Record<string, unknown> = {
-      from: `${fromName} <noreply@dealzflow.ca>`,
-      to: Array.isArray(opts.to) ? opts.to : [opts.to],
-      subject: opts.subject,
-      html: opts.html,
-    };
-    if (opts.cc) payload.cc = Array.isArray(opts.cc) ? opts.cc : [opts.cc];
-    if (opts.bcc) payload.bcc = Array.isArray(opts.bcc) ? opts.bcc : [opts.bcc];
-    if (opts.replyTo) payload.reply_to = opts.replyTo;
-
-    const r = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${opts.apiKey}`,
-      },
-      body: JSON.stringify(payload),
-    });
-    const j = await r.json().catch(() => ({}));
-    if (!r.ok) {
-      return { ok: false, error: j?.message || j?.error || `Resend returned ${r.status}` };
-    }
-    return { ok: true, id: String(j?.id ?? "") };
-  } catch (e) {
-    return { ok: false, error: e instanceof Error ? e.message : "Resend network error" };
-  }
-}
