@@ -62,6 +62,7 @@ Deno.serve(async (req) => {
         .from('crm_scheduler_bookings')
         .select('start_at,end_at,invitee_first_name,invitee_last_name,invitee_email,invitee_phone,location_type,location_value,notes_for_agent,event_type:crm_scheduler_event_types(title)')
         .eq('agent_user_id', agent.user_id)
+        .is('deleted_at', null)
         .in('status', ['confirmed', 'rescheduled'])
         .gte('start_at', startUtc.toISOString())
         .lt('start_at', endUtc.toISOString())
