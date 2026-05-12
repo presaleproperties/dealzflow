@@ -416,6 +416,7 @@ export type Database = {
       crm_audit_log: {
         Row: {
           action: string
+          actor_email: string | null
           actor_id: string | null
           actor_label: string | null
           affected_count: number | null
@@ -433,6 +434,7 @@ export type Database = {
         }
         Insert: {
           action: string
+          actor_email?: string | null
           actor_id?: string | null
           actor_label?: string | null
           affected_count?: number | null
@@ -450,6 +452,7 @@ export type Database = {
         }
         Update: {
           action?: string
+          actor_email?: string | null
           actor_id?: string | null
           actor_label?: string | null
           affected_count?: number | null
@@ -6192,6 +6195,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      crm_audit_actor_email: { Args: { _uid: string }; Returns: string }
       crm_audit_actor_label: { Args: { _uid: string }; Returns: string }
       crm_backfill_orphan_activity: {
         Args: { _contact_id: string }
