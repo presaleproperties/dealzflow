@@ -47,6 +47,7 @@ Deno.serve(async (req) => {
       .from('crm_scheduler_bookings')
       .update({
         status: 'cancelled',
+        deleted_at: new Date().toISOString(),
         cancelled_at: new Date().toISOString(),
         cancelled_by: by === 'agent' ? 'agent' : 'invitee',
         cancellation_reason: reason || null,
