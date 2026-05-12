@@ -410,6 +410,8 @@ export function TopNav() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <PushNotificationDialog open={pushDialogOpen} onOpenChange={setPushDialogOpen} />
     </>
   );
 }
