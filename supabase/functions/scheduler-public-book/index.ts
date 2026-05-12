@@ -65,7 +65,7 @@ Deno.serve(async (req) => {
     // return it instead of creating a duplicate. Two callers passing the same
     // session_id (e.g. confirm-paid invoked twice from the success page) MUST
     // see exactly one booking. The DB-level partial unique index
-    //   crm_scheduler_bookings_stripe_session_uq (stripe_session_id) WHERE NOT NULL
+    //   crm_scheduler_bookings_stripe_session_uq (stripe_session_id) WHERE stripe_session_id IS NOT NULL
     // is the authoritative guard; this read just lets us short-circuit cleanly.
     if (stripe_session_id) {
       const { data: existing } = await supabase
