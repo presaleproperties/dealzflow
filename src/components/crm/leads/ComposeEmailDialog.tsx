@@ -39,6 +39,8 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useEmailSettings } from '@/hooks/useEmailSettings';
+import { useGmailConnected } from '@/hooks/useGmailConnected';
+import { FallbackSenderNotice } from '@/components/crm/email/FallbackSenderNotice';
 import { useEmailSignatures, useUpsertEmailSignature, pickSignatureForKind } from '@/hooks/useEmailSignatures';
 import { useAddCrmMessage, useCrmContactMessages } from '@/hooks/useCrmLeadDetail';
 import { useCrmEmailLog } from '@/hooks/useCrmEmailLog';
@@ -119,6 +121,7 @@ export function ComposeEmailDialog({ contact, open, onOpenChange, initialSubject
   const massSend = useMassSendEmail();
   const createTemplate = useCreateTemplate();
   const { data: emailSettings } = useEmailSettings();
+  const { data: gmailConnected } = useGmailConnected();
   const { data: signatures = [] } = useEmailSignatures();
   const upsertSignature = useUpsertEmailSignature();
   const { data: localTemplates = [] } = useCrmEmailTemplates();
@@ -1056,6 +1059,11 @@ export function ComposeEmailDialog({ contact, open, onOpenChange, initialSubject
                     </span>
                   </RecipientRow>
                 </div>
+                {gmailConnected === false && (
+                  <div className="px-0 sm:px-0 py-1.5">
+                    <FallbackSenderNotice />
+                  </div>
+                )}
                 <RecipientRow
                   label="To"
                   trailing={
