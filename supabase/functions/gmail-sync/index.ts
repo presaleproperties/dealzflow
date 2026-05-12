@@ -230,8 +230,28 @@ serve(async (req) => {
             attachment_meta: parsed.attachment_meta,
             internal_date: parsed.internal_date,
           });
-        if (!insErr) inserted++;
-        else if (!String(insErr.message).includes("duplicate")) {
+        if (!insErr) {
+          inserted++;
+          // Zara hook: fire-and-forget if this is an inbound message on a Zara-assigned contact
+          if (parsed.direction === "inbound" && contactId) {
+            try {
+              const { data: c } = await supabase
+                .from("crm_contacts").select("assigned_to").eq("id", contactId).maybeSingle();
+              const { data: zara } = await supabase
+                .from("crm_team").select("id").eq("slug", "zara").maybeSingle();
+              if (c?.assigned_to && zara?.id && c.assigned_to === zara.id) {
+                supabase.functions.invoke("zara-reply", {
+                  body: {
+                    contact_id: contactId,
+                    channel: "email",
+                    message_text: parsed.body_text || parsed.snippet || "",
+                    message_id: parsed.gmail_message_id,
+                  },
+                }).catch((e) => console.warn("[gmail-sync] zara-reply invoke failed", e));
+              }
+            } catch (e) { console.warn("[gmail-sync] zara hook err", e); }
+          }
+        } else if (!String(insErr.message).includes("duplicate")) {
           console.error(`[gmail-sync] insert error for msg ${msg.id}:`, insErr);
         }
       }
