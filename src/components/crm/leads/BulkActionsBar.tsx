@@ -177,18 +177,12 @@ export function BulkActionsBar({ selectedIds, onClearSelection }: BulkActionsBar
         </Button>
       </div>
 
-      <AlertDialog open={showDelete} onOpenChange={setShowDelete}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete {count} contact{count > 1 ? 's' : ''}?</AlertDialogTitle>
-            <AlertDialogDescription>This action cannot be undone.</AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Delete</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <DeleteLeadsConfirmDialog
+        open={showDelete}
+        onOpenChange={setShowDelete}
+        contactIds={selectedIds}
+        onDeleted={() => onClearSelection()}
+      />
 
       {/* Mass text — opens the canonical SendTextDialog with the first
           selected lead as primary and the rest as extras. >1 recipient routes
