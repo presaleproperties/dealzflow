@@ -65,7 +65,7 @@ Deno.serve(async (req) => {
     // return it instead of creating a duplicate. Two callers passing the same
     // session_id (e.g. confirm-paid invoked twice from the success page) MUST
     // see exactly one booking. The DB-level partial unique index
-    //   crm_scheduler_bookings_stripe_session_uq (stripe_session_id) WHERE NOT NULL
+    //   crm_scheduler_bookings_stripe_session_uq (stripe_session_id) WHERE stripe_session_id IS NOT NULL
     // is the authoritative guard; this read just lets us short-circuit cleanly.
     if (stripe_session_id) {
       const { data: existing } = await supabase
@@ -146,7 +146,7 @@ Deno.serve(async (req) => {
     }
 
     // Create booking. The partial unique index
-    //   crm_scheduler_bookings_active_slot_uq (agent_user_id, start_at) WHERE status IN (confirmed, rescheduled)
+    //   crm_scheduler_bookings_active_slot_uq (agent_user_id, start_at) WHERE status IN (confirmed, rescheduled) AND deleted_at IS NULL
     // gives atomic double-book prevention even under concurrent requests.
     const { data: booking, error: bookErr } = await supabase
       .from('crm_scheduler_bookings')
@@ -163,6 +163,7 @@ Deno.serve(async (req) => {
         end_at: endDate.toISOString(),
         duration_min: evt.duration_min,
         status: 'confirmed',
+        deleted_at: null,
         location_type: evt.location_type,
         location_value: evt.location_value,
         notes_for_agent: invitee.notes || null,

@@ -64,7 +64,7 @@ Deno.serve(async (req) => {
       } catch (e) { console.warn('gcal delete failed', e); }
     }
     await supabase.from('crm_scheduler_bookings')
-      .update({ status: 'cancelled', cancelled_at: new Date().toISOString(), cancellation_reason: 'rescheduled' })
+      .update({ status: 'cancelled', deleted_at: new Date().toISOString(), cancelled_at: new Date().toISOString(), cancellation_reason: 'rescheduled' })
       .eq('id', booking_id);
 
     // Book the new slot via the standard pipeline
@@ -90,7 +90,7 @@ Deno.serve(async (req) => {
     if (!bookRes.ok) {
       // Restore old booking if we failed to book
       await supabase.from('crm_scheduler_bookings')
-        .update({ status: 'confirmed', cancelled_at: null, cancellation_reason: null })
+        .update({ status: 'confirmed', deleted_at: null, cancelled_at: null, cancellation_reason: null })
         .eq('id', booking_id);
       return new Response(JSON.stringify({ error: bookJson.error || 'rebook_failed' }), {
         status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },

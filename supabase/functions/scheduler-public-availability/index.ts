@@ -58,6 +58,7 @@ Deno.serve(async (req) => {
       supabase.from('crm_scheduler_bookings')
         .select('start_at, end_at, status')
         .eq('agent_user_id', agent.user_id)
+        .is('deleted_at', null)
         .in('status', ['confirmed', 'rescheduled'])
         .gte('start_at', fromDate.toISOString())
         .lte('start_at', toDate.toISOString()),

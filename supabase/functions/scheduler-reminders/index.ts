@@ -35,6 +35,7 @@ Deno.serve(async (req) => {
       const { data: bookings, error } = await supabase
         .from("crm_scheduler_bookings")
         .select("id, invitee_email, invitee_phone, start_at, status")
+        .is('deleted_at', null)
         .in("status", ["confirmed", "rescheduled"])
         .gte("start_at", new Date(w.minMs).toISOString())
         .lte("start_at", new Date(w.maxMs).toISOString());
