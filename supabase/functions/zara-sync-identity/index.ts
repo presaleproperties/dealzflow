@@ -82,7 +82,8 @@ Deno.serve(async (req) => {
         { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
-    const full: any = await presaleBridge.getAgent(identifier);
+    const fullRaw: any = await presaleBridge.getAgent(identifier);
+    const full: any = fullRaw?.agent ?? fullRaw?.data ?? fullRaw;
 
     const signatureHtml = pick<string>(full, [
       "signature_html",
