@@ -22,15 +22,50 @@ export function useSoftDeleteContacts() {
   const { toast } = useToast();
   return useMutation({
     mutationFn: async (ids: string[]) => {
-      const { data, error } = await (supabase as any).rpc('crm_soft_delete_contacts', { _ids: ids });
+      // Use the with_undo wrapper so the audit row carries a full row snapshot
+      // (undo_payload) for admin recovery beyond the 30-day Trash window.
+      const { data, error } = await (supabase as any).rpc('crm_soft_delete_contacts_with_undo', { p_ids: ids });
       if (error) throw error;
       return (data as number) ?? 0;
     },
     onSuccess: (count) => {
-      toast({ title: 'Moved to Trash', description: `${count} lead${count === 1 ? '' : 's'} moved. Restorable for 30 days.` });
+      toast({
+        title: `Deleted ${count} contact${count === 1 ? '' : 's'}.`,
+        description: 'Restore from Trash within 30 days.',
+      });
       invalidateLeads(qc);
     },
     onError: (err: Error) => toast({ title: 'Could not delete', description: err.message, variant: 'destructive' }),
+  });
+}
+
+export interface DeleteScope {
+  contacts: number;
+  notes: number;
+  tasks: number;
+  emails: number;
+  texts: number;
+  calls: number;
+  showings: number;
+  automations: number;
+  behavior: number;
+  total_related: number;
+  display_name: string;
+}
+
+export function useDeleteScope(contactIds: string[] | null, enabled = true) {
+  const key = contactIds ? [...contactIds].sort().join(',') : 'none';
+  return useQuery<DeleteScope>({
+    queryKey: ['crm-delete-scope', key],
+    enabled: enabled && !!contactIds && contactIds.length > 0,
+    queryFn: async () => {
+      const { data, error } = await (supabase as any).rpc('crm_count_delete_scope', {
+        p_contact_ids: contactIds,
+      });
+      if (error) throw error;
+      return data as DeleteScope;
+    },
+    staleTime: 10_000,
   });
 }
 
