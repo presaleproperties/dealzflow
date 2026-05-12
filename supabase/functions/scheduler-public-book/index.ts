@@ -246,11 +246,27 @@ Deno.serve(async (req) => {
       });
     } catch (e) { console.warn('activity insert failed', e); }
 
-    // Showing record for project events
+    // Showing record for project events. showing_date/showing_time are stored
+    // as wall-clock values in the agent's timezone (matches how the showings
+    // calendar renders them); deriving them from the UTC ISO string would
+    // shift evening bookings into the wrong day for west-coast agents.
     if (evt.creates_showing) {
       try {
-        const localDate = startDate.toISOString().slice(0, 10);
-        const localTime = startDate.toISOString().slice(11, 19);
+        const tz = agent.timezone || 'America/Vancouver';
+        const fmt = new Intl.DateTimeFormat('en-CA', {
+          timeZone: tz,
+          year: 'numeric', month: '2-digit', day: '2-digit',
+          hour: '2-digit', minute: '2-digit', second: '2-digit',
+          hour12: false,
+        });
+        const parts = fmt.formatToParts(startDate).reduce<Record<string, string>>((acc, p) => {
+          if (p.type !== 'literal') acc[p.type] = p.value;
+          return acc;
+        }, {});
+        const localDate = `${parts.year}-${parts.month}-${parts.day}`;
+        // Intl returns "24" for midnight on some runtimes — normalize to "00".
+        const hh = parts.hour === '24' ? '00' : parts.hour;
+        const localTime = `${hh}:${parts.minute}:${parts.second}`;
         await supabase.from('crm_showings').insert({
           contact_id: contactId,
           project: evt.project_slug || evt.title,
