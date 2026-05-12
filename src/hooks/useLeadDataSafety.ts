@@ -136,6 +136,7 @@ export interface CrmAuditRow {
   occurred_at: string;
   actor_id: string | null;
   actor_label: string | null;
+  actor_email: string | null;
   action: string;
   table_name: string;
   record_id: string | null;
