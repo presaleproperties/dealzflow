@@ -66,11 +66,10 @@ export function BulkActionsBar({ selectedIds, onClearSelection }: BulkActionsBar
     // Keep selection so the user can chain more updates on the same set.
   };
 
-  const handleDelete = () => {
-    bulkDelete.mutate(selectedIds);
-    onClearSelection();
-    setShowDelete(false);
-  };
+  // Soft-delete is now handled inside <DeleteLeadsConfirmDialog />, which
+  // runs the type-to-confirm gate, calls crm_soft_delete_contacts_with_undo,
+  // logs the audit row, and toasts the result. We just clear selection on
+  // success.
 
   return (
     <>
