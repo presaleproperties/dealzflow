@@ -458,7 +458,11 @@ export function ComposeEmailDialog({ contact, open, onOpenChange, initialSubject
     return out;
   }, [contact, extraContacts]);
   const isMass = allRecipients.length > 1;
-  const canSend = allRecipients.length > 0 && subject.trim() && bodyText;
+  // Block sending when the agent's Gmail isn't connected — bridge-send-email
+  // will reject the call anyway, so disable the button up-front and surface
+  // the warning banner instead.
+  const gmailBlocked = gmailConnected === false;
+  const canSend = allRecipients.length > 0 && subject.trim() && bodyText && !gmailBlocked;
 
   const openSaveDialog = () => {
     if (!bodyText) {
@@ -489,6 +493,10 @@ export function ComposeEmailDialog({ contact, open, onOpenChange, initialSubject
   };
 
   const handleSend = async () => {
+    if (gmailBlocked) {
+      toast.error("This agent's Gmail is not connected. Connect Gmail in Settings → Team to send emails.");
+      return;
+    }
     if (!canSend) {
       toast.error('Subject, body and a recipient email are required');
       return;
