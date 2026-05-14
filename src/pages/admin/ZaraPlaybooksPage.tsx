@@ -139,6 +139,12 @@ export default function ZaraPlaybooksPage() {
                 <Label>Active</Label>
                 <Switch checked={editing.is_active ?? true} onCheckedChange={(v) => setEditing({ ...editing, is_active: v })}/>
               </div>
+
+              <PlaybookSimulator
+                playbookName={editing.name || 'Untitled'}
+                triggerJson={trigJson}
+                sequenceJson={seqJson}
+              />
             </div>
           )}
           <DialogFooter><Button variant="ghost" onClick={() => setEditing(null)}>Cancel</Button><Button onClick={save}>Save</Button></DialogFooter>
