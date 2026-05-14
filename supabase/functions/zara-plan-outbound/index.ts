@@ -209,9 +209,27 @@ Context: ${context}
 
 Draft the outbound message per the system rules. Strict JSON only.`;
 
-    let ai: any;
-    try { ai = await callAI(model, SYSTEM_PROMPT, userMsg); }
-    catch (e) { skipped.push({ id: lead.id, reason: 'ai_error', error: String(e) }); continue; }
+    let aiResult: { json: any; in_tok: number; out_tok: number; latency_ms: number };
+    try {
+      aiResult = await callAI(model, systemPrompt, userMsg);
+      await logModelCall(admin, {
+        function_called: 'zara-plan-outbound',
+        contact_id: lead.id,
+        model,
+        input_tokens: aiResult.in_tok,
+        output_tokens: aiResult.out_tok,
+        latency_ms: aiResult.latency_ms,
+        success: true,
+      });
+    } catch (e) {
+      await logModelCall(admin, {
+        function_called: 'zara-plan-outbound', contact_id: lead.id, model,
+        success: false, error: String(e),
+      });
+      skipped.push({ id: lead.id, reason: 'ai_error', error: String(e) });
+      continue;
+    }
+    const ai = aiResult.json;
 
     const body = String(ai?.body ?? '').trim();
     if (!body) { skipped.push({ id: lead.id, reason: 'empty_body' }); continue; }
@@ -241,6 +259,9 @@ Draft the outbound message per the system rules. Strict JSON only.`;
       .single();
 
     if (insErr) { skipped.push({ id: lead.id, reason: 'insert_error', error: insErr.message }); continue; }
+
+    // Capture {LOOKUP:...} placeholders as knowledge gaps
+    await captureLookupGaps(admin, `${subject ?? ''}\n${body}`, lead.id, inserted.id);
 
     generated.push({ id: inserted.id, contact_id: lead.id, trigger, channel });
 
