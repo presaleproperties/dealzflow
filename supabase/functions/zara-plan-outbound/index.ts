@@ -94,6 +94,16 @@ Deno.serve(async (req) => {
   const perLeadWeekly = settings.max_drafts_per_lead_per_week ?? 2;
   const model = settings.model_draft || settings.model_classify || 'google/gemini-3-flash-preview';
 
+  // Load active system prompt + workspace custom instructions
+  const [{ data: activePrompt }, { data: orgCtx }] = await Promise.all([
+    admin.from('zara_system_prompts').select('prompt_text').eq('is_active', true).order('created_at', { ascending: false }).limit(1).maybeSingle(),
+    admin.from('zara_org_context').select('custom_instructions').eq('id', 1).maybeSingle(),
+  ]);
+  let systemPrompt = activePrompt?.prompt_text || FALLBACK_SYSTEM_PROMPT;
+  if (orgCtx?.custom_instructions?.trim()) {
+    systemPrompt += `\n\nAdditional workspace context:\n${orgCtx.custom_instructions.trim()}`;
+  }
+
   // Pull Zara-assigned, non-muted, non-deleted candidates.
   const { data: leads, error: leadsErr } = await admin
     .from('crm_contacts')
