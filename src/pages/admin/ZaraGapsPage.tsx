@@ -55,7 +55,7 @@ export default function ZaraGapsPage() {
         <Card><CardContent className="p-8 text-center text-sm text-muted-foreground">No gaps. Zara has all the context she needs.</CardContent></Card>
       ) : (
         <div className="grid gap-4 md:grid-cols-2">
-          {Object.entries(grouped).map(([type, items]) => (
+          {(Object.entries(grouped) as [string, any[]][]).map(([type, items]) => (
             <Card key={type}>
               <CardHeader>
                 <CardTitle className="text-base flex items-center justify-between">
