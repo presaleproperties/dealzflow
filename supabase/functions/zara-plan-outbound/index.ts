@@ -4,6 +4,7 @@
 // Invoke: GET/POST (cron). Optional body: { trigger?: string, dry_run?: boolean, limit?: number }
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 import { logModelCall, captureLookupGaps, estimateTokens } from '../_shared/zara-logging.ts';
+import { autoSendDraft } from '../_shared/zara-send.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -87,8 +88,10 @@ Deno.serve(async (req) => {
     return json({ ok: true, reason: 'workspace_cap_reached', pending, generated: 0 });
   }
 
-  const { data: zara } = await admin.from('crm_team').select('id').eq('slug', 'zara').maybeSingle();
+  const { data: zara } = await admin.from('crm_team').select('id, display_name').eq('slug', 'zara').maybeSingle();
   if (!zara?.id) return json({ ok: false, reason: 'zara_not_found' }, 500);
+  // crm_contacts.assigned_to is text and stores either the team UUID or display_name. Match both.
+  const zaraAssignedKeys = [zara.id as string, zara.display_name as string].filter(Boolean) as string[];
 
   const coldDays = settings.cold_nudge_days ?? 7;
   const perLeadWeekly = settings.max_drafts_per_lead_per_week ?? 2;
@@ -108,7 +111,7 @@ Deno.serve(async (req) => {
   const { data: leads, error: leadsErr } = await admin
     .from('crm_contacts')
     .select('id, first_name, last_name, email, phone, language, tags, status, last_touch_at, created_at, assigned_to')
-    .eq('assigned_to', zara.id)
+    .in('assigned_to', zaraAssignedKeys)
     .is('deleted_at', null)
     .order('last_touch_at', { ascending: true, nullsFirst: true })
     .limit(200);
@@ -189,6 +192,19 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Initial introduction: Zara has never written to this lead. Always say hi
+    // once per assigned lead so she doesn't sit silent on contacts she owns.
+    if (!trigger && (!wantTrigger || wantTrigger === 'initial_outreach')) {
+      const { count: priorDrafts } = await admin
+        .from('crm_zara_drafts')
+        .select('id', { count: 'exact', head: true })
+        .eq('contact_id', lead.id);
+      if ((priorDrafts ?? 0) === 0) {
+        trigger = 'initial_outreach';
+        context = `First touch from Zara. Lead is assigned to her but she has never written. Status: ${lead.status ?? 'new'}. Warm introduction + ONE light question — do not pitch.`;
+      }
+    }
+
     if (!trigger) { skipped.push({ id: lead.id, reason: 'no_trigger' }); continue; }
 
     // Dedupe: don't create another pending draft for same lead+trigger
@@ -263,15 +279,21 @@ Draft the outbound message per the system rules. Strict JSON only.`;
     // Capture {LOOKUP:...} placeholders as knowledge gaps
     await captureLookupGaps(admin, `${subject ?? ''}\n${body}`, lead.id, inserted.id);
 
-    generated.push({ id: inserted.id, contact_id: lead.id, trigger, channel });
-
     await admin.from('crm_audit_log').insert({
       action: 'zara.draft_created',
       table_name: 'crm_zara_drafts',
       record_id: inserted.id,
       actor_label: 'zara',
-      meta: { trigger, channel, contact_id: lead.id, confidence },
+      meta: { trigger, channel, contact_id: lead.id, confidence, autonomous: !!settings.autonomous_outbound },
     });
+
+    // Autonomous send: if enabled, send immediately and update draft → 'sent'.
+    if (settings.autonomous_outbound) {
+      const sent = await autoSendDraft(admin, inserted.id);
+      generated.push({ id: inserted.id, contact_id: lead.id, trigger, channel, autonomous: true, sent: sent.ok, error: sent.error });
+    } else {
+      generated.push({ id: inserted.id, contact_id: lead.id, trigger, channel });
+    }
   }
 
   return json({ ok: true, pending_before: pending, generated: generated.length, skipped: skipped.length, generated_items: generated, skipped_items: skipped.slice(0, 20) });

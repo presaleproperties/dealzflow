@@ -5137,6 +5137,7 @@ export type Database = {
       crm_zara_settings: {
         Row: {
           auto_pause_on_cost: boolean
+          autonomous_outbound: boolean
           cold_nudge_days: number
           created_at: string
           daily_cost_cap_usd: number
@@ -5157,6 +5158,7 @@ export type Database = {
         }
         Insert: {
           auto_pause_on_cost?: boolean
+          autonomous_outbound?: boolean
           cold_nudge_days?: number
           created_at?: string
           daily_cost_cap_usd?: number
@@ -5177,6 +5179,7 @@ export type Database = {
         }
         Update: {
           auto_pause_on_cost?: boolean
+          autonomous_outbound?: boolean
           cold_nudge_days?: number
           created_at?: string
           daily_cost_cap_usd?: number
