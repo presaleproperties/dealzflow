@@ -29,9 +29,10 @@ function json(b: unknown, status = 200) {
   return new Response(JSON.stringify(b), { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
 }
 
-async function callAI(model: string, system: string, user: string): Promise<any> {
+async function callAI(model: string, system: string, user: string): Promise<{ json: any; in_tok: number; out_tok: number; latency_ms: number }> {
   const key = Deno.env.get('LOVABLE_API_KEY');
   if (!key) throw new Error('LOVABLE_API_KEY missing');
+  const t0 = Date.now();
   const r = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
@@ -42,8 +43,17 @@ async function callAI(model: string, system: string, user: string): Promise<any>
     }),
   });
   const text = await r.text();
+  const latency_ms = Date.now() - t0;
   if (!r.ok) throw new Error(`AI ${r.status}: ${text.slice(0, 300)}`);
-  return JSON.parse(JSON.parse(text)?.choices?.[0]?.message?.content ?? '{}');
+  const parsed = JSON.parse(text);
+  const content = parsed?.choices?.[0]?.message?.content ?? '{}';
+  const usage = parsed?.usage ?? {};
+  return {
+    json: JSON.parse(content),
+    in_tok: usage.prompt_tokens ?? estimateTokens(system + user),
+    out_tok: usage.completion_tokens ?? estimateTokens(content),
+    latency_ms,
+  };
 }
 
 function pickChannel(contact: any): 'email' | 'sms' | 'whatsapp' {
