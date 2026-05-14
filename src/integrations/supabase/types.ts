@@ -959,6 +959,7 @@ export type Database = {
           lofty_updated_at: string | null
           looking_to_buy_in: string[] | null
           marketing_consent: boolean | null
+          metadata: Json
           next_followup_date: string | null
           notes: string | null
           phone: string | null
@@ -984,6 +985,7 @@ export type Database = {
           updated_at: string | null
           visit_count: number
           won_at: string | null
+          zara_state: string | null
         }
         Insert: {
           address?: string | null
@@ -1032,6 +1034,7 @@ export type Database = {
           lofty_updated_at?: string | null
           looking_to_buy_in?: string[] | null
           marketing_consent?: boolean | null
+          metadata?: Json
           next_followup_date?: string | null
           notes?: string | null
           phone?: string | null
@@ -1057,6 +1060,7 @@ export type Database = {
           updated_at?: string | null
           visit_count?: number
           won_at?: string | null
+          zara_state?: string | null
         }
         Update: {
           address?: string | null
@@ -1105,6 +1109,7 @@ export type Database = {
           lofty_updated_at?: string | null
           looking_to_buy_in?: string[] | null
           marketing_consent?: boolean | null
+          metadata?: Json
           next_followup_date?: string | null
           notes?: string | null
           phone?: string | null
@@ -1130,6 +1135,7 @@ export type Database = {
           updated_at?: string | null
           visit_count?: number
           won_at?: string | null
+          zara_state?: string | null
         }
         Relationships: [
           {
@@ -4889,7 +4895,9 @@ export type Database = {
           confidence: number | null
           contact_id: string
           created_at: string
+          draft_metadata: Json
           id: string
+          is_training_example: boolean
           reasoning: string | null
           reject_reason: string | null
           scheduled_for: string
@@ -4900,6 +4908,7 @@ export type Database = {
           subject: string | null
           trigger_kind: string
           updated_at: string
+          urgency: string | null
         }
         Insert: {
           approved_at?: string | null
@@ -4909,7 +4918,9 @@ export type Database = {
           confidence?: number | null
           contact_id: string
           created_at?: string
+          draft_metadata?: Json
           id?: string
+          is_training_example?: boolean
           reasoning?: string | null
           reject_reason?: string | null
           scheduled_for?: string
@@ -4920,6 +4931,7 @@ export type Database = {
           subject?: string | null
           trigger_kind: string
           updated_at?: string
+          urgency?: string | null
         }
         Update: {
           approved_at?: string | null
@@ -4929,7 +4941,9 @@ export type Database = {
           confidence?: number | null
           contact_id?: string
           created_at?: string
+          draft_metadata?: Json
           id?: string
+          is_training_example?: boolean
           reasoning?: string | null
           reject_reason?: string | null
           scheduled_for?: string
@@ -4940,6 +4954,7 @@ export type Database = {
           subject?: string | null
           trigger_kind?: string
           updated_at?: string
+          urgency?: string | null
         }
         Relationships: [
           {
@@ -4951,10 +4966,180 @@ export type Database = {
           },
         ]
       }
+      crm_zara_insights: {
+        Row: {
+          created_at: string
+          id: string
+          insight_text: string
+          is_dismissed: boolean
+          period_end: string
+          period_start: string
+          severity: string
+          suggested_action: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          insight_text: string
+          is_dismissed?: boolean
+          period_end: string
+          period_start: string
+          severity?: string
+          suggested_action?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          insight_text?: string
+          is_dismissed?: boolean
+          period_end?: string
+          period_start?: string
+          severity?: string
+          suggested_action?: string | null
+        }
+        Relationships: []
+      }
+      crm_zara_knowledge_gaps: {
+        Row: {
+          contact_id: string | null
+          created_at: string
+          draft_id: string | null
+          gap_type: string
+          id: string
+          missing_value: string
+          resolved: boolean
+          resolved_at: string | null
+          resolved_by: string | null
+        }
+        Insert: {
+          contact_id?: string | null
+          created_at?: string
+          draft_id?: string | null
+          gap_type: string
+          id?: string
+          missing_value: string
+          resolved?: boolean
+          resolved_at?: string | null
+          resolved_by?: string | null
+        }
+        Update: {
+          contact_id?: string | null
+          created_at?: string
+          draft_id?: string | null
+          gap_type?: string
+          id?: string
+          missing_value?: string
+          resolved?: boolean
+          resolved_at?: string | null
+          resolved_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_zara_knowledge_gaps_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "crm_contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_zara_knowledge_gaps_draft_id_fkey"
+            columns: ["draft_id"]
+            isOneToOne: false
+            referencedRelation: "crm_zara_drafts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_zara_model_calls: {
+        Row: {
+          contact_id: string | null
+          cost_usd: number
+          created_at: string
+          error: string | null
+          function_called: string
+          id: string
+          input_tokens: number
+          latency_ms: number | null
+          model: string
+          output_tokens: number
+          success: boolean
+        }
+        Insert: {
+          contact_id?: string | null
+          cost_usd?: number
+          created_at?: string
+          error?: string | null
+          function_called: string
+          id?: string
+          input_tokens?: number
+          latency_ms?: number | null
+          model: string
+          output_tokens?: number
+          success?: boolean
+        }
+        Update: {
+          contact_id?: string | null
+          cost_usd?: number
+          created_at?: string
+          error?: string | null
+          function_called?: string
+          id?: string
+          input_tokens?: number
+          latency_ms?: number | null
+          model?: string
+          output_tokens?: number
+          success?: boolean
+        }
+        Relationships: []
+      }
+      crm_zara_playbooks: {
+        Row: {
+          behavior_sequence: Json
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          priority: number
+          times_triggered: number
+          trigger_conditions: Json
+          updated_at: string
+        }
+        Insert: {
+          behavior_sequence?: Json
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          priority?: number
+          times_triggered?: number
+          trigger_conditions?: Json
+          updated_at?: string
+        }
+        Update: {
+          behavior_sequence?: Json
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          priority?: number
+          times_triggered?: number
+          trigger_conditions?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
       crm_zara_settings: {
         Row: {
+          auto_pause_on_cost: boolean
           cold_nudge_days: number
           created_at: string
+          daily_cost_cap_usd: number
           daily_send_cap_per_lead: number
           enabled: boolean
           id: number
@@ -4971,8 +5156,10 @@ export type Database = {
           workspace_daily_cap: number
         }
         Insert: {
+          auto_pause_on_cost?: boolean
           cold_nudge_days?: number
           created_at?: string
+          daily_cost_cap_usd?: number
           daily_send_cap_per_lead?: number
           enabled?: boolean
           id?: number
@@ -4989,8 +5176,10 @@ export type Database = {
           workspace_daily_cap?: number
         }
         Update: {
+          auto_pause_on_cost?: boolean
           cold_nudge_days?: number
           created_at?: string
+          daily_cost_cap_usd?: number
           daily_send_cap_per_lead?: number
           enabled?: boolean
           id?: number
@@ -6269,6 +6458,60 @@ export type Database = {
           },
         ]
       }
+      zara_org_context: {
+        Row: {
+          custom_instructions: string | null
+          id: number
+          updated_at: string
+        }
+        Insert: {
+          custom_instructions?: string | null
+          id?: number
+          updated_at?: string
+        }
+        Update: {
+          custom_instructions?: string | null
+          id?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      zara_system_prompts: {
+        Row: {
+          change_summary: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          is_active: boolean
+          model: string
+          name: string
+          prompt_text: string
+          version: string
+        }
+        Insert: {
+          change_summary?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          model?: string
+          name?: string
+          prompt_text: string
+          version: string
+        }
+        Update: {
+          change_summary?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          model?: string
+          name?: string
+          prompt_text?: string
+          version?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       crm_potential_duplicates: {
@@ -6682,6 +6925,7 @@ export type Database = {
         }[]
       }
       crm_within_quiet_hours: { Args: { _user_id: string }; Returns: boolean }
+      crm_zara_behavior_score: { Args: never; Returns: number }
       crm_zara_pending_drafts_count: { Args: never; Returns: number }
       decrypt_api_credential: {
         Args: { ciphertext: string; passphrase: string }
