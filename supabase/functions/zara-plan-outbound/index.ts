@@ -264,15 +264,21 @@ Draft the outbound message per the system rules. Strict JSON only.`;
     // Capture {LOOKUP:...} placeholders as knowledge gaps
     await captureLookupGaps(admin, `${subject ?? ''}\n${body}`, lead.id, inserted.id);
 
-    generated.push({ id: inserted.id, contact_id: lead.id, trigger, channel });
-
     await admin.from('crm_audit_log').insert({
       action: 'zara.draft_created',
       table_name: 'crm_zara_drafts',
       record_id: inserted.id,
       actor_label: 'zara',
-      meta: { trigger, channel, contact_id: lead.id, confidence },
+      meta: { trigger, channel, contact_id: lead.id, confidence, autonomous: !!settings.autonomous_outbound },
     });
+
+    // Autonomous send: if enabled, send immediately and update draft → 'sent'.
+    if (settings.autonomous_outbound) {
+      const sent = await autoSendDraft(admin, inserted.id);
+      generated.push({ id: inserted.id, contact_id: lead.id, trigger, channel, autonomous: true, sent: sent.ok, error: sent.error });
+    } else {
+      generated.push({ id: inserted.id, contact_id: lead.id, trigger, channel });
+    }
   }
 
   return json({ ok: true, pending_before: pending, generated: generated.length, skipped: skipped.length, generated_items: generated, skipped_items: skipped.slice(0, 20) });
