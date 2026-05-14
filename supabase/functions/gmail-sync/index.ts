@@ -238,8 +238,9 @@ serve(async (req) => {
               const { data: c } = await supabase
                 .from("crm_contacts").select("assigned_to").eq("id", contactId).maybeSingle();
               const { data: zara } = await supabase
-                .from("crm_team").select("id").eq("slug", "zara").maybeSingle();
-              if (c?.assigned_to && zara?.id && c.assigned_to === zara.id) {
+                .from("crm_team").select("id, display_name").eq("slug", "zara").maybeSingle();
+              const zaraKeys = [zara?.id, zara?.display_name].filter(Boolean) as string[];
+              if (c?.assigned_to && zaraKeys.includes(c.assigned_to)) {
                 supabase.functions.invoke("zara-reply", {
                   body: {
                     contact_id: contactId,
