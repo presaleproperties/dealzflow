@@ -10,6 +10,7 @@
 - **PWA**: Command Center is `start_url`. Web Push via aesgcm VAPID. No layout animations for native selects.
 - **User Preference**: Prompt for approval before automated decisions/imports. 100% data retention during import.
 - **Access Model**: Workspace = apply + admin approval (`profiles.workspace_status`). CRM = invite-only (`crm_team`). Two independent gates — never mix.
+- **Zara Output**: Zara writes in English ONLY. `crm_contacts.language` is internal metadata for human agents on calls — never translate Zara's drafts/replies. See [Zara English-only](mem://constraints/zara-english-only).
 - **Composer/Thread Imports**: All new email/SMS composition or thread code MUST import from `@/components/crm/unified` (see Unified Composer Primitives memory).
 
 ## Memories
