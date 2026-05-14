@@ -4,6 +4,7 @@
 // Invoke: GET/POST (cron). Optional body: { trigger?: string, dry_run?: boolean, limit?: number }
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 import { logModelCall, captureLookupGaps, estimateTokens } from '../_shared/zara-logging.ts';
+import { autoSendDraft } from '../_shared/zara-send.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
