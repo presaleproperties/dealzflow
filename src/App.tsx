@@ -287,6 +287,12 @@ const App = () => (
                     <Route path="/admin/zara/live" element={<AdminRoute><ZaraDashboardPage /></AdminRoute>} />
                     <Route path="/admin/zara/settings" element={<AdminRoute><ZaraSettingsPage /></AdminRoute>} />
                     <Route path="/admin/zara/drafts" element={<AdminRoute><ZaraDraftsPage /></AdminRoute>} />
+                    <Route path="/admin/zara/jobs" element={<AdminRoute><ZaraJobsPage /></AdminRoute>} />
+                    <Route path="/admin/zara/behavior" element={<AdminRoute><ZaraBehaviorPage /></AdminRoute>} />
+                    <Route path="/admin/zara/gaps" element={<AdminRoute><ZaraGapsPage /></AdminRoute>} />
+                    <Route path="/admin/zara/cost" element={<AdminRoute><ZaraCostPage /></AdminRoute>} />
+                    <Route path="/admin/zara/training" element={<AdminRoute><ZaraTrainingPage /></AdminRoute>} />
+                    <Route path="/admin/zara/playbooks" element={<AdminRoute><ZaraPlaybooksPage /></AdminRoute>} />
                     <Route path="/crm/trash" element={<ProtectedRoute><CrmLayout requireRole={['owner', 'admin']}><CrmTrashPage /></CrmLayout></ProtectedRoute>} />
                     <Route path="/agent/profile" element={<ProtectedRoute><AgentProfilePage /></ProtectedRoute>} />
                     <Route path="/agent/compose" element={<ProtectedRoute><AgentComposePage /></ProtectedRoute>} />
