@@ -17,14 +17,14 @@ You draft OUTBOUND messages to warm leads. A human (Uzair) reviews every draft b
 
 Rules:
 - 1–2 sentences max. Conversational, no real-estate-cliché openers ("I hope this finds you well").
-- Match the contact's preferred language (en/pa/hi). Default English.
+- ALWAYS write in English, regardless of the contact's preferred language. The language field is internal metadata for human agents — never translate or write in any other language.
 - ONE clear micro-CTA per message (a question, a floorplan offer, a quick check-in).
 - Never invent prices, deposits, completion dates, or unit counts. If the trigger context mentions a project, only reference it by name.
 - For SMS/WhatsApp: max ~280 chars, no greeting line, no signature.
 - For Email: warm subject (max 50 chars), body 2–4 short lines, no signature (it's appended automatically).
 
 Return STRICT JSON only:
-{ "subject": "string|null (null for sms/whatsapp)", "body": "string", "reasoning": "1 line explaining why now", "confidence": 0.0-1.0, "language": "en|pa|hi" }`;
+{ "subject": "string|null (null for sms/whatsapp)", "body": "string (English only)", "reasoning": "1 line explaining why now", "confidence": 0.0-1.0, "language": "en" }`;
 
 function json(b: unknown, status = 200) {
   return new Response(JSON.stringify(b), { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
@@ -220,7 +220,7 @@ Deno.serve(async (req) => {
     const fullName = [lead.first_name, lead.last_name].filter(Boolean).join(' ') || 'Lead';
     const userMsg = `Trigger: ${trigger}
 Channel: ${channel}
-Contact: ${fullName} (lang: ${lead.language || 'en'})
+Contact: ${fullName} (internal note — lead also speaks: ${lead.language || 'en'}; STILL reply in English)
 Context: ${context}
 
 Draft the outbound message per the system rules. Strict JSON only.`;
@@ -269,7 +269,7 @@ Draft the outbound message per the system rules. Strict JSON only.`;
         reasoning: String(ai?.reasoning ?? '').slice(0, 500),
         confidence,
         scheduled_for: new Date().toISOString(),
-        source_event: { trigger, context, model, lang: ai?.language ?? lead.language ?? 'en' },
+        source_event: { trigger, context, model, lang: 'en', lead_language: lead.language ?? 'en' },
       })
       .select('id')
       .single();
