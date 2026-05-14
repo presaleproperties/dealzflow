@@ -88,8 +88,10 @@ Deno.serve(async (req) => {
     return json({ ok: true, reason: 'workspace_cap_reached', pending, generated: 0 });
   }
 
-  const { data: zara } = await admin.from('crm_team').select('id').eq('slug', 'zara').maybeSingle();
+  const { data: zara } = await admin.from('crm_team').select('id, display_name').eq('slug', 'zara').maybeSingle();
   if (!zara?.id) return json({ ok: false, reason: 'zara_not_found' }, 500);
+  // crm_contacts.assigned_to is text and stores either the team UUID or display_name. Match both.
+  const zaraAssignedKeys = [zara.id as string, zara.display_name as string].filter(Boolean) as string[];
 
   const coldDays = settings.cold_nudge_days ?? 7;
   const perLeadWeekly = settings.max_drafts_per_lead_per_week ?? 2;
