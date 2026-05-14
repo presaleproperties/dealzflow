@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Plus, Pencil, Trash2 } from 'lucide-react';
+import { PlaybookSimulator } from '@/components/admin/zara/PlaybookSimulator';
 
 type Playbook = {
   id: string;
@@ -138,6 +139,12 @@ export default function ZaraPlaybooksPage() {
                 <Label>Active</Label>
                 <Switch checked={editing.is_active ?? true} onCheckedChange={(v) => setEditing({ ...editing, is_active: v })}/>
               </div>
+
+              <PlaybookSimulator
+                playbookName={editing.name || 'Untitled'}
+                triggerJson={trigJson}
+                sequenceJson={seqJson}
+              />
             </div>
           )}
           <DialogFooter><Button variant="ghost" onClick={() => setEditing(null)}>Cancel</Button><Button onClick={save}>Save</Button></DialogFooter>
