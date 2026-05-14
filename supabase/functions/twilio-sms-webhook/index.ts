@@ -212,8 +212,9 @@ Deno.serve(async (req) => {
     // Zara hook: if this contact is assigned to Zara, fire autonomous reply
     if (contact?.id && contact.assigned_to) {
       try {
-        const { data: zara } = await admin.from('crm_team').select('id').eq('slug', 'zara').maybeSingle();
-        if (zara?.id && contact.assigned_to === zara.id) {
+        const { data: zara } = await admin.from('crm_team').select('id, display_name').eq('slug', 'zara').maybeSingle();
+        const zaraKeys = [zara?.id, zara?.display_name].filter(Boolean) as string[];
+        if (zaraKeys.includes(contact.assigned_to)) {
           admin.functions.invoke('zara-reply', {
             body: { contact_id: contact.id, channel, message_text: bodyText, message_id: sid },
           }).catch((e) => console.warn('[twilio-sms-webhook] zara-reply invoke failed', e));
