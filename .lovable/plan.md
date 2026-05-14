@@ -1,136 +1,75 @@
-# Phase 1.5 — Lead data safety, audit & full-history export
+# Zara Operations Center v2
 
-Three independent workstreams, all admin-gated for destructive/export actions.
-
----
-
-## 1. Soft-delete + Trash + 30-day purge (crm_contacts)
-
-### Schema
-- Add `deleted_at timestamptz` + `deleted_by uuid` to `crm_contacts`.
-- Index: `crm_contacts_deleted_at_idx` on `(deleted_at) where deleted_at is not null`.
-- Update `crm_can_see_contact_id(uuid)` to return `false` for soft-deleted rows when caller is **not** `is_crm_admin_or_owner()`. Admins can see + restore + hard-delete.
-- All existing list/search RPCs (`crm_search_leads`, kanban queries, segment counts, dashboards, exports, mass-send recipient resolution) get `deleted_at IS NULL` filters. Audit hits via `rg "from\\('crm_contacts'\\)"`.
-
-### RPCs (SECURITY DEFINER)
-- `crm_soft_delete_contacts(_ids uuid[]) returns int` — admin-only; sets `deleted_at=now(), deleted_by=auth.uid()`. Writes one bulk-op audit row.
-- `crm_restore_contacts(_ids uuid[]) returns int` — admin-only; sets `deleted_at=NULL, deleted_by=NULL`. Audit row.
-- `crm_hard_delete_contacts(_ids uuid[]) returns int` — admin-only; only allowed on rows already soft-deleted. Audit row (snapshot of basic fields before delete).
-
-### Trash UI
-- New segment `trash` in `/crm/leads` (admin-only chip in segment row, hidden for agents).
-- Reuses LeadsTable; row actions become **Restore** / **Delete forever** (confirm dialog).
-- Bulk bar gains the same two actions when segment=trash.
-- Empty state: "Leads stay in Trash for 30 days, then are permanently removed."
-
-### 30-day purge cron
-- New edge fn `crm-purge-trash` — service role; deletes contacts where `deleted_at < now() - interval '30 days'`. Writes one audit row per run with affected_count.
-- pg_cron daily at 03:15 UTC (insert tool, not migration — contains anon key).
+This is a large build. Before I start, here's the plan so you can confirm scope and call out any cuts. **Estimated work: 1 migration, 1 data-seed, ~10 new files, edits to 4 edge functions, 1 new edge function, 1 new cron.** I'll deliver in one pass.
 
 ---
 
-## 2. Audit log — mutations + bulk ops
+## 1. Database (single migration)
 
-### Schema
-```
-crm_audit_log (
-  id uuid pk,
-  occurred_at timestamptz default now(),
-  actor_id uuid,                    -- auth.uid() at time of write
-  actor_label text,                 -- denormalized crm_team display_name
-  action text not null,             -- 'insert'|'update'|'delete'|'soft_delete'|'restore'|'hard_delete'|'bulk_reassign'|'bulk_import'|'bulk_tag'|'bulk_delete'|'purge'
-  table_name text not null,         -- 'crm_contacts' for now
-  record_id uuid,                   -- null for bulk
-  before jsonb,                     -- null for insert / bulk
-  after  jsonb,                     -- null for delete / bulk
-  changed_fields text[],            -- diff keys for updates
-  bulk_job_id uuid,                 -- groups a bulk operation
-  bulk_op text,                     -- mirrors action for bulk
-  affected_count int,
-  filter_snapshot jsonb,            -- segment/search/ids that drove the bulk op
-  meta jsonb default '{}'
-);
-```
-- RLS: SELECT for `is_crm_admin_or_owner()` OR `actor_id = auth.uid()` OR (record_id maps to a contact the caller can see). INSERT only via SECURITY DEFINER helpers (no direct client writes).
+New tables (all RLS-enabled, admin SELECT + service_role ALL):
+- `crm_zara_insights` — daily AI-generated behavior insights
+- `crm_zara_knowledge_gaps` — auto-captured `{LOOKUP:...}` / FAQ misses
+- `crm_zara_model_calls` — per-call AI usage + cost ledger (indexed `created_at desc`)
+- `zara_system_prompts` — versioned system prompt with `is_active`
+- `crm_zara_playbooks` — trigger_conditions + behavior_sequence
 
-### Triggers
-- `crm_audit_contacts_trg` AFTER INSERT/UPDATE/DELETE on `crm_contacts`. Skips when `current_setting('app.skip_audit', true) = 'on'` (matches existing `app.skip_touch` precedent so import jobs can opt out where appropriate). Diff = keys whose values differ; PII columns (email, phone, address) recorded as before/after.
+Schema changes:
+- `crm_zara_drafts.is_training_example bool default false`
+- `zara_org_context.custom_instructions text` (add if column missing)
+- `crm_zara_settings`: `daily_cost_cap_usd numeric default 20`, `auto_pause_on_cost bool default true`
 
-### Bulk-op logging
-- Helper `crm_log_bulk_op(_action text, _affected int, _filter jsonb, _meta jsonb default '{}')` SECURITY DEFINER.
-- Wired into existing bulk RPCs/edge fns: bulk reassign, bulk tag, bulk delete (soft+hard), import, purge cron, mass send is **not** included (owns its own send log).
+Seeds:
+- 5 playbooks (Default New Lead, Hot Lead Fast-Track, VIP Approval, Investor Long-Game, Dormant Re-Engage)
+- 1 active row in `zara_system_prompts` (v1, copied from current planner SYSTEM_PROMPT)
 
-### Surfacing
-- Lead Detail timeline (v2): new `crm_lead_timeline_v2` source row type `audit` — renders as compact "Field X: A → B by Sarb · 3m ago" entries. Included only for admins (agents already see their own changes via existing activity).
-- Admin-only `/admin/audit` page: paginated table with filters (actor, action, date range). Reuses existing admin layout primitives — no new design tokens.
+## 2. Edge functions
 
----
+New: `zara-insight-generator` — daily 7am UTC cron, summarizes 7d audit log via Sonnet 4.6, writes 1–3 rows to `crm_zara_insights`, logs cost.
 
-## 3. Full-history export
+Edits (add `crm_zara_model_calls` insert + gap detection):
+- `zara-reply` — log every Anthropic call; insert gap row when FAQ lookup returns null
+- `zara-plan-outbound` — log every AI call; **playbook resolver**: for `zara_state='new'`, pick first matching playbook by priority asc, store `active_playbook_id` + `step_index` in `crm_contacts.metadata`, drive sequence on subsequent ticks; insert gap row on `{LOOKUP:...}` placeholders or null project lookup; inject top-5 most recent `is_training_example=true` drafts as few-shot; append `zara_org_context.custom_instructions` and active `zara_system_prompts.prompt_text`
+- `zara-draft-action` — log model calls if any
 
-### Per-lead CSV (everyone with view access)
-- Edge fn `crm-export-lead` — input `{contact_id}`. Validates `crm_can_see_contact_id`. Pulls profile + crm_notes + crm_email_log + crm_sms_log + crm_call_log + crm_showings + crm_activity_events + audit rows. Returns multi-section CSV (one CSV file with `## section` separators — single download, fits the answered "Single CSV per lead").
-- Button in Lead Detail header overflow menu → triggers download.
-- Audit row written: `action='export_lead'`.
+New cron: `zara-insight-generator` daily `0 7 * * *` (via `supabase--insert` since URL+anon key are user-specific).
 
-### Workspace ZIP (admin-only)
-- New private storage bucket `crm-exports` (no public read; signed URL only).
-- Edge fn `crm-export-workspace` — admin-gated. Streams: one folder per non-deleted contact with the same files as per-lead, plus root `contacts.csv`, `audit_log.csv`, `team.csv`. Uses `jsr:@zip-js/zip-js` (already pattern-compatible with edge runtime; if unavailable, fall back to a hand-rolled ZIP via `Deno.readAll` of in-memory entries).
-- Uploads to `crm-exports/{yyyy-mm-dd}/{job_id}.zip`, returns 7-day signed URL.
-- Admin Settings → Data → "Export workspace history" button. Shows progress toast; on completion, copies signed URL + sends in-app notification to caller.
-- Audit row: `action='export_workspace'` with `affected_count`.
+## 3. Frontend — Sidebar shell + 7 pages
 
----
+New shell: `src/pages/admin/ZaraLayout.tsx` with left sidebar (Overview, Drafts, Jobs, Behavior, Gaps, Models & Cost, Training, Lead Assignment Designer, Settings). Mounts at `/admin/zara/*`. Mobile: collapses to icon rail.
 
-## Permissions matrix
-| Action | Agent | Admin/Owner |
-|---|---|---|
-| View own leads | yes | yes (all) |
-| Soft-delete | no | yes |
-| See Trash segment | no | yes |
-| Restore | no | yes |
-| Hard-delete | no | yes |
-| Per-lead CSV export | yes (their leads) | yes |
-| Workspace ZIP export | no | yes |
-| Audit log page | no | yes |
+Routes (existing routes for `/admin/zara`, `/admin/zara/drafts`, `/admin/zara/settings` rewired through the layout, content untouched):
 
----
+- **Overview** `/admin/zara` (replaces current landing)
+  - Stat cards: Edge Functions deployed (hardcoded list count), Tables (count of `crm_zara_*`), Last Cron Tick, 7-day uptime %, Kill Switch toggle, Behavior Score (computed client-side from RPC)
+  - `zara_state` distribution donut (recharts)
+  - "What I built recently" feed from `crm_audit_log`
+  - "Run planner now" button (top right)
+  - "Quick Test Lead" modal button (creates lead with tag `zara:test`, immediately triggers planner)
+- **Jobs** `/admin/zara/jobs` — 6 job cards (Inbound Classifier, FAQ Instant Reply, Outbound Planner, Cold Drafter, Hot Drafter, Escalator) with counts 1d/7d/30d, last-5 examples table, Run-now button
+- **Behavior** `/admin/zara/behavior` — 4 recharts (state donut, decision-to-send funnel, approval breakdown bars, response latency lines) + insights list from `crm_zara_insights`
+- **Gaps** `/admin/zara/gaps` — Biggest Gap card (auto-detect), Knowledge Gaps table + Behavior Gaps table (categorized approval rates)
+- **Models & Cost** `/admin/zara/cost` — 4 stat cards, stacked bar (Sonnet/Haiku/Voyage/other), per-function table (calls, total, avg, p95), budget alarm input + auto-pause toggle bound to `crm_zara_settings`
+- **Training** `/admin/zara/training` — 4 sections: System Prompt Editor (markdown + version save/activate + line diff), Training Examples table, Custom Instructions textarea, Prompt Version History table
+- **Lead Assignment Designer** `/admin/zara/playbooks` — list view with priority/active/triggered/edit/dupe/delete, click → two-pane editor (Trigger Conditions form + sortable Behavior Sequence with edit-step modal)
 
-## Tests
-- Vitest: CSV builder for per-lead export (sections render, escape commas/newlines, empty sections OK).
-- Deno: 
-  - `crm_soft_delete_contacts` — non-admin returns 0/raises; admin sets timestamps; restore clears them.
-  - `crm_hard_delete_contacts` — refuses on rows that aren't soft-deleted.
-  - Trigger: update on contact writes audit row with diff; `app.skip_audit=on` suppresses it.
-  - `crm-purge-trash` deletes only rows older than 30d.
+All pages use existing Card / Table / Badge primitives + Plus Jakarta Sans.
 
----
+## 4. Wiring confirmations (will verify before completion)
 
-## Out of scope (explicitly)
-- No new design tokens, fonts, libraries — Trash segment, audit timeline, exports reuse `<Pill>`, ResponsiveDialog, existing admin table primitives, sonner toasts.
-- Mass-send log is unchanged.
-- No read-of-PII auditing (you picked mutation+bulk only).
-- No undo for hard-delete.
+- `crm_zara_model_calls` written by zara-reply, zara-plan-outbound, zara-draft-action, zara-insight-generator
+- Knowledge gaps inserted on `{LOOKUP:...}` placeholders + null FAQ/project lookups
+- 5 default playbooks seeded
+- Playbook resolver active in `zara-plan-outbound`
+- `zara-insight-generator` cron registered
 
----
+## 5. Scope notes / likely deviations
 
-## Files (new)
-- migration: `add_soft_delete_and_audit_to_crm_contacts.sql`
-- migration: `crm_audit_log_table_and_triggers.sql`
-- migration: `crm_trash_rpcs_and_can_see_update.sql`
-- migration: `crm_exports_bucket.sql`
-- insert-tool: `pg_cron crm-purge-trash daily`
-- edge fns: `crm-purge-trash/`, `crm-export-lead/`, `crm-export-workspace/`
-- frontend: `src/components/crm/leads/TrashSegmentActions.tsx`, `src/pages/admin/AuditLog.tsx`, `src/components/crm/lead/ExportLeadButton.tsx`, `src/components/settings/data/WorkspaceExportCard.tsx`
-- hooks: `useSoftDeleteContacts`, `useRestoreContacts`, `useHardDeleteContacts`, `useExportLead`, `useExportWorkspace`, `useAuditLog`
-- tests: `src/lib/lead-export-csv.test.ts`, `supabase/functions/_shared/audit_test.ts`
+- **Edge Functions count** will be a hardcoded list (no Supabase mgmt API in edge runtime); easy to extend.
+- **Cost numbers** are computed from logged token counts × hardcoded model rate cards (Sonnet 4.6, Haiku 4.5, Voyage). Rate-card constants live in one file.
+- **Behavior Score** computed in a Postgres function `crm_zara_behavior_score()` returning a single int — Overview just reads it.
+- **Diff view** in Training is line-based (not token-level); good enough for prompt review.
+- **Sample screenshots** at the end will be Lovable preview links rather than uploaded PNGs (faster, you can click through).
+- **`zara-bridge-healthcheck`** — you mentioned "if not already there"; I'll skip creating it unless you confirm you want it (the uptime % already comes from cron-tick audit rows). If you want it, say so and I'll add it as a 5-minute cron that pings the bridge and writes a `zara.tick.healthcheck` audit row.
+- I will **not** touch the existing kill switch, 24h stats, activity feed, escalation rail, training stats panel, assigned-leads queue, drafts inbox, or settings page — they get re-mounted inside the new sidebar shell unchanged.
 
-## Files (edited)
-- `crm_can_see_contact_id` (migration) — exclude soft-deleted for non-admins.
-- `useLeadsList`, `useKanbanLeads`, `useSegmentCounts`, mass-send recipient resolver — add `deleted_at IS NULL` (or rely on RLS).
-- `LeadsHeader` segment row — add Trash chip behind admin gate.
-- `LeadDetailHeader` — Export + Soft-delete actions in overflow menu.
-- `LeadTimelineV2` — new `audit` row renderer (admin-only).
-- `mem://index.md` + new memory `mem://features/crm/data-safety-and-audit-v1`.
-
-Approve and I'll ship it in this order: migrations → RPCs/triggers → edge fns → cron → UI → tests → memory.
+Reply **go** to ship, or call out cuts/changes.
