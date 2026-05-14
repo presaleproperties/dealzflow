@@ -224,6 +224,9 @@ export default function ZaraDashboardPage() {
                 <Button variant="outline" size="sm" onClick={load}>
                   <Activity className="h-4 w-4 mr-1.5" /> Refresh
                 </Button>
+                <Button asChild variant="outline" size="sm">
+                  <Link to="/admin/zara/drafts"><Sparkles className="h-4 w-4 mr-1.5" /> Drafts</Link>
+                </Button>
                 <Button asChild size="sm">
                   <Link to="/admin/zara/settings"><Settings className="h-4 w-4 mr-1.5" /> Settings</Link>
                 </Button>

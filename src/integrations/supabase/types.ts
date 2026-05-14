@@ -4880,14 +4880,89 @@ export type Database = {
         }
         Relationships: []
       }
+      crm_zara_drafts: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          body: string
+          channel: string
+          confidence: number | null
+          contact_id: string
+          created_at: string
+          id: string
+          reasoning: string | null
+          reject_reason: string | null
+          scheduled_for: string
+          send_meta: Json | null
+          sent_at: string | null
+          source_event: Json | null
+          status: string
+          subject: string | null
+          trigger_kind: string
+          updated_at: string
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          body: string
+          channel: string
+          confidence?: number | null
+          contact_id: string
+          created_at?: string
+          id?: string
+          reasoning?: string | null
+          reject_reason?: string | null
+          scheduled_for?: string
+          send_meta?: Json | null
+          sent_at?: string | null
+          source_event?: Json | null
+          status?: string
+          subject?: string | null
+          trigger_kind: string
+          updated_at?: string
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          body?: string
+          channel?: string
+          confidence?: number | null
+          contact_id?: string
+          created_at?: string
+          id?: string
+          reasoning?: string | null
+          reject_reason?: string | null
+          scheduled_for?: string
+          send_meta?: Json | null
+          sent_at?: string | null
+          source_event?: Json | null
+          status?: string
+          subject?: string | null
+          trigger_kind?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_zara_drafts_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "crm_contacts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       crm_zara_settings: {
         Row: {
+          cold_nudge_days: number
           created_at: string
           daily_send_cap_per_lead: number
           enabled: boolean
           id: number
+          max_drafts_per_lead_per_week: number
+          max_workspace_pending: number
           model_classify: string
           model_draft: string
+          outbound_planner_enabled: boolean
           quiet_hours_end: string
           quiet_hours_start: string
           system_prompt_version: string
@@ -4896,12 +4971,16 @@ export type Database = {
           workspace_daily_cap: number
         }
         Insert: {
+          cold_nudge_days?: number
           created_at?: string
           daily_send_cap_per_lead?: number
           enabled?: boolean
           id?: number
+          max_drafts_per_lead_per_week?: number
+          max_workspace_pending?: number
           model_classify?: string
           model_draft?: string
+          outbound_planner_enabled?: boolean
           quiet_hours_end?: string
           quiet_hours_start?: string
           system_prompt_version?: string
@@ -4910,12 +4989,16 @@ export type Database = {
           workspace_daily_cap?: number
         }
         Update: {
+          cold_nudge_days?: number
           created_at?: string
           daily_send_cap_per_lead?: number
           enabled?: boolean
           id?: number
+          max_drafts_per_lead_per_week?: number
+          max_workspace_pending?: number
           model_classify?: string
           model_draft?: string
+          outbound_planner_enabled?: boolean
           quiet_hours_end?: string
           quiet_hours_start?: string
           system_prompt_version?: string
@@ -6599,6 +6682,7 @@ export type Database = {
         }[]
       }
       crm_within_quiet_hours: { Args: { _user_id: string }; Returns: boolean }
+      crm_zara_pending_drafts_count: { Args: never; Returns: number }
       decrypt_api_credential: {
         Args: { ciphertext: string; passphrase: string }
         Returns: string
