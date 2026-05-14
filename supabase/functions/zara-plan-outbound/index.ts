@@ -111,7 +111,7 @@ Deno.serve(async (req) => {
   const { data: leads, error: leadsErr } = await admin
     .from('crm_contacts')
     .select('id, first_name, last_name, email, phone, language, tags, status, last_touch_at, created_at, assigned_to')
-    .eq('assigned_to', zara.id)
+    .in('assigned_to', zaraAssignedKeys)
     .is('deleted_at', null)
     .order('last_touch_at', { ascending: true, nullsFirst: true })
     .limit(200);
