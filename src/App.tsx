@@ -68,6 +68,12 @@ const ZaraSettingsPage = lazy(() => import("./pages/admin/ZaraSettingsPage"));
 const ZaraDashboardPage = lazy(() => import("./pages/admin/ZaraDashboardPage"));
 const ZaraDraftsPage = lazy(() => import("./pages/admin/ZaraDraftsPage"));
 const ZaraOverviewPage = lazy(() => import("./pages/admin/ZaraOverviewPage"));
+const ZaraJobsPage = lazy(() => import("./pages/admin/ZaraJobsPage"));
+const ZaraBehaviorPage = lazy(() => import("./pages/admin/ZaraBehaviorPage"));
+const ZaraGapsPage = lazy(() => import("./pages/admin/ZaraGapsPage"));
+const ZaraCostPage = lazy(() => import("./pages/admin/ZaraCostPage"));
+const ZaraTrainingPage = lazy(() => import("./pages/admin/ZaraTrainingPage"));
+const ZaraPlaybooksPage = lazy(() => import("./pages/admin/ZaraPlaybooksPage"));
 const CrmTrashPage = lazy(() => import("./pages/crm/CrmTrashPage"));
 const AgentProfilePage = lazy(() => import("./pages/agent/AgentProfilePage"));
 const AgentComposePage = lazy(() => import("./pages/agent/AgentComposePage"));
@@ -281,6 +287,12 @@ const App = () => (
                     <Route path="/admin/zara/live" element={<AdminRoute><ZaraDashboardPage /></AdminRoute>} />
                     <Route path="/admin/zara/settings" element={<AdminRoute><ZaraSettingsPage /></AdminRoute>} />
                     <Route path="/admin/zara/drafts" element={<AdminRoute><ZaraDraftsPage /></AdminRoute>} />
+                    <Route path="/admin/zara/jobs" element={<AdminRoute><ZaraJobsPage /></AdminRoute>} />
+                    <Route path="/admin/zara/behavior" element={<AdminRoute><ZaraBehaviorPage /></AdminRoute>} />
+                    <Route path="/admin/zara/gaps" element={<AdminRoute><ZaraGapsPage /></AdminRoute>} />
+                    <Route path="/admin/zara/cost" element={<AdminRoute><ZaraCostPage /></AdminRoute>} />
+                    <Route path="/admin/zara/training" element={<AdminRoute><ZaraTrainingPage /></AdminRoute>} />
+                    <Route path="/admin/zara/playbooks" element={<AdminRoute><ZaraPlaybooksPage /></AdminRoute>} />
                     <Route path="/crm/trash" element={<ProtectedRoute><CrmLayout requireRole={['owner', 'admin']}><CrmTrashPage /></CrmLayout></ProtectedRoute>} />
                     <Route path="/agent/profile" element={<ProtectedRoute><AgentProfilePage /></ProtectedRoute>} />
                     <Route path="/agent/compose" element={<ProtectedRoute><AgentComposePage /></ProtectedRoute>} />

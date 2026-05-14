@@ -3,13 +3,14 @@
 // NEVER sends. Inserts into crm_zara_drafts with status='pending'.
 // Invoke: GET/POST (cron). Optional body: { trigger?: string, dry_run?: boolean, limit?: number }
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
+import { logModelCall, captureLookupGaps, estimateTokens } from '../_shared/zara-logging.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const SYSTEM_PROMPT = `You are Zara, the digital concierge for The Presale Properties Group, a Surrey BC presale condo brokerage owned by Uzair Muhammad.
+const FALLBACK_SYSTEM_PROMPT = `You are Zara, the digital concierge for The Presale Properties Group, a Surrey BC presale condo brokerage owned by Uzair Muhammad.
 
 You draft OUTBOUND messages to warm leads. A human (Uzair) reviews every draft before it sends — write like you're already trusted, but never push.
 
@@ -28,9 +29,10 @@ function json(b: unknown, status = 200) {
   return new Response(JSON.stringify(b), { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
 }
 
-async function callAI(model: string, system: string, user: string): Promise<any> {
+async function callAI(model: string, system: string, user: string): Promise<{ json: any; in_tok: number; out_tok: number; latency_ms: number }> {
   const key = Deno.env.get('LOVABLE_API_KEY');
   if (!key) throw new Error('LOVABLE_API_KEY missing');
+  const t0 = Date.now();
   const r = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
@@ -41,8 +43,17 @@ async function callAI(model: string, system: string, user: string): Promise<any>
     }),
   });
   const text = await r.text();
+  const latency_ms = Date.now() - t0;
   if (!r.ok) throw new Error(`AI ${r.status}: ${text.slice(0, 300)}`);
-  return JSON.parse(JSON.parse(text)?.choices?.[0]?.message?.content ?? '{}');
+  const parsed = JSON.parse(text);
+  const content = parsed?.choices?.[0]?.message?.content ?? '{}';
+  const usage = parsed?.usage ?? {};
+  return {
+    json: JSON.parse(content),
+    in_tok: usage.prompt_tokens ?? estimateTokens(system + user),
+    out_tok: usage.completion_tokens ?? estimateTokens(content),
+    latency_ms,
+  };
 }
 
 function pickChannel(contact: any): 'email' | 'sms' | 'whatsapp' {
@@ -82,6 +93,16 @@ Deno.serve(async (req) => {
   const coldDays = settings.cold_nudge_days ?? 7;
   const perLeadWeekly = settings.max_drafts_per_lead_per_week ?? 2;
   const model = settings.model_draft || settings.model_classify || 'google/gemini-3-flash-preview';
+
+  // Load active system prompt + workspace custom instructions
+  const [{ data: activePrompt }, { data: orgCtx }] = await Promise.all([
+    admin.from('zara_system_prompts').select('prompt_text').eq('is_active', true).order('created_at', { ascending: false }).limit(1).maybeSingle(),
+    admin.from('zara_org_context').select('custom_instructions').eq('id', 1).maybeSingle(),
+  ]);
+  let systemPrompt = activePrompt?.prompt_text || FALLBACK_SYSTEM_PROMPT;
+  if (orgCtx?.custom_instructions?.trim()) {
+    systemPrompt += `\n\nAdditional workspace context:\n${orgCtx.custom_instructions.trim()}`;
+  }
 
   // Pull Zara-assigned, non-muted, non-deleted candidates.
   const { data: leads, error: leadsErr } = await admin
@@ -188,9 +209,27 @@ Context: ${context}
 
 Draft the outbound message per the system rules. Strict JSON only.`;
 
-    let ai: any;
-    try { ai = await callAI(model, SYSTEM_PROMPT, userMsg); }
-    catch (e) { skipped.push({ id: lead.id, reason: 'ai_error', error: String(e) }); continue; }
+    let aiResult: { json: any; in_tok: number; out_tok: number; latency_ms: number };
+    try {
+      aiResult = await callAI(model, systemPrompt, userMsg);
+      await logModelCall(admin, {
+        function_called: 'zara-plan-outbound',
+        contact_id: lead.id,
+        model,
+        input_tokens: aiResult.in_tok,
+        output_tokens: aiResult.out_tok,
+        latency_ms: aiResult.latency_ms,
+        success: true,
+      });
+    } catch (e) {
+      await logModelCall(admin, {
+        function_called: 'zara-plan-outbound', contact_id: lead.id, model,
+        success: false, error: String(e),
+      });
+      skipped.push({ id: lead.id, reason: 'ai_error', error: String(e) });
+      continue;
+    }
+    const ai = aiResult.json;
 
     const body = String(ai?.body ?? '').trim();
     if (!body) { skipped.push({ id: lead.id, reason: 'empty_body' }); continue; }
@@ -220,6 +259,9 @@ Draft the outbound message per the system rules. Strict JSON only.`;
       .single();
 
     if (insErr) { skipped.push({ id: lead.id, reason: 'insert_error', error: insErr.message }); continue; }
+
+    // Capture {LOOKUP:...} placeholders as knowledge gaps
+    await captureLookupGaps(admin, `${subject ?? ''}\n${body}`, lead.id, inserted.id);
 
     generated.push({ id: inserted.id, contact_id: lead.id, trigger, channel });
 
