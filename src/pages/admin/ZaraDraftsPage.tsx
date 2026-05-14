@@ -64,7 +64,7 @@ function ChannelIcon({ ch, className }: { ch: string; className?: string }) {
 }
 
 export default function ZaraDraftsPage() {
-  const isAdmin = useIsAdmin();
+  const { data: isAdmin, isLoading: checking } = useIsAdmin();
   const navigate = useNavigate();
   const [tab, setTab] = useState<'pending' | 'snoozed' | 'sent' | 'rejected' | 'failed'>('pending');
   const [drafts, setDrafts] = useState<Draft[]>([]);
@@ -79,8 +79,8 @@ export default function ZaraDraftsPage() {
   const [rejectReason, setRejectReason] = useState('');
 
   useEffect(() => {
-    if (isAdmin === false) navigate('/');
-  }, [isAdmin, navigate]);
+    if (!checking && !isAdmin) navigate('/');
+  }, [checking, isAdmin, navigate]);
 
   async function load() {
     setLoading(true);
@@ -162,11 +162,11 @@ export default function ZaraDraftsPage() {
     finally { setBusy(false); }
   }
 
-  if (isAdmin === undefined) return null;
+  if (checking) return null;
 
   return (
     <AppLayout>
-      <Header />
+      <Header title="Zara Drafts" subtitle="Co-pilot approval inbox" />
       <div className="container max-w-7xl mx-auto px-4 py-6 space-y-4">
         <div className="flex items-center gap-3">
           <Button variant="ghost" size="sm" onClick={() => navigate('/admin/zara')} className="-ml-2">
