@@ -190,6 +190,19 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Initial introduction: Zara has never written to this lead. Always say hi
+    // once per assigned lead so she doesn't sit silent on contacts she owns.
+    if (!trigger && (!wantTrigger || wantTrigger === 'initial_outreach')) {
+      const { count: priorDrafts } = await admin
+        .from('crm_zara_drafts')
+        .select('id', { count: 'exact', head: true })
+        .eq('contact_id', lead.id);
+      if ((priorDrafts ?? 0) === 0) {
+        trigger = 'initial_outreach';
+        context = `First touch from Zara. Lead is assigned to her but she has never written. Status: ${lead.status ?? 'new'}. Warm introduction + ONE light question — do not pitch.`;
+      }
+    }
+
     if (!trigger) { skipped.push({ id: lead.id, reason: 'no_trigger' }); continue; }
 
     // Dedupe: don't create another pending draft for same lead+trigger
