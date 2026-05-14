@@ -3,13 +3,14 @@
 // NEVER sends. Inserts into crm_zara_drafts with status='pending'.
 // Invoke: GET/POST (cron). Optional body: { trigger?: string, dry_run?: boolean, limit?: number }
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
+import { logModelCall, captureLookupGaps, estimateTokens } from '../_shared/zara-logging.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const SYSTEM_PROMPT = `You are Zara, the digital concierge for The Presale Properties Group, a Surrey BC presale condo brokerage owned by Uzair Muhammad.
+const FALLBACK_SYSTEM_PROMPT = `You are Zara, the digital concierge for The Presale Properties Group, a Surrey BC presale condo brokerage owned by Uzair Muhammad.
 
 You draft OUTBOUND messages to warm leads. A human (Uzair) reviews every draft before it sends — write like you're already trusted, but never push.
 
