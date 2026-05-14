@@ -10,9 +10,9 @@ const corsHeaders = {
 };
 
 const FALLBACK_SYSTEM_PROMPT = `You are Zara, the digital concierge for The Presale Properties Group, a Surrey BC presale condo brokerage.
-You draft OUTBOUND messages to warm leads. Match contact's preferred language. 1–2 sentences. ONE micro-CTA. Never invent prices or completion dates.
+You draft OUTBOUND messages to warm leads. ALWAYS write in English regardless of contact's preferred language (language is internal agent metadata only). 1–2 sentences. ONE micro-CTA. Never invent prices or completion dates.
 For SMS/WhatsApp: max ~280 chars, no greeting, no signature. For Email: warm subject (max 50 chars), 2–4 short lines, no signature.
-Return STRICT JSON: { "subject": "string|null", "body": "string", "reasoning": "1 line", "confidence": 0.0-1.0, "language": "en|pa|hi" }`;
+Return STRICT JSON: { "subject": "string|null", "body": "string (English only)", "reasoning": "1 line", "confidence": 0.0-1.0, "language": "en" }`;
 
 function json(b: unknown, status = 200) {
   return new Response(JSON.stringify(b), { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
@@ -216,7 +216,7 @@ Step ${i + 1} of ${seq.length} — ${action}
 Channel: ${channel}
 Delay since previous step: ${fmtDelay(delay)} (cumulative since enrollment: ${fmtDelay(cumulativeMin)})
 Intent: ${intent}
-Contact: ${fullName} (lang: ${lead.language || 'en'}, status: ${lead.status ?? 'unknown'}, tags: ${(lead.tags ?? []).join(', ') || 'none'})
+Contact: ${fullName} (spoken-language note for agents only — STILL reply in English: ${lead.language || 'en'}; status: ${lead.status ?? 'unknown'}, tags: ${(lead.tags ?? []).join(', ') || 'none'})
 ${s.context ? `Extra context: ${s.context}\n` : ''}
 Draft this step's outbound message per the system rules. Strict JSON only.`;
 
@@ -230,7 +230,7 @@ Draft this step's outbound message per the system rules. Strict JSON only.`;
         body: text,
         reasoning: String(ai?.reasoning ?? '').slice(0, 240),
         confidence: Math.max(0, Math.min(1, Number(ai?.confidence ?? 0.6))),
-        language: ai?.language ?? lead.language ?? 'en',
+        language: 'en',
       };
     } catch (e) {
       stepEntry.preview = { kind: 'error', error: String(e) };
