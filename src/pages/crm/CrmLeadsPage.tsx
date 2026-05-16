@@ -208,6 +208,10 @@ export default function CrmLeadsPage() {
   const [filterLanguage, setFilterLanguage] = useState<string[]>(persistedPrefs.filterLanguage ?? []);
   const [filterTags, setFilterTags] = useState<string[]>(persistedPrefs.filterTags ?? []);
   const [filterExcludeTags, setFilterExcludeTags] = useState<string[]>(persistedPrefs.filterExcludeTags ?? []);
+  const [filterExcludeContactTypes, setFilterExcludeContactTypes] = useState<string[]>(persistedPrefs.filterExcludeContactTypes ?? []);
+  const [filterExcludeStatuses, setFilterExcludeStatuses] = useState<string[]>(persistedPrefs.filterExcludeStatuses ?? []);
+  const [filterExcludeSources, setFilterExcludeSources] = useState<string[]>(persistedPrefs.filterExcludeSources ?? []);
+  const [filterExcludeLeadTypes, setFilterExcludeLeadTypes] = useState<string[]>(persistedPrefs.filterExcludeLeadTypes ?? []);
   const [filterPropertyType, setFilterPropertyType] = useState<string[]>(persistedPrefs.filterPropertyType ?? []);
   const [filterCity, setFilterCity] = useState<string[]>(persistedPrefs.filterCity ?? []);
   const [filterPreApproved, setFilterPreApproved] = useState<string[]>(persistedPrefs.filterPreApproved ?? []);
