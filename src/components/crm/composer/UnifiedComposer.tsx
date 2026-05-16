@@ -477,6 +477,13 @@ export function UnifiedComposer() {
     // Re-validate attachments against current channel (channel toggle may have changed)
     const attachErr = validateAttachments(attachments, activeChannel);
     if (attachErr) { toast.error(attachErr); return; }
+    // Resolve effective send time:
+    //  - explicit schedule wins
+    //  - otherwise, if we're inside Vancouver quiet hours (9pm–8am), auto-queue
+    //    for the next 8am Vancouver. Applies to BOTH email and text.
+    const explicitSchedule = scheduleOn && scheduleAt ? new Date(scheduleAt).toISOString() : null;
+    const autoQueued = !explicitSchedule && inVancouverQuietHours();
+    const effectiveSendAt = explicitSchedule ?? (autoQueued ? nextVancouver8amISO() : null);
     setSending(true);
     try {
       if (activeChannel === 'email') {
