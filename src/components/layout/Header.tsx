@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Sidebar } from './Sidebar';
 import { ChevronLeft, Menu } from 'lucide-react';
+import { SmsStagedBadge } from '@/components/crm/sms/SmsStagedBadge';
 
 interface HeaderProps {
   title: string;
