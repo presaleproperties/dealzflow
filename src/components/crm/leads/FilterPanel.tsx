@@ -32,6 +32,14 @@ interface FilterPanelProps {
   setFilterTags: (v: string[]) => void;
   filterExcludeTags: string[];
   setFilterExcludeTags: (v: string[]) => void;
+  filterExcludeContactTypes: string[];
+  setFilterExcludeContactTypes: (v: string[]) => void;
+  filterExcludeStatuses: string[];
+  setFilterExcludeStatuses: (v: string[]) => void;
+  filterExcludeSources: string[];
+  setFilterExcludeSources: (v: string[]) => void;
+  filterExcludeLeadTypes: string[];
+  setFilterExcludeLeadTypes: (v: string[]) => void;
   filterPropertyType: string[];
   setFilterPropertyType: (v: string[]) => void;
   filterCity: string[];
