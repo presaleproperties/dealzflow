@@ -222,20 +222,20 @@ function OverviewTab({ contacts, showings }: { contacts: any[]; showings: any[] 
 }
 
 /* ── Agent Performance ── */
-function AgentPerformanceTab({ contacts, showings, messages }: { contacts: any[]; showings: any[]; messages: any[] }) {
+function AgentPerformanceTab({ contacts, showings, emails }: { contacts: any[]; showings: any[]; emails: any[] }) {
   const rows = useMemo(() => {
     const agents = new Set<string>();
     contacts.forEach(c => { if (c.assigned_to) agents.add(c.assigned_to); });
 
     return Array.from(agents).map(agent => {
       const assigned = contacts.filter(c => c.assigned_to === agent);
-      const emailsSent = messages.filter(m => m.sent_by === agent && m.direction === 'outbound').length;
+      const emailsSent = emails.filter(m => m.user_id === agent).length;
       const showingsBooked = showings.filter(s => s.assigned_agent === agent).length;
       const closed = assigned.filter(c => c.status === 'Closed').length;
       const rate = assigned.length > 0 ? ((closed / assigned.length) * 100).toFixed(1) : '0';
       return { agent, leads: assigned.length, emailsSent, showingsBooked, closed, rate };
     }).sort((a, b) => b.leads - a.leads);
-  }, [contacts, showings, messages]);
+  }, [contacts, showings, emails]);
 
   return (
     <Card className="rounded-[10px] lg:rounded-xl">
