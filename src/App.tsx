@@ -322,6 +322,8 @@ const App = () => (
                     <Route path="/crm/sms" element={<Navigate to="/crm/inbox?channel=text" replace />} />
                     <Route path="/crm/whatsapp" element={<Navigate to="/crm/leads" replace />} />
                     <Route path="/crm/templates" element={<ProtectedRoute><CrmLayout><CrmTemplatesPage /></CrmLayout></ProtectedRoute>} />
+                    <Route path="/crm/campaigns" element={<ProtectedRoute><CrmLayout><CrmCampaignsListPage /></CrmLayout></ProtectedRoute>} />
+                    <Route path="/crm/campaigns/:id" element={<ProtectedRoute><CrmLayout><CrmCampaignDetailPage /></CrmLayout></ProtectedRoute>} />
                     <Route path="/crm/marketing-hub" element={<ProtectedRoute><CrmLayout><CrmMarketingHubPage /></CrmLayout></ProtectedRoute>} />
                     <Route path="/crm/email-builder" element={<ProtectedRoute><CrmLayout><CrmEmailBuilderPage /></CrmLayout></ProtectedRoute>} />
                     <Route path="/crm/contacts" element={<Navigate to="/crm/leads" replace />} />
