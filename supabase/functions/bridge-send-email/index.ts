@@ -331,6 +331,7 @@ Deno.serve(async (req) => {
           sent_at: new Date().toISOString(),
           tracking_id: trackingId,
           status: "sent",
+          campaign_id: body.campaign_id ?? null,
         });
       } catch (e) {
         console.warn("crm_email_log insert failed", e);
