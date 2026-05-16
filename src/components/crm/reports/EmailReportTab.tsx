@@ -512,6 +512,87 @@ export function EmailReportTab() {
           </CardContent>
         </Card>
       )}
+
+      {/* Bounced / failed addresses — DB hygiene */}
+      <Card className="rounded-xl border-destructive/30">
+        <CardHeader className="flex flex-row items-start justify-between gap-3 space-y-0">
+          <div>
+            <CardTitle className="text-base flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4 text-destructive" />
+              Bounced & Failed Addresses
+            </CardTitle>
+            <p className="text-xs text-muted-foreground mt-1">
+              {totalBadAddresses.toLocaleString()} unique address{totalBadAddresses === 1 ? '' : 'es'} •{' '}
+              {totalBadEvents.toLocaleString()} failure{totalBadEvents === 1 ? '' : 's'} in last {days} days
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button size="sm" variant="outline" onClick={copyAllEmails} disabled={!badAddresses.length}>
+              <Copy className="h-3.5 w-3.5 mr-1.5" /> Copy
+            </Button>
+            <Button size="sm" variant="outline" onClick={exportBadCsv} disabled={!badAddresses.length}>
+              <Download className="h-3.5 w-3.5 mr-1.5" /> CSV
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Email</TableHead>
+                <TableHead>Name</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="text-right">Failures</TableHead>
+                <TableHead>Last error</TableHead>
+                <TableHead>Last failed</TableHead>
+                <TableHead className="w-8" />
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {badAddresses.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center text-muted-foreground py-10">
+                    No bounced or failed addresses in this range — your list is clean.
+                  </TableCell>
+                </TableRow>
+              ) : badAddresses.slice(0, 200).map(r => {
+                const tone =
+                  r.lastStatus === 'bounced' ? 'destructive' :
+                  r.lastStatus === 'complained' ? 'destructive' :
+                  r.lastStatus === 'suppressed' ? 'secondary' : 'outline';
+                return (
+                  <TableRow key={r.email}>
+                    <TableCell className="font-mono text-xs">{r.email}</TableCell>
+                    <TableCell className="text-sm">{r.name || '—'}</TableCell>
+                    <TableCell>
+                      <Badge variant={tone as any} className="capitalize text-[10px]">{r.lastStatus}</Badge>
+                    </TableCell>
+                    <TableCell className="text-right font-semibold text-destructive">{r.count}</TableCell>
+                    <TableCell className="text-xs text-muted-foreground max-w-[280px] truncate" title={r.lastError ?? ''}>
+                      {r.lastError || '—'}
+                    </TableCell>
+                    <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
+                      {r.lastAt ? format(parseISO(r.lastAt), 'MMM d, h:mm a') : '—'}
+                    </TableCell>
+                    <TableCell>
+                      {r.contactId && (
+                        <Link to={`/crm/leads/${r.contactId}`} className="text-primary hover:underline inline-flex">
+                          <ExternalLink className="h-3.5 w-3.5" />
+                        </Link>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+          {badAddresses.length > 200 && (
+            <p className="text-[11px] text-muted-foreground mt-2 text-center">
+              Showing top 200 of {badAddresses.length.toLocaleString()} — export CSV for the full list.
+            </p>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
