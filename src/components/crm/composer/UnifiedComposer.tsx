@@ -123,7 +123,40 @@ export function UnifiedComposer() {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [sending, setSending] = useState(false);
   const [attachments, setAttachments] = useState<File[]>([]);
+  const [previewUrls, setPreviewUrls] = useState<Record<string, string>>({});
   const bodyRef = useRef<HTMLTextAreaElement | null>(null);
+
+  // Generate / revoke object URLs for image previews.
+  useEffect(() => {
+    const next: Record<string, string> = {};
+    attachments.forEach((f) => {
+      if (f.type.startsWith('image/')) {
+        const key = `${f.name}:${f.size}:${f.lastModified}`;
+        next[key] = previewUrls[key] ?? URL.createObjectURL(f);
+      }
+    });
+    // Revoke any urls no longer referenced
+    Object.entries(previewUrls).forEach(([k, url]) => {
+      if (!next[k]) URL.revokeObjectURL(url);
+    });
+    setPreviewUrls(next);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [attachments]);
+
+  useEffect(() => {
+    return () => {
+      Object.values(previewUrls).forEach((u) => URL.revokeObjectURL(u));
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const addFiles = (files: File[]) => {
+    if (files.length === 0) return;
+    const merged = [...attachments, ...files];
+    const err = validateAttachments(merged, activeChannel);
+    if (err) { toast.error(err); return; }
+    setAttachments(merged);
+  };
 
   // Reset on each new instance (openComposer call bumps `instance`).
   useEffect(() => {
