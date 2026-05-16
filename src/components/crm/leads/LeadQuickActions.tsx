@@ -10,7 +10,7 @@ import { AgentAvatar } from '@/components/crm/AgentAvatar';
 import type { CrmContact } from '@/hooks/useCrmContacts';
 import { BookShowingDialog } from './BookShowingDialog';
 import { CreateTaskDialog } from './CreateTaskDialog';
-import { ComposeEmailDialog } from './ComposeEmailDialog';
+import { openComposer } from '@/stores/useComposer';
 import { SendBookingLinkDialog } from './SendBookingLinkDialog';
 import { useOpenChat } from '@/hooks/useOpenChat';
 import { EnrollInAutomationDialog } from '@/components/crm/automations/EnrollInAutomationDialog';
@@ -25,7 +25,6 @@ export function LeadQuickActions({ contact }: { contact: CrmContact }) {
   const openChat = useOpenChat();
   const [showShowing, setShowShowing] = useState(false);
   const [showTask, setShowTask] = useState(false);
-  const [showEmail, setShowEmail] = useState(false);
   const [showBooking, setShowBooking] = useState(false);
   const [showEnroll, setShowEnroll] = useState(false);
 
@@ -45,7 +44,7 @@ export function LeadQuickActions({ contact }: { contact: CrmContact }) {
         <h3 className="text-sm font-semibold text-foreground mb-1">Quick Actions</h3>
 
         <div className="grid grid-cols-2 gap-2">
-          <Button variant="outline" size="sm" className="h-9 text-xs gap-1.5 justify-start" onClick={() => setShowEmail(true)}>
+          <Button variant="outline" size="sm" className="h-9 text-xs gap-1.5 justify-start" onClick={() => openComposer({ channel: 'email', leadId: contact.id })}>
             <Mail className="w-3.5 h-3.5 text-primary" /> Send Email
           </Button>
           <Button variant="outline" size="sm" className="h-9 text-xs gap-1.5 justify-start" onClick={() => setShowShowing(true)}>
@@ -58,7 +57,7 @@ export function LeadQuickActions({ contact }: { contact: CrmContact }) {
             variant="outline"
             size="sm"
             className="h-9 text-xs gap-1.5 justify-start"
-            onClick={() => { void openChat(contact.id, 'sms'); }}
+            onClick={() => openComposer({ channel: 'text', leadId: contact.id })}
             disabled={!contact.phone}
             title={contact.phone ? 'Send SMS' : 'No phone number on file'}
           >
@@ -120,7 +119,6 @@ export function LeadQuickActions({ contact }: { contact: CrmContact }) {
 
       <BookShowingDialog contactId={contact.id} project={contact.project} open={showShowing} onOpenChange={setShowShowing} />
       <CreateTaskDialog contactId={contact.id} assignedTo={contact.assigned_to} open={showTask} onOpenChange={setShowTask} />
-      <ComposeEmailDialog contact={contact} open={showEmail} onOpenChange={setShowEmail} />
       
       <SendBookingLinkDialog contact={contact} open={showBooking} onOpenChange={setShowBooking} />
       <EnrollInAutomationDialog

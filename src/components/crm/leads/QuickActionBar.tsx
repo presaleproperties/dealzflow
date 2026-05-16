@@ -14,8 +14,7 @@ import { renderForRecipient } from '@/lib/emailVariables';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
 import { usePresaleAgentStore } from '@/stores/usePresaleAgent';
-import { ComposeEmailDialog } from '@/components/crm/leads/ComposeEmailDialog';
-import { SendTextDialog } from '@/components/crm/leads/SendTextDialog';
+import { openComposer } from '@/stores/useComposer';
 import { useLeadQuickReplies } from '@/hooks/useLeadQuickReplies';
 import { toast } from 'sonner';
 import type { CrmContact } from '@/hooks/useCrmContacts';
@@ -51,8 +50,6 @@ export function QuickActionBar({ contact }: Props) {
   const [textChannel, setTextChannel] = useState<MessagingChannel>('sms');
   const [callDuration, setCallDuration] = useState('');
   const [callOutcome, setCallOutcome] = useState(CALL_OUTCOMES[0]);
-  const [showAdvancedEmail, setShowAdvancedEmail] = useState(false);
-  const [showAdvancedText, setShowAdvancedText] = useState(false);
 
   const taRef = useRef<HTMLTextAreaElement>(null);
   const addNote = useAddNote();
@@ -379,9 +376,14 @@ export function QuickActionBar({ contact }: Props) {
             {(mode === 'email' || mode === 'text') && (
               <button
                 type="button"
-                onClick={() => mode === 'email' ? setShowAdvancedEmail(true) : setShowAdvancedText(true)}
+                onClick={() => openComposer({
+                  channel: mode === 'email' ? 'email' : 'text',
+                  leadId: contact.id,
+                  subject,
+                  body,
+                })}
                 className="inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground font-medium"
-                title="Open full composer (templates, scheduling, attachments)"
+                title="Open unified composer (templates, scheduling, variables)"
               >
                 <Settings2 className="w-3 h-3" />
                 Advanced
@@ -403,8 +405,6 @@ export function QuickActionBar({ contact }: Props) {
       </div>
     </div>
 
-    <ComposeEmailDialog contact={contact} open={showAdvancedEmail} onOpenChange={setShowAdvancedEmail} />
-    <SendTextDialog contact={contact} open={showAdvancedText} onOpenChange={setShowAdvancedText} initialChannel={textChannel} />
     </>
   );
 }
