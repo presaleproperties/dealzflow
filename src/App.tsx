@@ -108,6 +108,8 @@ const CrmBehaviorLeadsPage = lazy(() => import("./pages/crm/CrmBehaviorLeadsPage
 const CrmBehaviorDashboardPage = lazy(() => import("./pages/crm/CrmBehaviorDashboardPage"));
 
 const CrmInboxPage = lazy(() => import("./pages/crm/CrmInboxPage"));
+const CrmCampaignsListPage = lazy(() => import("./pages/crm/CrmCampaignsListPage"));
+const CrmCampaignDetailPage = lazy(() => import("./pages/crm/CrmCampaignDetailPage"));
 const CrmSchedulerPage = lazy(() => import("./pages/crm/CrmSchedulerPage"));
 const PublicAgentLandingPage = lazy(() => import("./pages/public/PublicAgentLandingPage"));
 const PublicBookingPage = lazy(() => import("./pages/public/PublicBookingPage"));
