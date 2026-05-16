@@ -4,7 +4,6 @@ import { BottomNav } from '@/components/layout/BottomNav';
 import { MobileAppHeader } from '@/components/layout/MobileAppHeader';
 import { CrmRouteGuard } from './CrmRouteGuard';
 import { CrmSubNav } from './CrmSubNav';
-import { CrmSideRail } from './CrmSideRail';
 import { CrmSectionScope } from './CrmSectionScope';
 import { PageTransition } from '@/components/layout/PageTransition';
 import { useLocation } from 'react-router-dom';
