@@ -107,6 +107,14 @@ interface PaginatedFilters {
   languages: string[];
   tags: string[];
   excludeTags?: string[];
+  /** Exclusions — used heavily for clean mass-email targeting. Each list
+   *  is applied as a NOT IN against the matching column so users can carve
+   *  out past clients, realtors, specific statuses/sources/lead-types and
+   *  blocked tags in one pass. */
+  excludeContactTypes?: string[];
+  excludeStatuses?: string[];
+  excludeSources?: string[];
+  excludeLeadTypes?: string[];
   propertyTypes?: string[];
   cities?: string[];
   preApproved?: string[];
