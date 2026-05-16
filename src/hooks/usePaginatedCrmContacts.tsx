@@ -148,6 +148,41 @@ export function usePaginatedCrmContacts(params: PaginatedParams): PaginatedResul
         .from('crm_contacts')
         .select('*', { count: 'estimated' });
 
+      query = applyAllContactFilters(query, filters);
+
+      const dbColumn = SORT_COLUMN_MAP[sortKey] || 'created_at';
+      query = query.order(dbColumn, { ascending: sortDir === 'asc', nullsFirst: false });
+      if (sortKey === 'name') {
+        query = query.order('last_name', { ascending: sortDir === 'asc', nullsFirst: false });
+      }
+
+      query = query.range(from, to);
+
+      const { data: rows, error, count } = await query;
+      if (error) throw error;
+
+      const contacts = (rows ?? []).map(d => ({
+        ...normalizeCrmContactArrays(d),
+        contact_type: d.contact_type ?? 'lead',
+      })) as CrmContact[];
+
+      return { contacts, totalCount: count ?? 0 };
+    },
+    staleTime: 15_000,
+    placeholderData: (prev) => prev,
+  });
+
+  return {
+    contacts: data?.contacts ?? [],
+    totalCount: data?.totalCount ?? 0,
+    isLoading,
+    isFetching,
+  };
+}
+
+/** Shared filter chain used by both the paginated query and the
+ *  "select all filtered" id fetch. Keep these in sync. */
+function applyAllContactFilters(query: any, filters: PaginatedFilters) {
       if (filters.search) {
         // Tokenize so "john smith" matches first_name=John AND last_name=Smith.
         // Escape PostgREST reserved chars (, ) . : * ' ") inside ilike values
