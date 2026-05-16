@@ -111,9 +111,36 @@ export default function CrmInboxPage() {
   return (
     <div className="flex flex-1 min-h-0 h-full flex-col">
       <header className="border-b border-border/60 bg-background/95 backdrop-blur-sm">
-        {/* Search row */}
-        <div className="hidden md:flex px-4 lg:px-6 pt-3 pb-2 items-center gap-3">
-          <div className="ml-auto relative w-full max-w-[360px]">
+        <div className="flex items-center gap-3 px-4 lg:px-6 h-10">
+          {/* Chips */}
+          <nav
+            role="tablist"
+            aria-label="Inbox filter"
+            className="flex gap-1 overflow-x-auto min-w-0"
+          >
+            {CHIPS.map((chip) => {
+              const isActive = chip.value === active;
+              return (
+                <button
+                  key={chip.value}
+                  role="tab"
+                  aria-selected={isActive}
+                  onClick={() => onSelect(chip.value)}
+                  className={cn(
+                    'px-2.5 py-1 rounded-full text-[12px] font-medium tracking-tight whitespace-nowrap transition-colors',
+                    isActive
+                      ? 'bg-primary text-primary-foreground'
+                      : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+                  )}
+                >
+                  {chip.label}
+                </button>
+              );
+            })}
+          </nav>
+
+          {/* Search */}
+          <div className="hidden md:block ml-auto relative w-full max-w-[300px]">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" strokeWidth={1.8} />
             <input
               ref={searchRef}
@@ -122,41 +149,18 @@ export default function CrmInboxPage() {
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search messages, leads, phones…"
               className={cn(
-                'w-full h-8 pl-8 pr-10 rounded-md',
+                'w-full h-7 pl-8 pr-8 rounded-md',
                 'bg-muted/40 border border-border/60',
-                'text-[13px] placeholder:text-muted-foreground/70',
+                'text-[12.5px] placeholder:text-muted-foreground/70',
                 'focus:outline-none focus:ring-2 focus:ring-primary/40 focus:bg-background',
               )}
               aria-label="Search inbox"
             />
-            <kbd className="hidden lg:inline-flex absolute right-2 top-1/2 -translate-y-1/2 items-center px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground bg-background border border-border/60 rounded">
+            <kbd className="hidden lg:inline-flex absolute right-1.5 top-1/2 -translate-y-1/2 items-center px-1 py-0.5 text-[10px] font-medium text-muted-foreground bg-background border border-border/60 rounded">
               /
             </kbd>
           </div>
         </div>
-
-        {/* Chips */}
-        <nav role="tablist" aria-label="Inbox filter" className="px-4 lg:px-6 pb-2 pt-1 md:pt-0 flex gap-1.5 overflow-x-auto">
-          {CHIPS.map((chip) => {
-            const isActive = chip.value === active;
-            return (
-              <button
-                key={chip.value}
-                role="tab"
-                aria-selected={isActive}
-                onClick={() => onSelect(chip.value)}
-                className={cn(
-                  'px-2.5 py-1 rounded-full text-[12px] font-medium tracking-tight whitespace-nowrap transition-colors',
-                  isActive
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground',
-                )}
-              >
-                {chip.label}
-              </button>
-            );
-          })}
-        </nav>
       </header>
 
       {/* Active surface */}
