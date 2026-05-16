@@ -47,11 +47,57 @@ Deno.serve(async (req) => {
     return pixelResponse();
   }
 
+  // ── Bot/scanner classification ──────────────────────────────────────────────
+  // Apple Mail Privacy Protection, Gmail proxy, Outlook ATP, Proofpoint, etc.
+  // pre-fetch the pixel without a human reading the email. Heuristics:
+  //   1. Known scanner/proxy user-agent substrings
+  //   2. Pixel fired < 8s after sent_at (no human reads that fast)
+  //   3. Cache-warming GoogleImageProxy/AMP/Outlook safelink prefetches
+  const ua = (req.headers.get("user-agent") ?? "").toLowerCase();
+  const BOT_UA_PATTERNS = [
+    "googleimageproxy",     // Gmail image proxy
+    "ggpht.com",
+    "yahoomailproxy",
+    "mimecast",
+    "proofpoint",
+    "barracuda",
+    "symantec",
+    "messagelabs",
+    "trendmicro",
+    "forcepoint",
+    "cloudmark",
+    "spamtitan",
+    "msnbot",
+    "bingpreview",
+    "slackbot",
+    "facebookexternalhit",
+    "twitterbot",
+    "linkedinbot",
+    "discordbot",
+    "curl/",
+    "python-requests",
+    "go-http-client",
+    "node-fetch",
+    "headlesschrome",
+    "phantomjs",
+  ];
+  function classifyBot(userAgent: string, sentAt?: string | null): boolean {
+    if (!userAgent) return true; // No UA = almost certainly a bot
+    if (BOT_UA_PATTERNS.some((p) => userAgent.includes(p))) return true;
+    // Apple Mail Privacy: requests come from Apple's iCloud relay range with
+    // a Mozilla-style UA, almost always within seconds of send.
+    if (sentAt) {
+      const dt = Date.now() - new Date(sentAt).getTime();
+      if (dt < 8_000) return true; // pre-fetch
+    }
+    return false;
+  }
+
   try {
     // Fetch the send-log row to know which contact / template / campaign this belongs to.
     const { data: log } = await supabase
       .from("crm_email_send_log")
-      .select("id, contact_id, email_to, subject, template_id, campaign_id, template_type, open_count, click_count")
+      .select("id, contact_id, email_to, subject, template_id, campaign_id, template_type, open_count, click_count, human_open_count, sent_at")
       .eq("tracking_id", trackingId)
       .maybeSingle();
 
@@ -59,41 +105,55 @@ Deno.serve(async (req) => {
     // reads). Both updates are best-effort — neither should block the response.
     const { data: emailLog } = await supabase
       .from("crm_email_log")
-      .select("id, contact_id, open_count, click_count")
+      .select("id, contact_id, open_count, click_count, human_open_count, sent_at")
       .eq("tracking_id", trackingId)
       .maybeSingle();
 
     const nowIso = new Date().toISOString();
+    const sentAt = log?.sent_at ?? emailLog?.sent_at ?? null;
+    const isBot = action === "open" ? classifyBot(ua, sentAt) : false;
 
     if (action === "open") {
       if (log) {
-        await supabase
-          .from("crm_email_send_log")
-          .update({
-            status: "opened",
-            opened_at: log.open_count === 0 ? nowIso : undefined,
-            last_opened_at: nowIso,
-            open_count: (log.open_count ?? 0) + 1,
-          })
-          .eq("id", log.id);
+        const patch: Record<string, unknown> = {
+          last_opened_at: nowIso,
+          open_count: (log.open_count ?? 0) + 1,
+        };
+        if (isBot) {
+          patch.bot_open_count = ((log as any).bot_open_count ?? 0) + 1;
+        } else {
+          patch.status = "opened";
+          patch.human_open_count = (log.human_open_count ?? 0) + 1;
+          if ((log.human_open_count ?? 0) === 0) {
+            patch.opened_at = nowIso;
+            patch.first_human_opened_at = nowIso;
+          }
+        }
+        await supabase.from("crm_email_send_log").update(patch).eq("id", log.id);
       }
 
       if (emailLog) {
-        await supabase
-          .from("crm_email_log")
-          .update({
-            opened_at: emailLog.open_count === 0 ? nowIso : undefined,
-            last_opened_at: nowIso,
-            open_count: (emailLog.open_count ?? 0) + 1,
-          })
-          .eq("id", emailLog.id);
+        const patch: Record<string, unknown> = {
+          last_opened_at: nowIso,
+          open_count: (emailLog.open_count ?? 0) + 1,
+        };
+        if (isBot) {
+          patch.bot_open_count = ((emailLog as any).bot_open_count ?? 0) + 1;
+        } else {
+          patch.human_open_count = (emailLog.human_open_count ?? 0) + 1;
+          if ((emailLog.human_open_count ?? 0) === 0) {
+            patch.opened_at = nowIso;
+            patch.first_human_opened_at = nowIso;
+          }
+        }
+        await supabase.from("crm_email_log").update(patch).eq("id", emailLog.id);
       }
 
-      // Only write an engagement event on the FIRST open to avoid timeline spam.
-      const firstOpen =
-        (log?.open_count ?? emailLog?.open_count ?? 0) === 0;
+      // Only write an engagement event on the FIRST HUMAN open to avoid timeline spam from bots.
+      const firstHumanOpen = !isBot &&
+        (log?.human_open_count ?? emailLog?.human_open_count ?? 0) === 0;
       const contactId = log?.contact_id ?? emailLog?.contact_id ?? null;
-      if (firstOpen && contactId) {
+      if (firstHumanOpen && contactId) {
         await supabase.from("crm_lead_behavior_engagement").insert({
           contact_id: contactId,
           email: log?.email_to,
