@@ -96,6 +96,7 @@ Deno.serve(async (req) => {
 
     let upstream: Response | null = null;
     let text = "";
+    const diag: Record<string, unknown> = { caller_slug: callerSlug, prefer_scoped: preferScoped, has_presale_anon: !!PRESALE_ANON };
 
     if (preferScoped && PRESALE_ANON) {
       const scoped = await tryFetch(`${BRIDGE_URL}/bridge-list-templates`, {
@@ -108,7 +109,9 @@ Deno.serve(async (req) => {
         },
         body: JSON.stringify({ agent_slug: callerSlug, include_team: true }),
       });
-      if (scoped.res?.ok) { upstream = scoped.res; text = scoped.body; }
+      diag.scoped_status = scoped.res?.status ?? null;
+      diag.scoped_body_preview = scoped.body.slice(0, 240);
+      if (scoped.res?.ok) { upstream = scoped.res; text = scoped.body; diag.used = "scoped"; }
     }
 
     if (!upstream || !upstream.ok) {
@@ -118,10 +121,12 @@ Deno.serve(async (req) => {
       });
       upstream = fallback.res;
       text = fallback.body;
+      diag.fallback_status = fallback.res?.status ?? null;
+      if (!diag.used) diag.used = "fallback_serve_auto_templates";
     }
 
     if (!upstream || !upstream.ok) {
-      return json({ error: "upstream_error", status: upstream?.status, body: text.slice(0, 300) }, 502);
+      return json({ error: "upstream_error", status: upstream?.status, body: text.slice(0, 300), diag }, 502);
     }
 
     let payload: any;
