@@ -119,7 +119,7 @@ Deno.serve(async (req) => {
     // Fetch recipient details
     const { data: contacts, error: cErr } = await supabase
       .from("crm_contacts")
-      .select("id,first_name,last_name,email,phone,city,preferred_city")
+      .select("id,first_name,last_name,email,phone,city")
       .in("id", body.recipient_ids);
     if (cErr) return json({ error: cErr.message }, 500);
 
@@ -238,7 +238,7 @@ Deno.serve(async (req) => {
           full_name: [c.first_name, c.last_name].filter(Boolean).join(" "),
           email: c.email ?? "",
           phone: c.phone ?? "",
-          city: (c.city ?? c.preferred_city ?? "") as string,
+          city: (c.city ?? "") as string,
         };
         const subj = renderForLead(body.subject, lead, senderCtx);
         let html = renderForLead(body.body_html, lead, senderCtx);
