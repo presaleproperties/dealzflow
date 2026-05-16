@@ -23,15 +23,11 @@ function notifyDisabled() {
   try { toast.info(DISABLED_MSG); } catch { /* noop */ }
 }
 
-export async function startInAppCall(_args: {
-  contact?: DialerContact | null;
-  number?: string | null;
-  fallbackTelHref?: string;
-}): Promise<void> {
+export async function startInAppCall(_args?: Record<string, unknown>): Promise<void> {
   notifyDisabled();
-  // Fallback to the device's native dialer if a tel: href was provided.
-  if (_args?.fallbackTelHref && typeof window !== 'undefined') {
-    try { window.location.href = _args.fallbackTelHref; } catch { /* noop */ }
+  const fallback = _args && typeof _args.fallbackTelHref === 'string' ? _args.fallbackTelHref : null;
+  if (fallback && typeof window !== 'undefined') {
+    try { window.location.href = fallback; } catch { /* noop */ }
   }
 }
 
