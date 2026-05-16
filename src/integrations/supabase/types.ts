@@ -6263,6 +6263,77 @@ export type Database = {
         }
         Relationships: []
       }
+      sms_outbound_queue: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          body: string
+          campaign_id: string | null
+          contact_id: string | null
+          created_at: string
+          from_number: string | null
+          id: string
+          media_urls: string[]
+          metadata: Json
+          reason: string | null
+          rejection_reason: string | null
+          requested_by: string
+          scheduled_for: string | null
+          status: string
+          template_id: string | null
+          to_number: string
+          updated_at: string
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          body: string
+          campaign_id?: string | null
+          contact_id?: string | null
+          created_at?: string
+          from_number?: string | null
+          id?: string
+          media_urls?: string[]
+          metadata?: Json
+          reason?: string | null
+          rejection_reason?: string | null
+          requested_by?: string
+          scheduled_for?: string | null
+          status?: string
+          template_id?: string | null
+          to_number: string
+          updated_at?: string
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          body?: string
+          campaign_id?: string | null
+          contact_id?: string | null
+          created_at?: string
+          from_number?: string | null
+          id?: string
+          media_urls?: string[]
+          metadata?: Json
+          reason?: string | null
+          rejection_reason?: string | null
+          requested_by?: string
+          scheduled_for?: string | null
+          status?: string
+          template_id?: string | null
+          to_number?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sms_outbound_queue_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "crm_contacts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sync_log: {
         Row: {
           created_at: string
@@ -6443,6 +6514,27 @@ export type Database = {
           transaction_type?: string | null
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      system_settings: {
+        Row: {
+          key: string
+          updated_at: string
+          updated_by: string | null
+          value: Json
+        }
+        Insert: {
+          key: string
+          updated_at?: string
+          updated_by?: string | null
+          value?: Json
+        }
+        Update: {
+          key?: string
+          updated_at?: string
+          updated_by?: string | null
+          value?: Json
         }
         Relationships: []
       }
