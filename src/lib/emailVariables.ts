@@ -75,13 +75,66 @@ const sampleMap: Record<string, string> = Object.fromEntries(
   EMAIL_VARIABLES.map(v => [v.token, v.example]),
 );
 
+// Legacy / Presale / Lofty alias → canonical token (used by preview AND send).
+// Keep this list in sync with the `legacy` map inside renderForRecipient
+// below and the server-side `renderForLead` in crm-mass-send-email.
+const LEGACY_ALIAS: Record<string, string> = {
+  // Lead name
+  name: 'lead.first_name',
+  first_name: 'lead.first_name',
+  firstname: 'lead.first_name',
+  lead_first_name: 'lead.first_name',
+  last_name: 'lead.last_name',
+  lastname: 'lead.last_name',
+  lead_last_name: 'lead.last_name',
+  full_name: 'lead.full_name',
+  lead_name: 'lead.full_name',
+  contact_name: 'lead.full_name',
+  // Lead contact
+  email: 'lead.email',
+  phone: 'lead.phone',
+  // Lead location / preferences
+  city: 'lead.city',
+  preferred_city: 'lead.city',
+  lead_city: 'lead.city',
+  // Sender / agent
+  agent_name: 'sender.full_name',
+  agent_first_name: 'sender.first_name',
+  agent_email: 'sender.email',
+  agent_phone: 'sender.phone',
+  sender_name: 'sender.full_name',
+  sender_email: 'sender.email',
+  // Project (Presale templates)
+  project_name: 'project.name',
+  project_location: 'project.city',
+  project_city: 'project.city',
+  project_url: 'project.url',
+  project_developer: 'project.developer',
+  brochure_url: 'project.brochure_url',
+  // Links
+  unsubscribe: 'link.unsubscribe',
+  unsubscribe_link: 'link.unsubscribe',
+};
+
 /** Replace {{token}} occurrences with example values, leaving unknown tokens highlighted. */
 export function renderWithSampleData(input: string): string {
   if (!input) return input;
-  return input.replace(/\{\{\s*([a-zA-Z0-9_.]+)\s*\}\}/g, (_, tok) => {
-    if (sampleMap[tok] !== undefined) return sampleMap[tok];
-    return `<mark style="background:#fde68a;padding:0 2px;border-radius:2px">{{${tok}}}</mark>`;
-  });
+  const lookup = (raw: string): string | undefined => {
+    if (sampleMap[raw] !== undefined) return sampleMap[raw];
+    const aliased = LEGACY_ALIAS[raw.toLowerCase()];
+    if (aliased && sampleMap[aliased] !== undefined) return sampleMap[aliased];
+    return undefined;
+  };
+  return input
+    .replace(/\{\{\s*([a-zA-Z0-9_.]+)\s*\}\}/g, (_, tok) => {
+      const v = lookup(tok);
+      if (v !== undefined) return v;
+      return `<mark style="background:#fde68a;padding:0 2px;border-radius:2px">{{${tok}}}</mark>`;
+    })
+    .replace(/\{\s*\$\s*([a-zA-Z0-9_.]+)\s*\}/g, (_, tok) => {
+      const v = lookup(tok);
+      return v !== undefined ? v : `<mark style="background:#fde68a;padding:0 2px;border-radius:2px">{${'$'}${tok}}</mark>`;
+    });
 }
 
 // ---------------------------------------------------------------------------
