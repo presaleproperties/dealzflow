@@ -238,6 +238,7 @@ Deno.serve(async (req) => {
           full_name: [c.first_name, c.last_name].filter(Boolean).join(" "),
           email: c.email ?? "",
           phone: c.phone ?? "",
+          city: (c.city ?? c.preferred_city ?? "") as string,
         };
         const subj = renderForLead(body.subject, lead, senderCtx);
         let html = renderForLead(body.body_html, lead, senderCtx);
