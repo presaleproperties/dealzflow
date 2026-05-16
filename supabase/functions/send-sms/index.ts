@@ -47,7 +47,18 @@ function isTransientStatus(status: number): boolean {
   return status === 408 || status === 409 || status === 425 || status === 429 || status >= 500;
 }
 
+// 🚨 KILL SWITCH 2026-05-16 — Twilio outbound disabled after billing incident (43k unintended SMS).
+// To re-enable: set SMS_KILL_SWITCH_DISABLED to true in this file (and bulk-send-sms + process-scheduled-sms).
+const SMS_KILL_SWITCH_ACTIVE = true;
+
 Deno.serve(async (req) => {
+  if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
+  if (SMS_KILL_SWITCH_ACTIVE) {
+    return new Response(JSON.stringify({
+      error: 'SMS sending is temporarily disabled by your admin (billing safeguard). Contact your workspace admin to re-enable.',
+      kill_switch: true,
+    }), { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+  }
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
 
   let supabaseAdmin: any = null;
