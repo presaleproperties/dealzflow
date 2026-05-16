@@ -13,6 +13,7 @@ import { format, subDays, parseISO, startOfMonth, differenceInDays } from 'date-
 import { useCrmAccess } from '@/contexts/CrmAccessContext';
 import { EmailReportTab } from '@/components/crm/reports/EmailReportTab';
 import { SmsReportTab } from '@/components/crm/reports/SmsReportTab';
+import { TopLeadsTab } from '@/components/crm/reports/TopLeadsTab';
 
 const FUNNEL_STAGES = [
   'New Lead', 'Contacted', 'Nurturing', 'Hot / Engaged',
