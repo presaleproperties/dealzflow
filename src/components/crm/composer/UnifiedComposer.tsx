@@ -577,9 +577,10 @@ export function UnifiedComposer() {
     }
   };
 
+  const autoQueueLabel = quietHoursWarn && !scheduleOn ? 'Queue for 8am' : null;
   const sendLabel = activeChannel === 'email'
-    ? (scheduleOn ? 'Schedule' : 'Send now')
-    : (channelBlocked ? 'Stage for approval' : (scheduleOn ? 'Schedule' : 'Send now'));
+    ? (scheduleOn ? 'Schedule' : (autoQueueLabel ?? 'Send now'))
+    : (channelBlocked ? 'Stage for approval' : (scheduleOn ? 'Schedule' : (autoQueueLabel ?? 'Send now')));
 
   return (
     <>
