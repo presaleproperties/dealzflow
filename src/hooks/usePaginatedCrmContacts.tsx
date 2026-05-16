@@ -148,6 +148,41 @@ export function usePaginatedCrmContacts(params: PaginatedParams): PaginatedResul
         .from('crm_contacts')
         .select('*', { count: 'estimated' });
 
+      query = applyAllContactFilters(query, filters);
+
+      const dbColumn = SORT_COLUMN_MAP[sortKey] || 'created_at';
+      query = query.order(dbColumn, { ascending: sortDir === 'asc', nullsFirst: false });
+      if (sortKey === 'name') {
+        query = query.order('last_name', { ascending: sortDir === 'asc', nullsFirst: false });
+      }
+
+      query = query.range(from, to);
+
+      const { data: rows, error, count } = await query;
+      if (error) throw error;
+
+      const contacts = (rows ?? []).map(d => ({
+        ...normalizeCrmContactArrays(d),
+        contact_type: d.contact_type ?? 'lead',
+      })) as CrmContact[];
+
+      return { contacts, totalCount: count ?? 0 };
+    },
+    staleTime: 15_000,
+    placeholderData: (prev) => prev,
+  });
+
+  return {
+    contacts: data?.contacts ?? [],
+    totalCount: data?.totalCount ?? 0,
+    isLoading,
+    isFetching,
+  };
+}
+
+/** Shared filter chain used by both the paginated query and the
+ *  "select all filtered" id fetch. Keep these in sync. */
+function applyAllContactFilters(query: any, filters: PaginatedFilters) {
       if (filters.search) {
         // Tokenize so "john smith" matches first_name=John AND last_name=Smith.
         // Escape PostgREST reserved chars (, ) . : * ' ") inside ilike values
@@ -256,33 +291,29 @@ export function usePaginatedCrmContacts(params: PaginatedParams): PaginatedResul
         query = applyJsonFilters(query, filters.segmentFilters);
       }
 
-      const dbColumn = SORT_COLUMN_MAP[sortKey] || 'created_at';
-      query = query.order(dbColumn, { ascending: sortDir === 'asc', nullsFirst: false });
-      if (sortKey === 'name') {
-        query = query.order('last_name', { ascending: sortDir === 'asc', nullsFirst: false });
-      }
-
-      query = query.range(from, to);
-
-      const { data: rows, error, count } = await query;
-      if (error) throw error;
-
-      const contacts = (rows ?? []).map(d => ({
-        ...normalizeCrmContactArrays(d),
-        contact_type: d.contact_type ?? 'lead',
-      })) as CrmContact[];
-
-      return { contacts, totalCount: count ?? 0 };
-    },
-    staleTime: 15_000,
-    placeholderData: (prev) => prev,
-  });
-
-  return {
-    contacts: data?.contacts ?? [],
-    totalCount: data?.totalCount ?? 0,
-    isLoading,
-    isFetching,
-  };
+  return query;
 }
+
+/** Hard ceiling that matches `crm-mass-send-email`'s MAX_RECIPIENTS so a
+ *  "Select all filtered" never queues more than the server allows. */
+export const MAX_SELECT_ALL_FILTERED = 1500;
+
+/** Run the same filter chain used by the paginated list and return every
+ *  matching contact id (capped at MAX_SELECT_ALL_FILTERED). Used by the
+ *  "Select all N filtered" affordance on the Leads page. */
+export async function fetchAllFilteredContactIds(
+  filters: PaginatedFilters,
+  max: number = MAX_SELECT_ALL_FILTERED,
+): Promise<{ ids: string[]; capped: boolean }> {
+  let query = supabase.from('crm_contacts').select('id', { count: 'exact' });
+  query = applyAllContactFilters(query, filters);
+  query = query.range(0, max - 1);
+  const { data, error, count } = await query;
+  if (error) throw error;
+  const ids = (data ?? []).map((r: any) => r.id as string);
+  return { ids, capped: (count ?? ids.length) > max };
+}
+
+export type { PaginatedFilters };
+
 

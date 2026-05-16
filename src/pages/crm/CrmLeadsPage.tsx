@@ -6,8 +6,9 @@ import { Badge } from '@/components/ui/badge';
 import { Search, Plus, Filter, Settings2, Eye, X, ArrowDownNarrowWide, Check, ChevronDown } from 'lucide-react';
 import { useDynamicFilterOptions, LEAD_STATUSES, LEAD_SOURCES, LEAD_TYPES } from '@/hooks/useCrmContacts';
 import { useCrmContactsLite } from '@/hooks/useCrmContactsLite';
-import { usePaginatedCrmContacts } from '@/hooks/usePaginatedCrmContacts';
+import { usePaginatedCrmContacts, fetchAllFilteredContactIds, MAX_SELECT_ALL_FILTERED } from '@/hooks/usePaginatedCrmContacts';
 import type { SortKey, SortDir } from '@/hooks/usePaginatedCrmContacts';
+import { toast } from 'sonner';
 import { useCrmLeadSegments, useReorderCrmLeadSegments } from '@/hooks/useCrmLeadSegments';
 import { computeSegmentCounts } from '@/lib/segmentMatching';
 import { applyClientFilters } from '@/lib/clientContactFilters';
@@ -356,42 +357,68 @@ export default function CrmLeadsPage() {
     if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
   }, []);
 
+  // Built once so the paginated hook and the "Select all filtered" helper
+  // run against the exact same filter set.
+  const paginatedFilters = useMemo(() => ({
+    search: debouncedSearch,
+    contactType: filterContactType,
+    statuses: filterStatus,
+    sources: filterSource,
+    agents: filterAgent,
+    projects: filterProject,
+    leadTypes: filterLeadType,
+    languages: filterLanguage,
+    tags: filterTags,
+    excludeTags: filterExcludeTags,
+    propertyTypes: filterPropertyType,
+    cities: filterCity,
+    preApproved: filterPreApproved,
+    campaigns: filterCampaign,
+    letterFilter,
+    pipelineView,
+    savedViewFilters: savedViewFilters,
+    segmentFilters: activeSegment && Object.keys(activeSegment.filter_config).length > 0
+      ? (activeSegment.filter_config as Record<string, unknown>)
+      : undefined,
+    uncontacted7: !!activeView.filters._uncontacted_7,
+    stale30: !!activeView.filters._stale_30,
+    highScore: !!activeView.filters._high_score,
+    birthdayMonth: !!activeView.filters._birthday_month,
+  }), [
+    debouncedSearch, filterContactType, filterStatus, filterSource, filterAgent,
+    filterProject, filterLeadType, filterLanguage, filterTags, filterExcludeTags,
+    filterPropertyType, filterCity, filterPreApproved, filterCampaign, letterFilter,
+    pipelineView, savedViewFilters, activeSegment, activeView.filters,
+  ]);
+
   const { contacts, totalCount, isLoading, isFetching } = usePaginatedCrmContacts({
     page,
     pageSize,
     sortKey: pipelineView === 'directory' && sortKey === 'created_at' ? 'name' : sortKey,
     sortDir: pipelineView === 'directory' && sortKey === 'created_at' ? 'asc' : sortDir,
-    filters: {
-      search: debouncedSearch,
-      contactType: filterContactType,
-      statuses: filterStatus,
-      sources: filterSource,
-      agents: filterAgent,
-      projects: filterProject,
-      leadTypes: filterLeadType,
-      languages: filterLanguage,
-      tags: filterTags,
-      excludeTags: filterExcludeTags,
-      propertyTypes: filterPropertyType,
-      cities: filterCity,
-      preApproved: filterPreApproved,
-      campaigns: filterCampaign,
-      letterFilter,
-      pipelineView,
-      savedViewFilters: savedViewFilters,
-      // Pass the segment's full filter_config (tags_any_ci / lead_type_ci / status / etc.)
-      // so the list matches the pill count exactly. Using only pipeline_segment_id
-      // would show ONLY contacts manually dragged in Kanban (often <10) while the
-      // pill counts every contact matching the loose tag/lead_type filter (often 50+).
-      segmentFilters: activeSegment && Object.keys(activeSegment.filter_config).length > 0
-        ? (activeSegment.filter_config as Record<string, unknown>)
-        : undefined,
-      uncontacted7: !!activeView.filters._uncontacted_7,
-      stale30: !!activeView.filters._stale_30,
-      highScore: !!activeView.filters._high_score,
-      birthdayMonth: !!activeView.filters._birthday_month,
-    },
+    filters: paginatedFilters,
   });
+
+  /** Bulk-selects every contact matching the current filters (capped at
+   *  MAX_SELECT_ALL_FILTERED = 1,500 to match crm-mass-send-email). Wired
+   *  into the LeadsTable banner shown when the whole page is selected. */
+  const handleSelectAllFiltered = useCallback(async () => {
+    const t = toast.loading('Selecting all filtered leads…');
+    try {
+      const { ids, capped } = await fetchAllFilteredContactIds(paginatedFilters);
+      setSelectedIds(ids);
+      toast.success(
+        capped
+          ? `Selected ${ids.length.toLocaleString()} leads (capped at ${MAX_SELECT_ALL_FILTERED.toLocaleString()} per mass send)`
+          : `Selected ${ids.length.toLocaleString()} leads`,
+        { id: t },
+      );
+    } catch (e) {
+      console.error('[leads] select-all-filtered failed', e);
+      toast.error((e as Error).message ?? 'Failed to select all filtered leads', { id: t });
+    }
+  }, [paginatedFilters]);
+
 
   // ── Mobile infinite scroll: accumulate pages locally; reset whenever filters/sort change
   const filtersKey = useMemo(() => JSON.stringify({
@@ -940,6 +967,7 @@ export default function CrmLeadsPage() {
             page={page} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={handlePageSizeChange}
             sortKey={sortKey} sortDir={sortDir} onSort={handleSort} visibleColumns={visibleColumns}
             hidePagination={isMobile}
+            onSelectAllFiltered={handleSelectAllFiltered}
           />
 
           {/* Mobile infinite-scroll loader */}
