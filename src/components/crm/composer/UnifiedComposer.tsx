@@ -981,9 +981,17 @@ export function UnifiedComposer() {
                   className="h-9 text-[13px]"
                 />
               )}
-              {quietHoursWarn && (
+              {quietHoursWarn && !scheduleOn && (
                 <div className="rounded border border-amber-500/40 bg-amber-500/10 px-2.5 py-2 text-[11.5px] text-amber-700 dark:text-amber-300 flex items-start gap-1.5">
                   <AlertTriangle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+                  <span>
+                    It's quiet hours in Vancouver (9pm–8am). This {activeChannel === 'email' ? 'email' : 'text'} will auto-queue for 8am unless you pick a different time.
+                  </span>
+                </div>
+              )}
+              {false && (
+                <div className="hidden">
+                  <AlertTriangle />
                   <span>Outside quiet hours (9pm–8am Vancouver) — auto-queue for 8am.</span>
                 </div>
               )}
