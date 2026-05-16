@@ -42,7 +42,6 @@ Deno.serve(async (req) => {
       kill_switch: true,
     }), { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   }
-  if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
 
   try {
     const authHeader = req.headers.get('Authorization');
