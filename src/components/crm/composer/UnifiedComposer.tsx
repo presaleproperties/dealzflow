@@ -290,21 +290,65 @@ export function UnifiedComposer() {
     }
   };
 
+  // Upload email attachments to private `email-attachments` bucket and return
+  // 30-day signed URLs. External recipients aren't authed so signed URLs are
+  // required (never use getPublicUrl — see storage-bucket-lockdown memory).
+  const uploadEmailAttachments = async (): Promise<{ name: string; url: string; size: number; type: string }[]> => {
+    if (attachments.length === 0) return [];
+    const { data: auth } = await supabase.auth.getUser();
+    const userId = auth?.user?.id;
+    if (!userId) throw new Error('Not authenticated');
+    const out: { name: string; url: string; size: number; type: string }[] = [];
+    for (const f of attachments) {
+      const safe = f.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+      const path = `${userId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}-${safe}`;
+      const { error } = await supabase.storage
+        .from('email-attachments')
+        .upload(path, f, { contentType: f.type || 'application/octet-stream', upsert: false });
+      if (error) throw new Error(`Upload failed (${f.name}): ${error.message}`);
+      const { data: signed, error: signErr } = await supabase.storage
+        .from('email-attachments')
+        .createSignedUrl(path, 60 * 60 * 24 * 30); // 30 days
+      if (signErr || !signed?.signedUrl) throw new Error(signErr?.message || 'Could not sign URL');
+      out.push({ name: f.name, url: signed.signedUrl, size: f.size, type: f.type });
+    }
+    return out;
+  };
+
+  const buildAttachmentsHtml = (
+    files: { name: string; url: string; size: number; type: string }[],
+  ): string => {
+    if (files.length === 0) return '';
+    const rows = files
+      .map(
+        (f) =>
+          `<li style="margin:4px 0;"><a href="${f.url}" style="color:#D7A542;text-decoration:none;">📎 ${f.name}</a> <span style="color:#888;font-size:12px;">(${fmtBytes(f.size)})</span></li>`,
+      )
+      .join('');
+    return `<div style="margin-top:20px;padding-top:12px;border-top:1px solid #e5e5e5;font-family:Plus Jakarta Sans,system-ui,sans-serif;font-size:14px;"><div style="color:#666;margin-bottom:6px;">Attachments (links valid 30 days):</div><ul style="list-style:none;padding:0;margin:0;">${rows}</ul></div>`;
+  };
+
   const handleSend = async () => {
     if (sending) return;
+    // Re-validate attachments against current channel (channel toggle may have changed)
+    const attachErr = validateAttachments(attachments, activeChannel);
+    if (attachErr) { toast.error(attachErr); return; }
     setSending(true);
     try {
       if (activeChannel === 'email') {
         if (!toEmail.trim()) { toast.error('Recipient email required'); return; }
         if (!subject.trim()) { toast.error('Subject required'); return; }
         const rendered = await renderViaServer(body, subject, 'email');
+        const uploaded = await uploadEmailAttachments();
+        const html = rendered.text + buildAttachmentsHtml(uploaded);
         const { data, error } = await supabase.functions.invoke('bridge-send-email', {
           body: {
             to: toEmail.trim(),
             subject: rendered.subject || subject,
-            html: rendered.text,
+            html,
             contact_id: leadId,
             send_at: scheduleOn && scheduleAt ? new Date(scheduleAt).toISOString() : null,
+            attachments: uploaded.map((a) => ({ name: a.name, url: a.url, type: a.type, size: a.size })),
           },
         });
         if (error) throw new Error(error.message);
@@ -313,8 +357,9 @@ export function UnifiedComposer() {
         closeComposer();
       } else {
         if (!toPhone.trim()) { toast.error('Recipient phone required'); return; }
-        if (!body.trim()) { toast.error('Message body required'); return; }
+        if (!body.trim() && attachments.length === 0) { toast.error('Message body or media required'); return; }
         const rendered = await renderViaServer(body, null, 'sms');
+        const mediaUrls = attachments.length > 0 ? await uploadSmsMedia(attachments) : [];
         if (channelBlocked) {
           // Stage for approval — INSERT directly to sms_outbound_queue.
           const reason = (settingsQuery.data?.killSwitch ?? true)
@@ -327,7 +372,11 @@ export function UnifiedComposer() {
             status: 'pending_approval',
             reason,
             scheduled_for: scheduleOn && scheduleAt ? new Date(scheduleAt).toISOString() : null,
-            metadata: { staged_via: 'unified_composer', quiet_hours: quietHoursWarn },
+            metadata: {
+              staged_via: 'unified_composer',
+              quiet_hours: quietHoursWarn,
+              media_urls: mediaUrls,
+            },
           });
           if (error) throw error;
           toast.success('Staged for approval', {
@@ -341,12 +390,13 @@ export function UnifiedComposer() {
               contact_id: leadId,
               to: toPhone.trim(),
               body: rendered.text,
+              media_urls: mediaUrls,
               scheduled_for: scheduleOn && scheduleAt ? new Date(scheduleAt).toISOString() : null,
             },
           });
           if (error) throw new Error(error.message);
           if ((data as any)?.error) throw new Error((data as any).error);
-          toast.success('Text sent');
+          toast.success(mediaUrls.length > 0 ? 'MMS sent' : 'Text sent');
           closeComposer();
         }
       }
