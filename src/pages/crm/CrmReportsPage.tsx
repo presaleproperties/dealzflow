@@ -62,14 +62,22 @@ export default function CrmReportsPage() {
     <div className="space-y-4 sm:space-y-6">
       <h1 className="text-xl sm:text-2xl font-bold text-foreground">Reports</h1>
       <Tabs defaultValue="overview">
-        <TabsList className="w-full sm:w-auto grid grid-cols-3 sm:flex">
-          <TabsTrigger value="overview" className="text-[13px] sm:text-sm min-h-[44px] sm:min-h-0">Overview</TabsTrigger>
-          <TabsTrigger value="agents" className="text-[13px] sm:text-sm min-h-[44px] sm:min-h-0">Agents</TabsTrigger>
-          <TabsTrigger value="funnel" className="text-[13px] sm:text-sm min-h-[44px] sm:min-h-0">Funnel</TabsTrigger>
+        <TabsList className="w-full sm:w-auto grid grid-cols-5 sm:flex">
+          <TabsTrigger value="overview" className="text-[12px] sm:text-sm min-h-[44px] sm:min-h-0">Overview</TabsTrigger>
+          <TabsTrigger value="email" className="text-[12px] sm:text-sm min-h-[44px] sm:min-h-0">Email</TabsTrigger>
+          <TabsTrigger value="sms" className="text-[12px] sm:text-sm min-h-[44px] sm:min-h-0">SMS</TabsTrigger>
+          <TabsTrigger value="agents" className="text-[12px] sm:text-sm min-h-[44px] sm:min-h-0">Agents</TabsTrigger>
+          <TabsTrigger value="funnel" className="text-[12px] sm:text-sm min-h-[44px] sm:min-h-0">Funnel</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview">
           <OverviewTab contacts={contacts} showings={showings} />
+        </TabsContent>
+        <TabsContent value="email">
+          <EmailReportTab />
+        </TabsContent>
+        <TabsContent value="sms">
+          <SmsReportTab />
         </TabsContent>
         <TabsContent value="agents">
           <AgentPerformanceTab contacts={contacts} showings={showings} messages={messages} />
