@@ -108,6 +108,8 @@ const CrmBehaviorLeadsPage = lazy(() => import("./pages/crm/CrmBehaviorLeadsPage
 const CrmBehaviorDashboardPage = lazy(() => import("./pages/crm/CrmBehaviorDashboardPage"));
 
 const CrmInboxPage = lazy(() => import("./pages/crm/CrmInboxPage"));
+const CrmCampaignsListPage = lazy(() => import("./pages/crm/CrmCampaignsListPage"));
+const CrmCampaignDetailPage = lazy(() => import("./pages/crm/CrmCampaignDetailPage"));
 const CrmSchedulerPage = lazy(() => import("./pages/crm/CrmSchedulerPage"));
 const PublicAgentLandingPage = lazy(() => import("./pages/public/PublicAgentLandingPage"));
 const PublicBookingPage = lazy(() => import("./pages/public/PublicBookingPage"));
@@ -320,6 +322,8 @@ const App = () => (
                     <Route path="/crm/sms" element={<Navigate to="/crm/inbox?channel=text" replace />} />
                     <Route path="/crm/whatsapp" element={<Navigate to="/crm/leads" replace />} />
                     <Route path="/crm/templates" element={<ProtectedRoute><CrmLayout><CrmTemplatesPage /></CrmLayout></ProtectedRoute>} />
+                    <Route path="/crm/campaigns" element={<ProtectedRoute><CrmLayout><CrmCampaignsListPage /></CrmLayout></ProtectedRoute>} />
+                    <Route path="/crm/campaigns/:id" element={<ProtectedRoute><CrmLayout><CrmCampaignDetailPage /></CrmLayout></ProtectedRoute>} />
                     <Route path="/crm/marketing-hub" element={<ProtectedRoute><CrmLayout><CrmMarketingHubPage /></CrmLayout></ProtectedRoute>} />
                     <Route path="/crm/email-builder" element={<ProtectedRoute><CrmLayout><CrmEmailBuilderPage /></CrmLayout></ProtectedRoute>} />
                     <Route path="/crm/contacts" element={<Navigate to="/crm/leads" replace />} />
