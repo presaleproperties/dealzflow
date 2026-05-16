@@ -50,8 +50,6 @@ export function QuickActionBar({ contact }: Props) {
   const [textChannel, setTextChannel] = useState<MessagingChannel>('sms');
   const [callDuration, setCallDuration] = useState('');
   const [callOutcome, setCallOutcome] = useState(CALL_OUTCOMES[0]);
-  const [showAdvancedEmail, setShowAdvancedEmail] = useState(false);
-  const [showAdvancedText, setShowAdvancedText] = useState(false);
 
   const taRef = useRef<HTMLTextAreaElement>(null);
   const addNote = useAddNote();
