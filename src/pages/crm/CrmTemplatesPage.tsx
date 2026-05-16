@@ -76,6 +76,34 @@ export default function CrmTemplatesPage() {
   const [sendPresale, setSendPresale] = useState<any | null>(null);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [historyTemplate, setHistoryTemplate] = useState<UnifiedTemplate | null>(null);
+  const [syncing, setSyncing] = useState(false);
+  const qc = useQueryClient();
+
+  const handleSyncFromPresale = async () => {
+    if (syncing) return;
+    setSyncing(true);
+    const toastId = toast.loading('Pulling latest templates from Presale…');
+    try {
+      const { data, error } = await supabase.functions.invoke('sync-bridge-templates', { body: {} });
+      if (error) throw error;
+      const results: Array<{ action: string }> = data?.results ?? [];
+      const created = results.filter(r => r.action === 'created').length;
+      const updated = results.filter(r => r.action === 'updated').length;
+      const unchanged = results.filter(r => r.action === 'unchanged').length;
+      await qc.invalidateQueries({ queryKey: ['unified-templates'] });
+      await qc.invalidateQueries({ queryKey: ['email-templates'] });
+      toast.success(
+        created || updated
+          ? `Synced — ${created} new, ${updated} updated, ${unchanged} unchanged`
+          : `Up to date (${unchanged} templates)`,
+        { id: toastId },
+      );
+    } catch (e: any) {
+      toast.error(`Sync failed: ${e?.message ?? 'unknown error'}`, { id: toastId });
+    } finally {
+      setSyncing(false);
+    }
+  };
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
