@@ -257,23 +257,37 @@ export function renderForRecipient(input: string, ctx: RenderContext): string {
   if (!input) return input;
   const values = buildRecipientValues(ctx);
   const legacy: Record<string, string> = {
-    // Lofty / Presale legacy aliases
+    // Lead name
     name: values['lead.first_name'] ?? '',
     first_name: values['lead.first_name'] ?? '',
     firstname: values['lead.first_name'] ?? '',
+    lead_first_name: values['lead.first_name'] ?? '',
     last_name: values['lead.last_name'] ?? '',
     lastname: values['lead.last_name'] ?? '',
+    lead_last_name: values['lead.last_name'] ?? '',
     full_name: values['lead.full_name'] ?? '',
     lead_name: values['lead.full_name'] ?? '',
     contact_name: values['lead.full_name'] ?? '',
     email: values['lead.email'] ?? '',
     phone: values['lead.phone'] ?? '',
+    // Lead location
+    city: values['lead.city'] ?? '',
+    preferred_city: values['lead.city'] ?? '',
+    lead_city: values['lead.city'] ?? '',
+    // Agent / sender
     agent_name: values['sender.full_name'] ?? '',
     agent_first_name: values['sender.first_name'] ?? '',
     agent_email: values['sender.email'] ?? '',
     agent_phone: values['sender.phone'] ?? '',
     sender_name: values['sender.full_name'] ?? '',
     sender_email: values['sender.email'] ?? '',
+    // Project (Presale)
+    project_name: values['project.name'] ?? '',
+    project_location: values['project.city'] ?? '',
+    project_city: values['project.city'] ?? '',
+    project_url: values['project.url'] ?? '',
+    project_developer: values['project.developer'] ?? '',
+    brochure_url: values['project.brochure_url'] ?? '',
     company_name: 'The Presale Properties Group',
     unsubscribe: values['link.unsubscribe'] ?? '',
     unsubscribe_link: values['link.unsubscribe'] ?? '',
