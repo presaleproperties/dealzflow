@@ -9,7 +9,11 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
 } from 'recharts';
 import { format, subDays, startOfDay, parseISO } from 'date-fns';
-import { Mail, Eye, MousePointerClick, AlertTriangle, Send, Users } from 'lucide-react';
+import { Mail, Eye, MousePointerClick, AlertTriangle, Send, Users, Download, ExternalLink, Copy } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Link } from 'react-router-dom';
+import { toast } from 'sonner';
 
 type EmailLog = {
   id: string;
@@ -86,6 +90,125 @@ export function EmailReportTab() {
     () => Object.fromEntries(agents.map((a: any) => [a.user_id, a.display_name])),
     [agents],
   );
+
+  // Bounced / failed addresses — pulled from mass send log (has email_to)
+  const { data: badSendRows = [] } = useQuery({
+    queryKey: ['crm-reports-email-bounces', days],
+    queryFn: async () => {
+      const since = subDays(new Date(), days).toISOString();
+      const { data, error } = await supabase
+        .from('crm_email_send_jobs')
+        .select('email_to, contact_id, recipient_name, status, error_message, sent_at, created_at')
+        .in('status', ['failed', 'bounced', 'complained', 'suppressed', 'rejected'])
+        .gte('created_at', since)
+        .order('created_at', { ascending: false })
+        .limit(2000);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  // Also pull failed 1:1 sends from crm_email_log + join contacts for emails
+  const { data: badLogContacts = [] } = useQuery({
+    queryKey: ['crm-reports-email-bounces-1to1', days],
+    queryFn: async () => {
+      const since = subDays(new Date(), days).toISOString();
+      const { data: logs, error } = await supabase
+        .from('crm_email_log')
+        .select('contact_id, status, error_message, failed_at, sent_at')
+        .eq('direction', 'outbound')
+        .or('status.eq.failed,status.eq.bounced,status.eq.complained,failed_at.not.is.null')
+        .gte('sent_at', since)
+        .limit(1000);
+      if (error) throw error;
+      const ids = Array.from(new Set((logs ?? []).map((l: any) => l.contact_id).filter(Boolean)));
+      if (ids.length === 0) return [];
+      const { data: contacts } = await supabase
+        .from('crm_contacts')
+        .select('id, email, first_name, last_name')
+        .in('id', ids);
+      const cmap = new Map((contacts ?? []).map((c: any) => [c.id, c]));
+      return (logs ?? []).map((l: any) => {
+        const c = cmap.get(l.contact_id);
+        return {
+          email_to: c?.email ?? null,
+          contact_id: l.contact_id,
+          recipient_name: c ? `${c.first_name ?? ''} ${c.last_name ?? ''}`.trim() : null,
+          status: l.status ?? 'failed',
+          error_message: l.error_message,
+          sent_at: l.failed_at ?? l.sent_at,
+          created_at: l.failed_at ?? l.sent_at,
+        };
+      });
+    },
+  });
+
+  const badAddresses = useMemo(() => {
+    type Row = {
+      email: string; contactId: string | null; name: string | null;
+      count: number; lastStatus: string; lastError: string | null; lastAt: string;
+    };
+    const map = new Map<string, Row>();
+    const ingest = (rows: any[]) => {
+      rows.forEach(r => {
+        const email = (r.email_to || '').toLowerCase().trim();
+        if (!email) return;
+        const cur = map.get(email);
+        const at = r.sent_at || r.created_at;
+        if (!cur) {
+          map.set(email, {
+            email,
+            contactId: r.contact_id ?? null,
+            name: r.recipient_name ?? null,
+            count: 1,
+            lastStatus: r.status,
+            lastError: r.error_message ?? null,
+            lastAt: at,
+          });
+        } else {
+          cur.count += 1;
+          if (!cur.lastAt || (at && at > cur.lastAt)) {
+            cur.lastAt = at;
+            cur.lastStatus = r.status;
+            cur.lastError = r.error_message ?? cur.lastError;
+          }
+          if (!cur.contactId && r.contact_id) cur.contactId = r.contact_id;
+          if (!cur.name && r.recipient_name) cur.name = r.recipient_name;
+        }
+      });
+    };
+    ingest(badSendRows as any[]);
+    ingest(badLogContacts as any[]);
+    return Array.from(map.values()).sort((a, b) => b.count - a.count || (b.lastAt || '').localeCompare(a.lastAt || ''));
+  }, [badSendRows, badLogContacts]);
+
+  const totalBadAddresses = badAddresses.length;
+  const totalBadEvents = badAddresses.reduce((s, r) => s + r.count, 0);
+
+  const exportBadCsv = () => {
+    const headers = ['email', 'name', 'failures', 'last_status', 'last_error', 'last_failed_at', 'contact_id'];
+    const lines = [headers.join(',')];
+    badAddresses.forEach(r => {
+      const esc = (v: any) => {
+        const s = v == null ? '' : String(v);
+        return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+      };
+      lines.push([r.email, r.name, r.count, r.lastStatus, r.lastError, r.lastAt, r.contactId].map(esc).join(','));
+    });
+    const blob = new Blob([lines.join('\n')], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `bounced-emails-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const copyAllEmails = async () => {
+    await navigator.clipboard.writeText(badAddresses.map(r => r.email).join('\n'));
+    toast.success(`Copied ${badAddresses.length} addresses`);
+  };
+
 
   const outbound = useMemo(() => logs.filter(l => l.direction === 'outbound'), [logs]);
   const totalSent = outbound.length;
@@ -389,6 +512,87 @@ export function EmailReportTab() {
           </CardContent>
         </Card>
       )}
+
+      {/* Bounced / failed addresses — DB hygiene */}
+      <Card className="rounded-xl border-destructive/30">
+        <CardHeader className="flex flex-row items-start justify-between gap-3 space-y-0">
+          <div>
+            <CardTitle className="text-base flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4 text-destructive" />
+              Bounced & Failed Addresses
+            </CardTitle>
+            <p className="text-xs text-muted-foreground mt-1">
+              {totalBadAddresses.toLocaleString()} unique address{totalBadAddresses === 1 ? '' : 'es'} •{' '}
+              {totalBadEvents.toLocaleString()} failure{totalBadEvents === 1 ? '' : 's'} in last {days} days
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button size="sm" variant="outline" onClick={copyAllEmails} disabled={!badAddresses.length}>
+              <Copy className="h-3.5 w-3.5 mr-1.5" /> Copy
+            </Button>
+            <Button size="sm" variant="outline" onClick={exportBadCsv} disabled={!badAddresses.length}>
+              <Download className="h-3.5 w-3.5 mr-1.5" /> CSV
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Email</TableHead>
+                <TableHead>Name</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="text-right">Failures</TableHead>
+                <TableHead>Last error</TableHead>
+                <TableHead>Last failed</TableHead>
+                <TableHead className="w-8" />
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {badAddresses.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center text-muted-foreground py-10">
+                    No bounced or failed addresses in this range — your list is clean.
+                  </TableCell>
+                </TableRow>
+              ) : badAddresses.slice(0, 200).map(r => {
+                const tone =
+                  r.lastStatus === 'bounced' ? 'destructive' :
+                  r.lastStatus === 'complained' ? 'destructive' :
+                  r.lastStatus === 'suppressed' ? 'secondary' : 'outline';
+                return (
+                  <TableRow key={r.email}>
+                    <TableCell className="font-mono text-xs">{r.email}</TableCell>
+                    <TableCell className="text-sm">{r.name || '—'}</TableCell>
+                    <TableCell>
+                      <Badge variant={tone as any} className="capitalize text-[10px]">{r.lastStatus}</Badge>
+                    </TableCell>
+                    <TableCell className="text-right font-semibold text-destructive">{r.count}</TableCell>
+                    <TableCell className="text-xs text-muted-foreground max-w-[280px] truncate" title={r.lastError ?? ''}>
+                      {r.lastError || '—'}
+                    </TableCell>
+                    <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
+                      {r.lastAt ? format(parseISO(r.lastAt), 'MMM d, h:mm a') : '—'}
+                    </TableCell>
+                    <TableCell>
+                      {r.contactId && (
+                        <Link to={`/crm/leads/${r.contactId}`} className="text-primary hover:underline inline-flex">
+                          <ExternalLink className="h-3.5 w-3.5" />
+                        </Link>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+          {badAddresses.length > 200 && (
+            <p className="text-[11px] text-muted-foreground mt-2 text-center">
+              Showing top 200 of {badAddresses.length.toLocaleString()} — export CSV for the full list.
+            </p>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
