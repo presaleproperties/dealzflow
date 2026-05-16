@@ -1050,6 +1050,14 @@ export default function CrmLeadsPage() {
               setFilterTags={v => { setFilterTags(v); setPage(1); }}
               filterExcludeTags={filterExcludeTags}
               setFilterExcludeTags={v => { setFilterExcludeTags(v); setPage(1); }}
+              filterExcludeContactTypes={filterExcludeContactTypes}
+              setFilterExcludeContactTypes={v => { setFilterExcludeContactTypes(v); setPage(1); }}
+              filterExcludeStatuses={filterExcludeStatuses}
+              setFilterExcludeStatuses={v => { setFilterExcludeStatuses(v); setPage(1); }}
+              filterExcludeSources={filterExcludeSources}
+              setFilterExcludeSources={v => { setFilterExcludeSources(v); setPage(1); }}
+              filterExcludeLeadTypes={filterExcludeLeadTypes}
+              setFilterExcludeLeadTypes={v => { setFilterExcludeLeadTypes(v); setPage(1); }}
               filterPropertyType={filterPropertyType}
               setFilterPropertyType={v => { setFilterPropertyType(v); setPage(1); }}
               filterCity={filterCity}
