@@ -40,8 +40,40 @@ import { usePresaleAgentStore } from '@/stores/usePresaleAgent';
 import { useComposerStore } from '@/stores/useComposer';
 import { TemplatePickerSheet } from '@/components/crm/templates/TemplatePickerSheet';
 import type { PickerTemplate } from '@/lib/templatePicker';
+import { uploadSmsMedia } from '@/lib/smsMediaUpload';
 
 type RecipientTab = 'single' | 'segment' | 'custom';
+
+// ---- Attachment validation limits
+const EMAIL_MAX_FILE = 20 * 1024 * 1024; // 20MB / file
+const EMAIL_MAX_TOTAL = 25 * 1024 * 1024; // 25MB combined
+const EMAIL_MAX_COUNT = 10;
+const MMS_MAX_FILE = 5 * 1024 * 1024;    // Twilio hard limit
+const MMS_MAX_COUNT = 10;
+const MMS_ALLOWED = /^(image\/|video\/|audio\/|application\/pdf)/;
+
+function fmtBytes(n: number): string {
+  if (n < 1024) return `${n} B`;
+  if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
+  return `${(n / 1024 / 1024).toFixed(1)} MB`;
+}
+
+function validateAttachments(files: File[], channel: 'email' | 'text'): string | null {
+  if (channel === 'email') {
+    if (files.length > EMAIL_MAX_COUNT) return `Max ${EMAIL_MAX_COUNT} attachments`;
+    const total = files.reduce((s, f) => s + f.size, 0);
+    if (total > EMAIL_MAX_TOTAL) return `Total exceeds ${fmtBytes(EMAIL_MAX_TOTAL)}`;
+    const oversized = files.find((f) => f.size > EMAIL_MAX_FILE);
+    if (oversized) return `${oversized.name} exceeds ${fmtBytes(EMAIL_MAX_FILE)}`;
+  } else {
+    if (files.length > MMS_MAX_COUNT) return `Max ${MMS_MAX_COUNT} MMS attachments`;
+    const oversized = files.find((f) => f.size > MMS_MAX_FILE);
+    if (oversized) return `${oversized.name} exceeds 5MB (Twilio MMS limit)`;
+    const bad = files.find((f) => !MMS_ALLOWED.test(f.type));
+    if (bad) return `${bad.name}: unsupported MMS type (${bad.type || 'unknown'})`;
+  }
+  return null;
+}
 
 const LEAD_VARS = [
   'first_name', 'last_name', 'full_name', 'email', 'phone',
@@ -91,7 +123,40 @@ export function UnifiedComposer() {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [sending, setSending] = useState(false);
   const [attachments, setAttachments] = useState<File[]>([]);
+  const [previewUrls, setPreviewUrls] = useState<Record<string, string>>({});
   const bodyRef = useRef<HTMLTextAreaElement | null>(null);
+
+  // Generate / revoke object URLs for image previews.
+  useEffect(() => {
+    const next: Record<string, string> = {};
+    attachments.forEach((f) => {
+      if (f.type.startsWith('image/')) {
+        const key = `${f.name}:${f.size}:${f.lastModified}`;
+        next[key] = previewUrls[key] ?? URL.createObjectURL(f);
+      }
+    });
+    // Revoke any urls no longer referenced
+    Object.entries(previewUrls).forEach(([k, url]) => {
+      if (!next[k]) URL.revokeObjectURL(url);
+    });
+    setPreviewUrls(next);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [attachments]);
+
+  useEffect(() => {
+    return () => {
+      Object.values(previewUrls).forEach((u) => URL.revokeObjectURL(u));
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const addFiles = (files: File[]) => {
+    if (files.length === 0) return;
+    const merged = [...attachments, ...files];
+    const err = validateAttachments(merged, activeChannel);
+    if (err) { toast.error(err); return; }
+    setAttachments(merged);
+  };
 
   // Reset on each new instance (openComposer call bumps `instance`).
   useEffect(() => {
@@ -225,21 +290,65 @@ export function UnifiedComposer() {
     }
   };
 
+  // Upload email attachments to private `email-attachments` bucket and return
+  // 30-day signed URLs. External recipients aren't authed so signed URLs are
+  // required (never use getPublicUrl — see storage-bucket-lockdown memory).
+  const uploadEmailAttachments = async (): Promise<{ name: string; url: string; size: number; type: string }[]> => {
+    if (attachments.length === 0) return [];
+    const { data: auth } = await supabase.auth.getUser();
+    const userId = auth?.user?.id;
+    if (!userId) throw new Error('Not authenticated');
+    const out: { name: string; url: string; size: number; type: string }[] = [];
+    for (const f of attachments) {
+      const safe = f.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+      const path = `${userId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}-${safe}`;
+      const { error } = await supabase.storage
+        .from('email-attachments')
+        .upload(path, f, { contentType: f.type || 'application/octet-stream', upsert: false });
+      if (error) throw new Error(`Upload failed (${f.name}): ${error.message}`);
+      const { data: signed, error: signErr } = await supabase.storage
+        .from('email-attachments')
+        .createSignedUrl(path, 60 * 60 * 24 * 30); // 30 days
+      if (signErr || !signed?.signedUrl) throw new Error(signErr?.message || 'Could not sign URL');
+      out.push({ name: f.name, url: signed.signedUrl, size: f.size, type: f.type });
+    }
+    return out;
+  };
+
+  const buildAttachmentsHtml = (
+    files: { name: string; url: string; size: number; type: string }[],
+  ): string => {
+    if (files.length === 0) return '';
+    const rows = files
+      .map(
+        (f) =>
+          `<li style="margin:4px 0;"><a href="${f.url}" style="color:#D7A542;text-decoration:none;">📎 ${f.name}</a> <span style="color:#888;font-size:12px;">(${fmtBytes(f.size)})</span></li>`,
+      )
+      .join('');
+    return `<div style="margin-top:20px;padding-top:12px;border-top:1px solid #e5e5e5;font-family:Plus Jakarta Sans,system-ui,sans-serif;font-size:14px;"><div style="color:#666;margin-bottom:6px;">Attachments (links valid 30 days):</div><ul style="list-style:none;padding:0;margin:0;">${rows}</ul></div>`;
+  };
+
   const handleSend = async () => {
     if (sending) return;
+    // Re-validate attachments against current channel (channel toggle may have changed)
+    const attachErr = validateAttachments(attachments, activeChannel);
+    if (attachErr) { toast.error(attachErr); return; }
     setSending(true);
     try {
       if (activeChannel === 'email') {
         if (!toEmail.trim()) { toast.error('Recipient email required'); return; }
         if (!subject.trim()) { toast.error('Subject required'); return; }
         const rendered = await renderViaServer(body, subject, 'email');
+        const uploaded = await uploadEmailAttachments();
+        const html = rendered.text + buildAttachmentsHtml(uploaded);
         const { data, error } = await supabase.functions.invoke('bridge-send-email', {
           body: {
             to: toEmail.trim(),
             subject: rendered.subject || subject,
-            html: rendered.text,
+            html,
             contact_id: leadId,
             send_at: scheduleOn && scheduleAt ? new Date(scheduleAt).toISOString() : null,
+            attachments: uploaded.map((a) => ({ name: a.name, url: a.url, type: a.type, size: a.size })),
           },
         });
         if (error) throw new Error(error.message);
@@ -248,8 +357,9 @@ export function UnifiedComposer() {
         closeComposer();
       } else {
         if (!toPhone.trim()) { toast.error('Recipient phone required'); return; }
-        if (!body.trim()) { toast.error('Message body required'); return; }
+        if (!body.trim() && attachments.length === 0) { toast.error('Message body or media required'); return; }
         const rendered = await renderViaServer(body, null, 'sms');
+        const mediaUrls = attachments.length > 0 ? await uploadSmsMedia(attachments) : [];
         if (channelBlocked) {
           // Stage for approval — INSERT directly to sms_outbound_queue.
           const reason = (settingsQuery.data?.killSwitch ?? true)
@@ -262,7 +372,11 @@ export function UnifiedComposer() {
             status: 'pending_approval',
             reason,
             scheduled_for: scheduleOn && scheduleAt ? new Date(scheduleAt).toISOString() : null,
-            metadata: { staged_via: 'unified_composer', quiet_hours: quietHoursWarn },
+            metadata: {
+              staged_via: 'unified_composer',
+              quiet_hours: quietHoursWarn,
+              media_urls: mediaUrls,
+            },
           });
           if (error) throw error;
           toast.success('Staged for approval', {
@@ -276,12 +390,13 @@ export function UnifiedComposer() {
               contact_id: leadId,
               to: toPhone.trim(),
               body: rendered.text,
+              media_urls: mediaUrls,
               scheduled_for: scheduleOn && scheduleAt ? new Date(scheduleAt).toISOString() : null,
             },
           });
           if (error) throw new Error(error.message);
           if ((data as any)?.error) throw new Error((data as any).error);
-          toast.success('Text sent');
+          toast.success(mediaUrls.length > 0 ? 'MMS sent' : 'Text sent');
           closeComposer();
         }
       }
@@ -502,7 +617,7 @@ export function UnifiedComposer() {
             </div>
 
             {/* Attachments */}
-            <div className="space-y-1">
+            <div className="space-y-1.5">
               <div className="flex items-center justify-between">
                 <Label className="text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
                   {activeChannel === 'email' ? 'Attachments' : 'MMS media'}
@@ -510,30 +625,63 @@ export function UnifiedComposer() {
                 <label className="inline-flex items-center gap-1 text-[11px] text-primary cursor-pointer hover:underline">
                   <Paperclip className="w-3 h-3" /> Add
                   <input
-                    type="file" multiple className="hidden"
-                    onChange={(e) => setAttachments((a) => [...a, ...Array.from(e.target.files ?? [])])}
+                    type="file"
+                    multiple
+                    accept={activeChannel === 'text' ? 'image/*,video/*,audio/*,application/pdf' : undefined}
+                    className="hidden"
+                    onChange={(e) => {
+                      addFiles(Array.from(e.target.files ?? []));
+                      e.currentTarget.value = '';
+                    }}
                   />
                 </label>
               </div>
+              <p className="text-[10.5px] text-muted-foreground">
+                {activeChannel === 'email'
+                  ? `Up to ${EMAIL_MAX_COUNT} files · ${fmtBytes(EMAIL_MAX_FILE)} each · ${fmtBytes(EMAIL_MAX_TOTAL)} total. Sent as secure download links (30-day expiry).`
+                  : `Up to ${MMS_MAX_COUNT} files · 5MB each · images, video, audio, or PDF only.`}
+              </p>
               {attachments.length > 0 && (
-                <ul className="text-[11.5px] text-muted-foreground space-y-0.5">
-                  {attachments.map((f, i) => (
-                    <li key={i} className="flex items-center justify-between">
-                      <span className="truncate">{f.name}</span>
-                      <button
-                        type="button"
-                        onClick={() => setAttachments((a) => a.filter((_, j) => j !== i))}
-                        className="text-[10px] text-destructive hover:underline"
+                <div className="grid grid-cols-2 gap-2">
+                  {attachments.map((f, i) => {
+                    const key = `${f.name}:${f.size}:${f.lastModified}`;
+                    const url = previewUrls[key];
+                    return (
+                      <div
+                        key={key + i}
+                        className="relative rounded-md border border-border/60 bg-muted/30 p-2 flex items-center gap-2"
                       >
-                        Remove
-                      </button>
-                    </li>
-                  ))}
-                </ul>
+                        {url ? (
+                          <img
+                            src={url}
+                            alt={f.name}
+                            className="w-10 h-10 rounded object-cover shrink-0 border border-border/40"
+                          />
+                        ) : (
+                          <div className="w-10 h-10 rounded shrink-0 bg-muted flex items-center justify-center">
+                            <FileText className="w-4 h-4 text-muted-foreground" />
+                          </div>
+                        )}
+                        <div className="min-w-0 flex-1">
+                          <p className="text-[11.5px] font-medium truncate">{f.name}</p>
+                          <p className="text-[10.5px] text-muted-foreground tabular-nums">
+                            {fmtBytes(f.size)}
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setAttachments((a) => a.filter((_, j) => j !== i))}
+                          className="text-muted-foreground hover:text-destructive shrink-0 p-1 rounded hover:bg-background"
+                          aria-label={`Remove ${f.name}`}
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
               )}
             </div>
-
-            {/* Schedule */}
             <div className="rounded-md border border-border/60 p-3 space-y-2">
               <div className="flex items-center justify-between">
                 <Label className="text-[12px] font-medium inline-flex items-center gap-1.5">
