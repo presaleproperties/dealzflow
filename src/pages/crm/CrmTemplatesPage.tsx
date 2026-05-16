@@ -2,8 +2,10 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Mail, MessageSquare, Search, Send, X, Star, StarOff, Plus, Folder,
   Pencil, Trash2, ExternalLink, Tag as TagIcon, Sparkles, FolderPlus,
-  History, MoreHorizontal, Lock, Command as CommandIcon, Clock, Copy,
+  History, MoreHorizontal, Lock, Command as CommandIcon, Clock, Copy, RefreshCw,
 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
