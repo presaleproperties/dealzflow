@@ -297,6 +297,10 @@ export default function CrmLeadsPage() {
       languages: filterLanguage,
       tags: filterTags,
       excludeTags: filterExcludeTags,
+      excludeContactTypes: filterExcludeContactTypes,
+      excludeStatuses: filterExcludeStatuses,
+      excludeSources: filterExcludeSources,
+      excludeLeadTypes: filterExcludeLeadTypes,
       propertyTypes: filterPropertyType,
       cities: filterCity,
       preApproved: filterPreApproved,
@@ -307,7 +311,9 @@ export default function CrmLeadsPage() {
     }),
     [allContacts, debouncedSearch, filterContactType, filterStatus, filterSource,
      filterAgent, filterProject, filterLeadType, filterLanguage, filterTags,
-     filterExcludeTags, filterPropertyType, filterCity, filterPreApproved,
+     filterExcludeTags, filterExcludeContactTypes, filterExcludeStatuses,
+     filterExcludeSources, filterExcludeLeadTypes,
+     filterPropertyType, filterCity, filterPreApproved,
      filterCampaign, letterFilter, activeView],
   );
 
