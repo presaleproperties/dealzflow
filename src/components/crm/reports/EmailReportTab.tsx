@@ -65,6 +65,46 @@ export function EmailReportTab() {
     },
   });
 
+  // Mass-campaign sends — these are NOT in crm_email_log, they live in crm_email_send_jobs
+  const { data: massJobs = [] } = useQuery({
+    queryKey: ['crm-reports-email-mass-jobs', days],
+    queryFn: async (): Promise<EmailLog[]> => {
+      const since = subDays(new Date(), days).toISOString();
+      const PAGE = 1000;
+      let all: any[] = [];
+      let from = 0;
+      let more = true;
+      while (more) {
+        const { data, error } = await supabase
+          .from('crm_email_send_jobs')
+          .select('id,contact_id,subject,status,sent_at,opened_at,clicked_at,open_count,click_count,campaign_id,error_message,created_at')
+          .gte('created_at', since)
+          .order('created_at', { ascending: false })
+          .range(from, from + PAGE - 1);
+        if (error) throw error;
+        const batch = (data ?? []);
+        all = all.concat(batch);
+        more = batch.length === PAGE;
+        from += PAGE;
+      }
+      // Normalize into EmailLog-ish rows (direction='outbound', user_id=null since mass is sent server-side)
+      return all.map((r: any) => ({
+        id: r.id,
+        contact_id: r.contact_id,
+        user_id: null,
+        subject: r.subject ?? '(mass campaign)',
+        sent_at: r.sent_at ?? r.created_at,
+        direction: 'outbound',
+        status: r.status,
+        open_count: r.open_count ?? 0,
+        click_count: r.click_count ?? 0,
+        opened_at: r.opened_at,
+        clicked_at: r.clicked_at,
+        failed_at: ['failed', 'bounced', 'complained', 'rejected'].includes(r.status) ? (r.sent_at ?? r.created_at) : null,
+      })) as EmailLog[];
+    },
+  });
+
   const { data: campaigns = [] } = useQuery({
     queryKey: ['crm-reports-email-campaigns', days],
     queryFn: async () => {
