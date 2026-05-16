@@ -145,6 +145,7 @@ export default function InboxView() {
       let q = supabase
         .from('crm_email_threads')
         .select('id, contact_id, subject, last_message_at, last_message_from, last_message_snippet, message_count, unread_count, is_archived, participants')
+        .is('campaign_id', null)  // Tier 2: hide campaign-origin threads until a reply lands (trigger clears campaign_id on inbound).
         .order('last_message_at', { ascending: false })
         .limit(200);
       if (folder === 'unread') q = q.gt('unread_count', 0).eq('is_archived', false);
