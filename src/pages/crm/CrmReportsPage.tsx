@@ -39,15 +39,19 @@ export default function CrmReportsPage() {
     },
   });
 
-  const { data: messages = [] } = useQuery({
-    queryKey: ['crm-reports-messages'],
+  const { data: emails = [] } = useQuery({
+    queryKey: ['crm-reports-emails-by-agent'],
     queryFn: async () => {
       const PAGE_SIZE = 1000;
       let all: any[] = [];
       let from = 0;
       let hasMore = true;
       while (hasMore) {
-        const { data: batch } = await supabase.from('crm_messages').select('sent_by, direction').range(from, from + PAGE_SIZE - 1);
+        const { data: batch } = await supabase
+          .from('crm_email_log')
+          .select('user_id, direction')
+          .eq('direction', 'outbound')
+          .range(from, from + PAGE_SIZE - 1);
         if (batch && batch.length > 0) { all = all.concat(batch); from += PAGE_SIZE; hasMore = batch.length === PAGE_SIZE; } else { hasMore = false; }
       }
       return all;
