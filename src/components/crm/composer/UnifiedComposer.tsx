@@ -546,12 +546,16 @@ export function UnifiedComposer() {
               to: toPhone.trim(),
               body: rendered.text,
               media_urls: mediaUrls,
-              scheduled_for: scheduleOn && scheduleAt ? new Date(scheduleAt).toISOString() : null,
+              scheduled_for: effectiveSendAt,
             },
           });
           if (error) throw new Error(error.message);
           if ((data as any)?.error) throw new Error((data as any).error);
-          toast.success(mediaUrls.length > 0 ? 'MMS sent' : 'Text sent');
+          toast.success(
+            effectiveSendAt
+              ? (autoQueued ? 'Text auto-queued for 8am Vancouver' : 'Text scheduled')
+              : (mediaUrls.length > 0 ? 'MMS sent' : 'Text sent')
+          );
           closeComposer();
         }
       }
