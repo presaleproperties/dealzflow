@@ -168,6 +168,9 @@ export function UnifiedComposer() {
   const [sending, setSending] = useState(false);
   const [attachments, setAttachments] = useState<File[]>([]);
   const [previewUrls, setPreviewUrls] = useState<Record<string, string>>({});
+  // Recipient tab state
+  const [segmentId, setSegmentId] = useState<string>('');
+  const [customInput, setCustomInput] = useState('');
   const bodyRef = useRef<HTMLTextAreaElement | null>(null);
 
   // Generate / revoke object URLs for image previews.
