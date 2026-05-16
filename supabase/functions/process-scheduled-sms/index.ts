@@ -29,7 +29,6 @@ Deno.serve(async (req) => {
       message: 'Scheduled SMS processor is disabled (billing safeguard).',
     }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   }
-  if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
 
   try {
     const admin = createClient(
