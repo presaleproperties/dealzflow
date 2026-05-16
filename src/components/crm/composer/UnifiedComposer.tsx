@@ -989,12 +989,6 @@ export function UnifiedComposer() {
                   </span>
                 </div>
               )}
-              {false && (
-                <div className="hidden">
-                  <AlertTriangle />
-                  <span>Outside quiet hours (9pm–8am Vancouver) — auto-queue for 8am.</span>
-                </div>
-              )}
             </div>
           </div>
 
