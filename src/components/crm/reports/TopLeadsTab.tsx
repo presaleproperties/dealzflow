@@ -95,7 +95,7 @@ export function TopLeadsTab() {
   const { data: mass = [] } = useQuery({
     queryKey: ['top-leads-mass', days],
     queryFn: () => fetchAll<any>(
-      'crm_email_send_log',
+      'crm_email_send_jobs',
       'contact_id,open_count,click_count,opened_at,clicked_at,sent_at,status',
       since,
     ),
