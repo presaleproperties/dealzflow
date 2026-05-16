@@ -18,6 +18,10 @@ export interface ClientFilterCriteria {
   languages?: string[];
   tags?: string[];
   excludeTags?: string[];
+  excludeContactTypes?: string[];
+  excludeStatuses?: string[];
+  excludeSources?: string[];
+  excludeLeadTypes?: string[];
   propertyTypes?: string[];
   cities?: string[];
   preApproved?: string[]; // ['yes'|'no']
