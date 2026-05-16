@@ -260,6 +260,10 @@ export default function CrmLeadsPage() {
         filterLanguage,
         filterTags,
         filterExcludeTags,
+        filterExcludeContactTypes,
+        filterExcludeStatuses,
+        filterExcludeSources,
+        filterExcludeLeadTypes,
         filterPropertyType,
         filterCity,
         filterPreApproved,
@@ -269,6 +273,7 @@ export default function CrmLeadsPage() {
   }, [
     visibleColumns, filterContactType, filterStatus, filterSource, filterAgent,
     filterProject, filterLeadType, filterLanguage, filterTags, filterExcludeTags,
+    filterExcludeContactTypes, filterExcludeStatuses, filterExcludeSources, filterExcludeLeadTypes,
     filterPropertyType, filterCity, filterPreApproved, filterCampaign,
   ]);
   const [showAdd, setShowAdd] = useState(false);
