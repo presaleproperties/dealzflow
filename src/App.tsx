@@ -6,7 +6,7 @@ import { QuietHoursConfirmHost } from "@/components/crm/sms/QuietHoursConfirm";
 import { UpdateBanner } from "@/components/UpdateBanner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useParams } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { useIsAdmin } from "@/hooks/useAdmin";
 import { useProfile } from "@/hooks/useProfile";
@@ -40,6 +40,12 @@ import AuthPage from "./pages/AuthPage";
 import DashboardPage from "./pages/DashboardPage";
 import NotFound from "./pages/NotFound";
 import PendingApprovalPage from "./pages/PendingApprovalPage";
+
+// Tier 1: preserve the conversationId param when bouncing legacy /crm/chats/:id → /crm/inbox/:id
+function NavigateChatToInbox() {
+  const { conversationId } = useParams<{ conversationId?: string }>();
+  return <Navigate to={`/crm/inbox/${conversationId ?? ''}`} replace />;
+}
 
 // ── Lazy-loaded pages ─────────────────────────────────────────────────────
 const DealsPage = lazy(() => import("./pages/DealsPage"));
@@ -87,10 +93,9 @@ import CrmLeadsPage from "./pages/crm/CrmLeadsPage";
 import LeadDetailPage from "./pages/crm/LeadDetailPage";
 
 const CrmPipelinePage = lazy(() => import("./pages/crm/CrmPipelinePage"));
-const CrmEmailWorkspacePage = lazy(() => import("./pages/crm/CrmEmailWorkspacePage"));
-const CrmChatsPage = lazy(() => import("./pages/crm/CrmChatsPage"));
-const CrmChatThreadPage = lazy(() => import("./pages/crm/CrmChatThreadPage"));
-const CrmChatsShell = lazy(() => import("./pages/crm/CrmChatsShell"));
+// Tier 1: /crm/email & /crm/chats merged into /crm/inbox. These page modules
+// still exist and are lazy-loaded by CrmInboxPage itself, so they are no
+// longer referenced here.
 const CrmMarketingHubPage = lazy(() => import("./pages/crm/CrmMarketingHubPage"));
 const CrmTemplatesPage = lazy(() => import("./pages/crm/CrmTemplatesPage"));
 const CrmEmailBuilderPage = lazy(() => import("./pages/crm/CrmEmailBuilderPage"));
@@ -305,12 +310,14 @@ const App = () => (
                     <Route path="/crm/leads" element={<ProtectedRoute><CrmLayout><CrmLeadsPage /></CrmLayout></ProtectedRoute>} />
                     <Route path="/crm/leads/:id" element={<ProtectedRoute><CrmLayout><LeadDetailPage /></CrmLayout></ProtectedRoute>} />
                     <Route path="/crm/pipeline" element={<ProtectedRoute><CrmLayout><CrmPipelinePage /></CrmLayout></ProtectedRoute>} />
-                    <Route path="/crm/chats" element={<ProtectedRoute><CrmLayout><CrmChatsShell /></CrmLayout></ProtectedRoute>} />
-                    <Route path="/crm/chats/:conversationId" element={<ProtectedRoute><CrmLayout><CrmChatsShell /></CrmLayout></ProtectedRoute>} />
                     <Route path="/crm/inbox" element={<ProtectedRoute><CrmLayout><CrmInboxPage /></CrmLayout></ProtectedRoute>} />
-                    <Route path="/crm/email" element={<ProtectedRoute><CrmLayout><CrmEmailWorkspacePage /></CrmLayout></ProtectedRoute>} />
-                    <Route path="/crm/email/legacy" element={<Navigate to="/crm/email" replace />} />
-                    <Route path="/crm/sms" element={<Navigate to="/crm/chats" replace />} />
+                    <Route path="/crm/inbox/:conversationId" element={<ProtectedRoute><CrmLayout><CrmInboxPage /></CrmLayout></ProtectedRoute>} />
+                    {/* Tier 1: legacy /crm/email and /crm/chats merged into /crm/inbox */}
+                    <Route path="/crm/chats" element={<Navigate to="/crm/inbox" replace />} />
+                    <Route path="/crm/chats/:conversationId" element={<NavigateChatToInbox />} />
+                    <Route path="/crm/email" element={<Navigate to="/crm/inbox?channel=email" replace />} />
+                    <Route path="/crm/email/legacy" element={<Navigate to="/crm/inbox?channel=email" replace />} />
+                    <Route path="/crm/sms" element={<Navigate to="/crm/inbox?channel=text" replace />} />
                     <Route path="/crm/whatsapp" element={<Navigate to="/crm/leads" replace />} />
                     <Route path="/crm/templates" element={<ProtectedRoute><CrmLayout><CrmTemplatesPage /></CrmLayout></ProtectedRoute>} />
                     <Route path="/crm/marketing-hub" element={<ProtectedRoute><CrmLayout><CrmMarketingHubPage /></CrmLayout></ProtectedRoute>} />
