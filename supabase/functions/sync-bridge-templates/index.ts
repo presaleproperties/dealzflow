@@ -67,7 +67,12 @@ Deno.serve(async (req) => {
     // earlier feature flag (PRESALE_TEMPLATE_SYNC_ENABLED) was a stub for the
     // scoped contract — when set to "false" we still attempt the fallback so
     // the agent's "Sync from Presale" button always returns real data.
-    const preferScoped = (Deno.env.get("PRESALE_TEMPLATE_SYNC_ENABLED") ?? "").toLowerCase() === "true";
+    // Always prefer the scoped endpoint (returns the agent's saved templates)
+    // whenever PRESALE_ANON is configured. The legacy feature flag is kept as
+    // an opt-OUT only — set PRESALE_TEMPLATE_SYNC_ENABLED=false to force the
+    // public fallback. Default = scoped first, fallback to serve-auto-templates.
+    const flag = (Deno.env.get("PRESALE_TEMPLATE_SYNC_ENABLED") ?? "").toLowerCase();
+    const preferScoped = flag !== "false";
     if (!BRIDGE_SECRET) {
       return json({ error: "bridge_not_configured" }, 500);
     }
@@ -91,6 +96,7 @@ Deno.serve(async (req) => {
 
     let upstream: Response | null = null;
     let text = "";
+    const diag: Record<string, unknown> = { caller_slug: callerSlug, prefer_scoped: preferScoped, has_presale_anon: !!PRESALE_ANON };
 
     if (preferScoped && PRESALE_ANON) {
       const scoped = await tryFetch(`${BRIDGE_URL}/bridge-list-templates`, {
@@ -103,7 +109,9 @@ Deno.serve(async (req) => {
         },
         body: JSON.stringify({ agent_slug: callerSlug, include_team: true }),
       });
-      if (scoped.res?.ok) { upstream = scoped.res; text = scoped.body; }
+      diag.scoped_status = scoped.res?.status ?? null;
+      diag.scoped_body_preview = scoped.body.slice(0, 240);
+      if (scoped.res?.ok) { upstream = scoped.res; text = scoped.body; diag.used = "scoped"; }
     }
 
     if (!upstream || !upstream.ok) {
@@ -113,10 +121,12 @@ Deno.serve(async (req) => {
       });
       upstream = fallback.res;
       text = fallback.body;
+      diag.fallback_status = fallback.res?.status ?? null;
+      if (!diag.used) diag.used = "fallback_serve_auto_templates";
     }
 
     if (!upstream || !upstream.ok) {
-      return json({ error: "upstream_error", status: upstream?.status, body: text.slice(0, 300) }, 502);
+      return json({ error: "upstream_error", status: upstream?.status, body: text.slice(0, 300), diag }, 502);
     }
 
     let payload: any;
