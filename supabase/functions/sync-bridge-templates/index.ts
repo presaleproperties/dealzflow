@@ -67,7 +67,12 @@ Deno.serve(async (req) => {
     // earlier feature flag (PRESALE_TEMPLATE_SYNC_ENABLED) was a stub for the
     // scoped contract — when set to "false" we still attempt the fallback so
     // the agent's "Sync from Presale" button always returns real data.
-    const preferScoped = (Deno.env.get("PRESALE_TEMPLATE_SYNC_ENABLED") ?? "").toLowerCase() === "true";
+    // Always prefer the scoped endpoint (returns the agent's saved templates)
+    // whenever PRESALE_ANON is configured. The legacy feature flag is kept as
+    // an opt-OUT only — set PRESALE_TEMPLATE_SYNC_ENABLED=false to force the
+    // public fallback. Default = scoped first, fallback to serve-auto-templates.
+    const flag = (Deno.env.get("PRESALE_TEMPLATE_SYNC_ENABLED") ?? "").toLowerCase();
+    const preferScoped = flag !== "false";
     if (!BRIDGE_SECRET) {
       return json({ error: "bridge_not_configured" }, 500);
     }
