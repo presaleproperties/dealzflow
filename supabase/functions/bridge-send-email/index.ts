@@ -87,6 +87,9 @@ interface SendBody {
   // Internal retry path: insert into crm_email_schedule and let the worker
   // deliver via agent Gmail with Presale bridge fallback.
   queue_only?: boolean;
+  // Tier 2: if set, tags the crm_email_log row + (via trigger) the parent
+  // thread so the send stays out of /crm/inbox until the lead replies.
+  campaign_id?: string | null;
 }
 
 Deno.serve(async (req) => {
@@ -328,6 +331,7 @@ Deno.serve(async (req) => {
           sent_at: new Date().toISOString(),
           tracking_id: trackingId,
           status: "sent",
+          campaign_id: body.campaign_id ?? null,
         });
       } catch (e) {
         console.warn("crm_email_log insert failed", e);
