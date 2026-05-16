@@ -34,27 +34,40 @@ interface ResultRow {
 }
 
 function renderForLead(template: string, lead: Record<string, string>, sender: Record<string, string>): string {
-  // Legacy aliases supported by the client renderer (renderForRecipient) — keep
-  // server-side parity so Presale / Lofty templates with {{first_name}},
+  // Legacy aliases — parity with client renderer (renderForRecipient) so Presale /
+  // Lofty templates with {{first_name}}, {{lead_name}}, {{city}}, {{project_name}},
   // {$name}, ${first_name}, etc. all expand instead of being stripped.
   const fullName = [lead.first_name, lead.last_name].filter(Boolean).join(" ");
   const legacy: Record<string, string> = {
+    // Lead name
     name: lead.first_name ?? "",
     first_name: lead.first_name ?? "",
     firstname: lead.first_name ?? "",
+    lead_first_name: lead.first_name ?? "",
     last_name: lead.last_name ?? "",
     lastname: lead.last_name ?? "",
+    lead_last_name: lead.last_name ?? "",
     full_name: fullName,
     lead_name: fullName,
     contact_name: fullName,
     email: lead.email ?? "",
     phone: lead.phone ?? "",
+    // Lead location
+    city: lead.city ?? "",
+    preferred_city: lead.city ?? "",
+    lead_city: lead.city ?? "",
+    // Sender / agent
     agent_name: sender.full_name ?? "",
     agent_first_name: sender.first_name ?? "",
     agent_email: sender.email ?? "",
     agent_phone: sender.phone ?? "",
     sender_name: sender.full_name ?? "",
     sender_email: sender.email ?? "",
+    // Project (best-effort; empty unless mass-send wires per-recipient project context)
+    project_name: lead.project_name ?? "",
+    project_location: lead.project_city ?? "",
+    project_city: lead.project_city ?? "",
+    project_url: lead.project_url ?? "",
     company_name: "The Presale Properties Group",
     unsubscribe: "",
     unsubscribe_link: "",
@@ -106,7 +119,7 @@ Deno.serve(async (req) => {
     // Fetch recipient details
     const { data: contacts, error: cErr } = await supabase
       .from("crm_contacts")
-      .select("id,first_name,last_name,email,phone")
+      .select("id,first_name,last_name,email,phone,city,preferred_city")
       .in("id", body.recipient_ids);
     if (cErr) return json({ error: cErr.message }, 500);
 
@@ -225,6 +238,7 @@ Deno.serve(async (req) => {
           full_name: [c.first_name, c.last_name].filter(Boolean).join(" "),
           email: c.email ?? "",
           phone: c.phone ?? "",
+          city: (c.city ?? c.preferred_city ?? "") as string,
         };
         const subj = renderForLead(body.subject, lead, senderCtx);
         let html = renderForLead(body.body_html, lead, senderCtx);

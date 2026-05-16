@@ -62,23 +62,38 @@ Deno.serve(async (req) => {
     const callerSlug: string | null = member.slug ?? null;
     const isAdmin = member.role === "owner" || member.role === "admin";
 
-    // Feature flag — Presale hasn't shipped the scoped `bridge-list-templates`
-    // contract yet. Return a soft "not ready" so the UI shows a friendly note
-    // instead of a red error toast. Flip PRESALE_TEMPLATE_SYNC_ENABLED to "true"
-    // once Presale deploys.
-    const syncEnabled = (Deno.env.get("PRESALE_TEMPLATE_SYNC_ENABLED") ?? "").toLowerCase() === "true";
-    if (!syncEnabled) {
-      return json({ ok: true, skipped: "presale_sync_disabled", count: 0, results: [] });
-    }
-    if (!BRIDGE_SECRET || !PRESALE_ANON) {
+    // Try Presale's scoped bridge-list-templates first, then fall back to the
+    // public serve-auto-templates endpoint that's been live for months. The
+    // earlier feature flag (PRESALE_TEMPLATE_SYNC_ENABLED) was a stub for the
+    // scoped contract — when set to "false" we still attempt the fallback so
+    // the agent's "Sync from Presale" button always returns real data.
+    const preferScoped = (Deno.env.get("PRESALE_TEMPLATE_SYNC_ENABLED") ?? "").toLowerCase() === "true";
+    if (!BRIDGE_SECRET) {
       return json({ error: "bridge_not_configured" }, 500);
     }
 
-    // Fetch live list from Presale (with retry for cold boots)
+    // Fetch live list from Presale (with retry for cold boots).
+    // Order of attempts:
+    //   1. bridge-list-templates (scoped, agent_slug-aware)  — only if PRESALE_ANON is configured
+    //   2. serve-auto-templates  (public bridge, returns the same shape)
+    async function tryFetch(url: string, init: RequestInit): Promise<{ res: Response | null; body: string }> {
+      let res: Response | null = null;
+      let body = "";
+      for (let i = 0; i < 3; i++) {
+        res = await fetch(url, init);
+        body = await res.text();
+        if (res.ok) break;
+        if (res.status < 500 && res.status !== 408 && res.status !== 429) break;
+        await new Promise((r) => setTimeout(r, 250 * (i + 1)));
+      }
+      return { res, body };
+    }
+
     let upstream: Response | null = null;
     let text = "";
-    for (let i = 0; i < 3; i++) {
-      upstream = await fetch(`${BRIDGE_URL}/bridge-list-templates`, {
+
+    if (preferScoped && PRESALE_ANON) {
+      const scoped = await tryFetch(`${BRIDGE_URL}/bridge-list-templates`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -88,11 +103,18 @@ Deno.serve(async (req) => {
         },
         body: JSON.stringify({ agent_slug: callerSlug, include_team: true }),
       });
-      text = await upstream.text();
-      if (upstream.ok) break;
-      if (upstream.status < 500 && upstream.status !== 408 && upstream.status !== 429) break;
-      await new Promise((r) => setTimeout(r, 250 * (i + 1)));
+      if (scoped.res?.ok) { upstream = scoped.res; text = scoped.body; }
     }
+
+    if (!upstream || !upstream.ok) {
+      const fallback = await tryFetch(`${BRIDGE_URL}/serve-auto-templates`, {
+        method: "GET",
+        headers: { "x-bridge-secret": BRIDGE_SECRET },
+      });
+      upstream = fallback.res;
+      text = fallback.body;
+    }
+
     if (!upstream || !upstream.ok) {
       return json({ error: "upstream_error", status: upstream?.status, body: text.slice(0, 300) }, 502);
     }

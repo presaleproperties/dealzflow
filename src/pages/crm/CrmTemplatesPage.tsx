@@ -2,8 +2,10 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Mail, MessageSquare, Search, Send, X, Star, StarOff, Plus, Folder,
   Pencil, Trash2, ExternalLink, Tag as TagIcon, Sparkles, FolderPlus,
-  History, MoreHorizontal, Lock, Command as CommandIcon, Clock, Copy,
+  History, MoreHorizontal, Lock, Command as CommandIcon, Clock, Copy, RefreshCw,
 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -74,6 +76,34 @@ export default function CrmTemplatesPage() {
   const [sendPresale, setSendPresale] = useState<any | null>(null);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [historyTemplate, setHistoryTemplate] = useState<UnifiedTemplate | null>(null);
+  const [syncing, setSyncing] = useState(false);
+  const qc = useQueryClient();
+
+  const handleSyncFromPresale = async () => {
+    if (syncing) return;
+    setSyncing(true);
+    const toastId = toast.loading('Pulling latest templates from Presale…');
+    try {
+      const { data, error } = await supabase.functions.invoke('sync-bridge-templates', { body: {} });
+      if (error) throw error;
+      const results: Array<{ action: string }> = data?.results ?? [];
+      const created = results.filter(r => r.action === 'created').length;
+      const updated = results.filter(r => r.action === 'updated').length;
+      const unchanged = results.filter(r => r.action === 'unchanged').length;
+      await qc.invalidateQueries({ queryKey: ['unified-templates'] });
+      await qc.invalidateQueries({ queryKey: ['email-templates'] });
+      toast.success(
+        created || updated
+          ? `Synced — ${created} new, ${updated} updated, ${unchanged} unchanged`
+          : `Up to date (${unchanged} templates)`,
+        { id: toastId },
+      );
+    } catch (e: any) {
+      toast.error(`Sync failed: ${e?.message ?? 'unknown error'}`, { id: toastId });
+    } finally {
+      setSyncing(false);
+    }
+  };
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -127,6 +157,17 @@ export default function CrmTemplatesPage() {
           </div>
           <div className="flex items-center gap-2">
             <ChannelToggle channel={channel} onChange={setChannel} />
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-9 gap-1.5"
+              onClick={handleSyncFromPresale}
+              disabled={syncing}
+              title="Pull the latest email templates from Presale Properties"
+            >
+              <RefreshCw className={cn('w-3.5 h-3.5', syncing && 'animate-spin')} />
+              {syncing ? 'Syncing…' : 'Sync from Presale'}
+            </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button size="sm" className="h-9 gap-1.5">
