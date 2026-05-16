@@ -220,7 +220,69 @@ export function UnifiedComposer() {
     setScheduleOn(false);
     setScheduleAt('');
     setAttachments([]);
+    setSegmentId('');
+    setCustomInput('');
   }, [instance, open, channel, initialSubject, initialBody, initialToEmail, initialToPhone, initialToName]);
+
+  // Available segments for the Segment tab
+  const segmentsQuery = useCrmLeadSegments();
+
+  // Reachable recipients in the selected segment, deduplicated and reachable-only
+  // (i.e. has a non-null email for email channel / phone for text). RLS-scoped.
+  const segmentRecipientsQuery = useQuery({
+    queryKey: ['composer-segment-recipients', segmentId, activeChannel],
+    enabled: open && recipientTab === 'segment' && !!segmentId,
+    queryFn: async () => {
+      const field = activeChannel === 'email' ? 'email' : 'phone';
+      const { data, error } = await supabase
+        .from('crm_contacts')
+        .select(`id, ${field}`)
+        .eq('pipeline_segment_id', segmentId)
+        .not(field, 'is', null)
+        .limit(5000);
+      if (error) throw error;
+      const seen = new Set<string>();
+      let totalWithChannel = 0;
+      let duplicates = 0;
+      for (const row of (data ?? []) as Array<Record<string, any>>) {
+        const raw = (row as any)[field] as string | null;
+        if (!raw) continue;
+        totalWithChannel++;
+        const normalized = activeChannel === 'email' ? normalizeEmail(raw) : normalizePhone(raw);
+        if (!normalized) continue;
+        if (seen.has(normalized)) { duplicates++; continue; }
+        seen.add(normalized);
+      }
+      return {
+        totalContacts: (data ?? []).length,
+        reachable: seen.size,
+        duplicates,
+        unreachable: (data ?? []).length - totalWithChannel,
+      };
+    },
+    staleTime: 30_000,
+  });
+
+  // Total contacts in segment (regardless of channel) — for the warning copy
+  const segmentTotalQuery = useQuery({
+    queryKey: ['composer-segment-total', segmentId],
+    enabled: open && recipientTab === 'segment' && !!segmentId,
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from('crm_contacts')
+        .select('id', { count: 'exact', head: true })
+        .eq('pipeline_segment_id', segmentId);
+      if (error) throw error;
+      return count ?? 0;
+    },
+    staleTime: 30_000,
+  });
+
+  // Parsed custom list (memoized)
+  const customParse = useMemo(
+    () => parseCustomList(customInput, activeChannel),
+    [customInput, activeChannel],
+  );
 
   // Hydrate recipient from lead if leadId provided but no explicit to* given.
   const leadQuery = useQuery({
