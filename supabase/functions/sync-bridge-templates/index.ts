@@ -72,11 +72,28 @@ Deno.serve(async (req) => {
       return json({ error: "bridge_not_configured" }, 500);
     }
 
-    // Fetch live list from Presale (with retry for cold boots)
+    // Fetch live list from Presale (with retry for cold boots).
+    // Order of attempts:
+    //   1. bridge-list-templates (scoped, agent_slug-aware)  — only if PRESALE_ANON is configured
+    //   2. serve-auto-templates  (public bridge, returns the same shape)
+    async function tryFetch(url: string, init: RequestInit): Promise<{ res: Response | null; body: string }> {
+      let res: Response | null = null;
+      let body = "";
+      for (let i = 0; i < 3; i++) {
+        res = await fetch(url, init);
+        body = await res.text();
+        if (res.ok) break;
+        if (res.status < 500 && res.status !== 408 && res.status !== 429) break;
+        await new Promise((r) => setTimeout(r, 250 * (i + 1)));
+      }
+      return { res, body };
+    }
+
     let upstream: Response | null = null;
     let text = "";
-    for (let i = 0; i < 3; i++) {
-      upstream = await fetch(`${BRIDGE_URL}/bridge-list-templates`, {
+
+    if (preferScoped && PRESALE_ANON) {
+      const scoped = await tryFetch(`${BRIDGE_URL}/bridge-list-templates`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -86,11 +103,18 @@ Deno.serve(async (req) => {
         },
         body: JSON.stringify({ agent_slug: callerSlug, include_team: true }),
       });
-      text = await upstream.text();
-      if (upstream.ok) break;
-      if (upstream.status < 500 && upstream.status !== 408 && upstream.status !== 429) break;
-      await new Promise((r) => setTimeout(r, 250 * (i + 1)));
+      if (scoped.res?.ok) { upstream = scoped.res; text = scoped.body; }
     }
+
+    if (!upstream || !upstream.ok) {
+      const fallback = await tryFetch(`${BRIDGE_URL}/serve-auto-templates`, {
+        method: "GET",
+        headers: { "x-bridge-secret": BRIDGE_SECRET },
+      });
+      upstream = fallback.res;
+      text = fallback.body;
+    }
+
     if (!upstream || !upstream.ok) {
       return json({ error: "upstream_error", status: upstream?.status, body: text.slice(0, 300) }, 502);
     }
