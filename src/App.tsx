@@ -41,6 +41,12 @@ import DashboardPage from "./pages/DashboardPage";
 import NotFound from "./pages/NotFound";
 import PendingApprovalPage from "./pages/PendingApprovalPage";
 
+// Tier 1: preserve the conversationId param when bouncing legacy /crm/chats/:id → /crm/inbox/:id
+function NavigateChatToInbox() {
+  const { conversationId } = useParams<{ conversationId?: string }>();
+  return <Navigate to={`/crm/inbox/${conversationId ?? ''}`} replace />;
+}
+
 // ── Lazy-loaded pages ─────────────────────────────────────────────────────
 const DealsPage = lazy(() => import("./pages/DealsPage"));
 const NewDealPage = lazy(() => import("./pages/NewDealPage"));
