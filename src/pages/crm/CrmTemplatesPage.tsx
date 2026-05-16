@@ -884,16 +884,7 @@ function TemplateCard({
               </a>
             </Button>
           )}
-          <Button
-            size="icon"
-            variant="outline"
-            className="h-8 w-8"
-            onClick={(e) => { stop(e); onSend(); }}
-            aria-label="Send"
-            title="Send"
-          >
-            <Send className="w-3.5 h-3.5" />
-          </Button>
+          {/* Tier 3: Send button removed — templates are management-only. Send happens from the composer (lead/campaign). */}
           <Button
             size="icon"
             variant="outline"
