@@ -4,7 +4,7 @@
 - **Tech Stack**: React, TS, Supabase, Tailwind, Vite. RLS strictly scoped to `auth.uid() = user_id`.
 - **Style**: Gold (#D7A542) & Dark (#14181F), Plus Jakarta Sans. 'Editorial' minimal: text-only badges, no generic icons.
 - **Data Security**: PII masked. Realtime disabled for `crm_contacts`. QueryClient ignores 401/403.
-- **Constraints**: WhatsApp, Meta Ads, ManyChat, MailerLite, AI chat, external email senders are removed. Do not re-add. SMS via Twilio is now active (see SMS Ecosystem memory).
+- **Constraints**: WhatsApp, Meta Ads, ManyChat, MailerLite, AI chat, external email senders, **Twilio (SMS + Voice)** are removed. Do not re-add. SMS edge functions return HTTP 410 "disabled"; in-app dialer (`useDialer`, `DialerWidget`, `CallButton`) are no-op stubs. SMS UI shell + `crm_sms_log`/`crm_sms_numbers`/`crm_sms_settings` tables remain so a future non-Twilio provider can be plugged in.
 - **Financials**: Timeline from Jan 1, 2023. Team splits: Ravish/Sarb 30% net. Earned YTD uses net payout for teams.
 - **Lead Architecture**: First-match-wins segmentation. Missing last names default to `(unknown)`. Fraser Valley cities only.
 - **PWA**: Command Center is `start_url`. Web Push via aesgcm VAPID. No layout animations for native selects.
