@@ -250,7 +250,10 @@ export function EmailReportTab() {
   };
 
 
-  const outbound = useMemo(() => logs.filter(l => l.direction === 'outbound'), [logs]);
+  const outbound = useMemo(
+    () => [...logs.filter(l => l.direction === 'outbound'), ...massJobs],
+    [logs, massJobs],
+  );
   const totalSent = outbound.length;
   const sentOk = outbound.filter(l => l.status === 'sent').length;
   const failed = outbound.filter(l => l.status === 'failed' || !!l.failed_at).length;
