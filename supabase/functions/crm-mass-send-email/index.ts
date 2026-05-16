@@ -24,6 +24,9 @@ interface Body {
   signature_id?: string | null;
   cc?: string | null;
   bcc?: string | null;
+  // Tier 2: when provided, every recipient send is tagged with this campaign
+  // id so the threads stay out of /crm/inbox until the lead replies.
+  campaign_id?: string | null;
 }
 
 interface ResultRow {
