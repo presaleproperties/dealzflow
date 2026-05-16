@@ -6,7 +6,7 @@ import { QuietHoursConfirmHost } from "@/components/crm/sms/QuietHoursConfirm";
 import { UpdateBanner } from "@/components/UpdateBanner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useParams } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { useIsAdmin } from "@/hooks/useAdmin";
 import { useProfile } from "@/hooks/useProfile";
