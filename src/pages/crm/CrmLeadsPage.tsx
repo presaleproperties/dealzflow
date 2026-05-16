@@ -556,6 +556,10 @@ export default function CrmLeadsPage() {
     filterLanguage.length > 0 ? 1 : 0,
     filterTags.length > 0 ? 1 : 0,
     filterExcludeTags.length > 0 ? 1 : 0,
+    filterExcludeContactTypes.length > 0 ? 1 : 0,
+    filterExcludeStatuses.length > 0 ? 1 : 0,
+    filterExcludeSources.length > 0 ? 1 : 0,
+    filterExcludeLeadTypes.length > 0 ? 1 : 0,
     filterPropertyType.length > 0 ? 1 : 0,
     filterCity.length > 0 ? 1 : 0,
     filterPreApproved.length > 0 ? 1 : 0,
@@ -566,6 +570,8 @@ export default function CrmLeadsPage() {
     setFilterContactType(''); setFilterStatus([]); setFilterSource([]); setFilterAgent([]);
     setFilterProject([]); setFilterLeadType([]); setFilterLanguage([]); setFilterTags([]);
     setFilterExcludeTags([]);
+    setFilterExcludeContactTypes([]); setFilterExcludeStatuses([]);
+    setFilterExcludeSources([]); setFilterExcludeLeadTypes([]);
     setFilterPropertyType([]); setFilterCity([]); setFilterPreApproved([]); setFilterCampaign([]);
     setLetterFilter(''); setPage(1);
   };
@@ -577,6 +583,10 @@ export default function CrmLeadsPage() {
       project: () => setFilterProject([]), leadType: () => setFilterLeadType([]),
       language: () => setFilterLanguage([]), tags: () => setFilterTags([]),
       excludeTags: () => setFilterExcludeTags([]),
+      excludeContactTypes: () => setFilterExcludeContactTypes([]),
+      excludeStatuses: () => setFilterExcludeStatuses([]),
+      excludeSources: () => setFilterExcludeSources([]),
+      excludeLeadTypes: () => setFilterExcludeLeadTypes([]),
       propertyType: () => setFilterPropertyType([]), city: () => setFilterCity([]),
       preApproved: () => setFilterPreApproved([]), campaign: () => setFilterCampaign([]),
     };
