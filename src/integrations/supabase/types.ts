@@ -1305,6 +1305,7 @@ export type Database = {
         Row: {
           bcc: string | null
           body: string | null
+          bot_open_count: number
           cc: string | null
           click_count: number
           clicked_at: string | null
@@ -1313,8 +1314,10 @@ export type Database = {
           direction: string
           error_message: string | null
           failed_at: string | null
+          first_human_opened_at: string | null
           gmail_message_id: string | null
           gmail_thread_id: string | null
+          human_open_count: number
           id: string
           in_reply_to: string | null
           last_clicked_at: string | null
@@ -1332,6 +1335,7 @@ export type Database = {
         Insert: {
           bcc?: string | null
           body?: string | null
+          bot_open_count?: number
           cc?: string | null
           click_count?: number
           clicked_at?: string | null
@@ -1340,8 +1344,10 @@ export type Database = {
           direction?: string
           error_message?: string | null
           failed_at?: string | null
+          first_human_opened_at?: string | null
           gmail_message_id?: string | null
           gmail_thread_id?: string | null
+          human_open_count?: number
           id?: string
           in_reply_to?: string | null
           last_clicked_at?: string | null
@@ -1359,6 +1365,7 @@ export type Database = {
         Update: {
           bcc?: string | null
           body?: string | null
+          bot_open_count?: number
           cc?: string | null
           click_count?: number
           clicked_at?: string | null
@@ -1367,8 +1374,10 @@ export type Database = {
           direction?: string
           error_message?: string | null
           failed_at?: string | null
+          first_human_opened_at?: string | null
           gmail_message_id?: string | null
           gmail_thread_id?: string | null
+          human_open_count?: number
           id?: string
           in_reply_to?: string | null
           last_clicked_at?: string | null
@@ -1533,6 +1542,7 @@ export type Database = {
       }
       crm_email_send_log: {
         Row: {
+          bot_open_count: number
           campaign_id: string | null
           click_count: number
           clicked_at: string | null
@@ -1541,6 +1551,8 @@ export type Database = {
           created_at: string
           email_to: string
           error_message: string | null
+          first_human_opened_at: string | null
+          human_open_count: number
           id: string
           last_clicked_at: string | null
           last_opened_at: string | null
@@ -1557,6 +1569,7 @@ export type Database = {
           tracking_id: string | null
         }
         Insert: {
+          bot_open_count?: number
           campaign_id?: string | null
           click_count?: number
           clicked_at?: string | null
@@ -1565,6 +1578,8 @@ export type Database = {
           created_at?: string
           email_to: string
           error_message?: string | null
+          first_human_opened_at?: string | null
+          human_open_count?: number
           id?: string
           last_clicked_at?: string | null
           last_opened_at?: string | null
@@ -1581,6 +1596,7 @@ export type Database = {
           tracking_id?: string | null
         }
         Update: {
+          bot_open_count?: number
           campaign_id?: string | null
           click_count?: number
           clicked_at?: string | null
@@ -1589,6 +1605,8 @@ export type Database = {
           created_at?: string
           email_to?: string
           error_message?: string | null
+          first_human_opened_at?: string | null
+          human_open_count?: number
           id?: string
           last_clicked_at?: string | null
           last_opened_at?: string | null
