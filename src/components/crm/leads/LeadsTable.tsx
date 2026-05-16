@@ -24,8 +24,7 @@ import { Plus } from 'lucide-react';
 import { LeadStatusBadge } from './LeadStatusBadge';
 import { Pill } from '@/components/crm/shared/Pill';
 import { SwipeRow } from './SwipeRow';
-import { SendTextDialog } from './SendTextDialog';
-import { ComposeEmailDialog } from './ComposeEmailDialog';
+import { openComposer } from '@/stores/useComposer';
 import { useIsCompact as useIsMobile } from '@/hooks/use-mobile';
 import { usePrefetchLead } from '@/hooks/usePrefetchCrm';
 import { toast } from 'sonner';
@@ -733,8 +732,7 @@ export function LeadsTable({
   const isMobile = useIsMobile();
   const prefetchLead = usePrefetchLead();
   const updateContact = useUpdateCrmContact();
-  const [smsContact, setSmsContact] = useState<CrmContact | null>(null);
-  const [emailContact, setEmailContact] = useState<CrmContact | null>(null);
+  // (smsContact/emailContact dialogs removed — Tier 4 routes through UnifiedComposer)
 
   const columns = useMemo(() => ALL_COLUMNS.filter(c => visibleColumns.has(c.key)), [visibleColumns]);
 
@@ -839,8 +837,8 @@ export function LeadsTable({
               hasPhone={!!contact.phone}
               hasEmail={!!contact.email}
               onCall={() => contact.phone && (window.location.href = `tel:${contact.phone}`)}
-              onText={() => contact.phone && (window.location.href = `sms:${contact.phone}`)}
-              onEmail={() => contact.email && setEmailContact(contact)}
+              onText={() => contact.phone && openComposer({ channel: 'text', leadId: contact.id })}
+              onEmail={() => contact.email && openComposer({ channel: 'email', leadId: contact.id })}
             >
               <div
                 onPointerEnter={() => prefetchLead(contact.id)}
@@ -862,13 +860,6 @@ export function LeadsTable({
             <PaginationBar page={page} pageSize={pageSize} totalCount={totalCount} isFetching={isFetching}
               onPageChange={onPageChange} onPageSizeChange={onPageSizeChange} isMobile />
           </div>
-        )}
-        {emailContact && (
-          <ComposeEmailDialog
-            contact={emailContact}
-            open={!!emailContact}
-            onOpenChange={(o) => !o && setEmailContact(null)}
-          />
         )}
       </div>
     );
@@ -956,7 +947,7 @@ export function LeadsTable({
                     </td>
                     {columns.map(col => (
                       <td key={col.key} className="px-3 py-3.5 align-middle overflow-hidden">
-                        <CellContent col={col} contact={contact} updateContact={updateContact} tagLibrary={tagLibrary} onSendSms={setSmsContact} onSendEmail={setEmailContact} />
+                        <CellContent col={col} contact={contact} updateContact={updateContact} tagLibrary={tagLibrary} onSendSms={(c) => openComposer({ channel: 'text', leadId: c.id })} onSendEmail={(c) => openComposer({ channel: 'email', leadId: c.id })} />
                       </td>
                     ))}
                   </tr>
