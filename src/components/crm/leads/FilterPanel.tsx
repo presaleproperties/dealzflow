@@ -32,6 +32,14 @@ interface FilterPanelProps {
   setFilterTags: (v: string[]) => void;
   filterExcludeTags: string[];
   setFilterExcludeTags: (v: string[]) => void;
+  filterExcludeContactTypes: string[];
+  setFilterExcludeContactTypes: (v: string[]) => void;
+  filterExcludeStatuses: string[];
+  setFilterExcludeStatuses: (v: string[]) => void;
+  filterExcludeSources: string[];
+  setFilterExcludeSources: (v: string[]) => void;
+  filterExcludeLeadTypes: string[];
+  setFilterExcludeLeadTypes: (v: string[]) => void;
   filterPropertyType: string[];
   setFilterPropertyType: (v: string[]) => void;
   filterCity: string[];
@@ -236,6 +244,14 @@ export function FilterPanel({
   setFilterTags,
   filterExcludeTags,
   setFilterExcludeTags,
+  filterExcludeContactTypes,
+  setFilterExcludeContactTypes,
+  filterExcludeStatuses,
+  setFilterExcludeStatuses,
+  filterExcludeSources,
+  setFilterExcludeSources,
+  filterExcludeLeadTypes,
+  setFilterExcludeLeadTypes,
   filterPropertyType,
   setFilterPropertyType,
   filterCity,
@@ -347,11 +363,66 @@ export function FilterPanel({
           })()}
           <FilterAccordion label="Language" options={[...CRM_LANGUAGES]} selected={filterLanguage} onChange={setFilterLanguage} />
           <FilterAccordion label="Tags" options={dynamicTags} selected={filterTags} onChange={setFilterTags} optionCounts={tagCounts} />
-          <FilterAccordion label="Exclude Tags" options={dynamicTags} selected={filterExcludeTags} onChange={setFilterExcludeTags} optionCounts={tagCounts} tone="exclude" />
           <FilterAccordion label="Property Type" options={['condo', 'townhome', 'both']} selected={filterPropertyType} onChange={setFilterPropertyType} optionLabels={{ condo: 'Condo', townhome: 'Townhome', both: 'Both' }} />
           <FilterAccordion label="City Preference" options={[...FRASER_VALLEY_CITIES]} selected={filterCity} onChange={setFilterCity} />
           <FilterAccordion label="Pre-Approved" options={['yes', 'no']} selected={filterPreApproved} onChange={setFilterPreApproved} optionLabels={{ yes: 'Yes', no: 'No' }} />
           <FilterAccordion label="Campaign" options={dynamicCampaigns} selected={filterCampaign} onChange={setFilterCampaign} />
+
+          {/* ── Exclusions group ─────────────────────────────────────────
+              Heavy-use for clean mass-email targeting: carve out past clients,
+              realtors, specific statuses/sources/lead-types and blocked tags. */}
+          <div className="border-t-2 border-destructive/20 mt-3 pt-2 bg-destructive/[0.02]">
+            <div className="px-3 pt-1 pb-2">
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-destructive/80">Exclude</p>
+              <p className="text-[10px] text-muted-foreground mt-0.5 leading-snug">Carve out groups before mass actions.</p>
+              <div className="mt-2 flex flex-wrap gap-1">
+                {[
+                  { label: 'Past Clients', val: 'past_client' },
+                  { label: 'Realtors', val: 'realtor' },
+                ].map(opt => {
+                  const on = filterExcludeContactTypes.includes(opt.val);
+                  return (
+                    <button
+                      key={opt.val}
+                      onClick={() => setFilterExcludeContactTypes(
+                        on
+                          ? filterExcludeContactTypes.filter(v => v !== opt.val)
+                          : [...filterExcludeContactTypes, opt.val],
+                      )}
+                      className={cn(
+                        'px-2 py-1 rounded-md text-[11px] font-medium transition-colors border',
+                        on
+                          ? 'bg-destructive/15 text-destructive border-destructive/30'
+                          : 'bg-muted/30 text-muted-foreground border-border/40 hover:bg-muted/50',
+                      )}
+                    >
+                      {on ? '− ' : '+ '}{opt.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            <FilterAccordion label="Exclude Tags" options={dynamicTags} selected={filterExcludeTags} onChange={setFilterExcludeTags} optionCounts={tagCounts} tone="exclude" />
+            <FilterAccordion label="Exclude Status" options={[...LEAD_STATUSES]} selected={filterExcludeStatuses} onChange={setFilterExcludeStatuses} tone="exclude" />
+            <FilterAccordion label="Exclude Source" options={[...LEAD_SOURCES]} selected={filterExcludeSources} onChange={setFilterExcludeSources} tone="exclude" />
+            <FilterAccordion
+              label="Exclude Lead Type"
+              options={(() => {
+                const seen = new Set<string>();
+                const merged: string[] = [];
+                [...LEAD_TYPES].forEach(t => { seen.add(t.toLowerCase()); merged.push(t); });
+                (dynamicLeadTypes ?? []).forEach(t => {
+                  if (!seen.has(t.toLowerCase())) { seen.add(t.toLowerCase()); merged.push(t); }
+                });
+                return merged;
+              })()}
+              selected={filterExcludeLeadTypes}
+              onChange={setFilterExcludeLeadTypes}
+              optionLabels={LEAD_TYPE_LABELS}
+              optionCounts={leadTypeCounts}
+              tone="exclude"
+            />
+          </div>
         </div>
       </ScrollArea>
     </div>

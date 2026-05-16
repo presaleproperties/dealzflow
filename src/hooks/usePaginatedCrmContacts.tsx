@@ -107,6 +107,14 @@ interface PaginatedFilters {
   languages: string[];
   tags: string[];
   excludeTags?: string[];
+  /** Exclusions — used heavily for clean mass-email targeting. Each list
+   *  is applied as a NOT IN against the matching column so users can carve
+   *  out past clients, realtors, specific statuses/sources/lead-types and
+   *  blocked tags in one pass. */
+  excludeContactTypes?: string[];
+  excludeStatuses?: string[];
+  excludeSources?: string[];
+  excludeLeadTypes?: string[];
   propertyTypes?: string[];
   cities?: string[];
   preApproved?: string[];
@@ -247,6 +255,27 @@ function applyAllContactFilters(query: any, filters: PaginatedFilters) {
         // PostgREST: not('tags', 'ov', '{a,b}')
         const escaped = filters.excludeTags.map(t => `"${t.replace(/"/g, '\\"')}"`).join(',');
         query = query.not('tags', 'ov', `{${escaped}}`);
+      }
+      if (filters.excludeContactTypes && filters.excludeContactTypes.length > 0) {
+        const inList = filters.excludeContactTypes.map(t => `"${t}"`).join(',');
+        query = query.not('contact_type', 'in', `(${inList})`);
+      }
+      if (filters.excludeStatuses && filters.excludeStatuses.length > 0) {
+        const inList = filters.excludeStatuses.map(t => `"${t}"`).join(',');
+        query = query.not('status', 'in', `(${inList})`);
+      }
+      if (filters.excludeSources && filters.excludeSources.length > 0) {
+        const inList = filters.excludeSources.map(t => `"${t}"`).join(',');
+        query = query.not('source', 'in', `(${inList})`);
+      }
+      if (filters.excludeLeadTypes && filters.excludeLeadTypes.length > 0) {
+        // Exclude contacts whose legacy `lead_type` OR array `lead_types[]`
+        // matches any of the excluded labels. PostgREST cannot AND two NOTs
+        // through .or(), so apply both negations sequentially.
+        const inList = filters.excludeLeadTypes.map(t => `"${t}"`).join(',');
+        const arrLiteral = `{${filters.excludeLeadTypes.map(t => `"${t.replace(/"/g, '\\"')}"`).join(',')}}`;
+        query = query.not('lead_type', 'in', `(${inList})`);
+        query = query.not('lead_types', 'ov', arrLiteral);
       }
       if (filters.propertyTypes && filters.propertyTypes.length > 0) {
         query = query.in('property_type_pref', filters.propertyTypes);

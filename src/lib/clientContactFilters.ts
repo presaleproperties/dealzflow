@@ -18,6 +18,10 @@ export interface ClientFilterCriteria {
   languages?: string[];
   tags?: string[];
   excludeTags?: string[];
+  excludeContactTypes?: string[];
+  excludeStatuses?: string[];
+  excludeSources?: string[];
+  excludeLeadTypes?: string[];
   propertyTypes?: string[];
   cities?: string[];
   preApproved?: string[]; // ['yes'|'no']
@@ -89,6 +93,13 @@ export function applyClientFilters(
     }
     if (f.excludeTags?.length) {
       if (arrAny(f.excludeTags, c.tags ?? [])) return false;
+    }
+    if (f.excludeContactTypes?.length && f.excludeContactTypes.includes(c.contact_type ?? '')) return false;
+    if (f.excludeStatuses?.length && f.excludeStatuses.includes(c.status ?? '')) return false;
+    if (f.excludeSources?.length && f.excludeSources.includes(c.source ?? '')) return false;
+    if (f.excludeLeadTypes?.length) {
+      const types: string[] = (c.lead_types?.length ? c.lead_types : (c.lead_type ? [c.lead_type] : []));
+      if (arrAny(f.excludeLeadTypes, types)) return false;
     }
 
     if (f.letterFilter) {
