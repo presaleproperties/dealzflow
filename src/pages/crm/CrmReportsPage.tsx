@@ -11,6 +11,8 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { format, subDays, parseISO, startOfMonth, differenceInDays } from 'date-fns';
 import { useCrmAccess } from '@/contexts/CrmAccessContext';
+import { EmailReportTab } from '@/components/crm/reports/EmailReportTab';
+import { SmsReportTab } from '@/components/crm/reports/SmsReportTab';
 
 const FUNNEL_STAGES = [
   'New Lead', 'Contacted', 'Nurturing', 'Hot / Engaged',
