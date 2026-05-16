@@ -498,13 +498,17 @@ export function UnifiedComposer() {
             subject: rendered.subject || subject,
             html,
             contact_id: leadId,
-            send_at: scheduleOn && scheduleAt ? new Date(scheduleAt).toISOString() : null,
+            send_at: effectiveSendAt,
             attachments: uploaded.map((a) => ({ name: a.name, url: a.url, type: a.type, size: a.size })),
           },
         });
         if (error) throw new Error(error.message);
         if ((data as any)?.error) throw new Error((data as any).error);
-        toast.success(scheduleOn ? 'Email scheduled' : 'Email sent');
+        toast.success(
+          effectiveSendAt
+            ? (autoQueued ? 'Email auto-queued for 8am Vancouver' : 'Email scheduled')
+            : 'Email sent'
+        );
         closeComposer();
       } else {
         if (!toPhone.trim()) { toast.error('Recipient phone required'); return; }
