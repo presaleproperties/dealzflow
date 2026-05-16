@@ -25,6 +25,8 @@ type EmailLog = {
   status: string;
   open_count: number | null;
   click_count: number | null;
+  human_open_count?: number | null;
+  bot_open_count?: number | null;
   opened_at: string | null;
   clicked_at: string | null;
   failed_at: string | null;
