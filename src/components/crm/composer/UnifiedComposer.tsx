@@ -381,7 +381,7 @@ export function UnifiedComposer() {
     (settingsQuery.data?.killSwitch ?? true) ||
     (smsCountQuery.data ?? 0) >= (settingsQuery.data?.dailyCap ?? 500)
   );
-  const quietHoursWarn = activeChannel === 'text' && inVancouverQuietHours();
+  const quietHoursWarn = inVancouverQuietHours();
   const senderName = profile?.full_name || presaleAgent?.name || user?.email || '';
   const senderEmail = user?.email || presaleAgent?.email || '';
   const senderPhone = presaleAgent?.phone || '';
