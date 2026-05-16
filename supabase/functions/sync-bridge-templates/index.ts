@@ -200,7 +200,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    return json({ ok: true, count: templates.length, results, synced_at: now });
+    return json({ ok: true, count: templates.length, results, synced_at: now, diag });
   } catch (e) {
     console.error("[sync-bridge-templates]", e);
     return json({ error: String(e) }, 500);
