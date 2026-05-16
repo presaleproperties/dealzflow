@@ -31,16 +31,98 @@ function normalizePhone(input: string): string | null {
   return d.length >= 8 ? `+${d}` : null;
 }
 
-// 🚨 KILL SWITCH 2026-05-16 — bulk SMS disabled after billing incident.
-const SMS_KILL_SWITCH_ACTIVE = true;
+// 🚨 STAGE MODE 2026-05-16 — bulk SMS is staged (campaign created with
+// status='draft', per-recipient log rows written with status='staged'). No
+// Twilio dispatch. Admin must release from the staged-queue UI.
+const SMS_STAGE_MODE = true;
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
-  if (SMS_KILL_SWITCH_ACTIVE) {
-    return new Response(JSON.stringify({
-      error: 'Bulk SMS sending is temporarily disabled by your admin (billing safeguard).',
-      kill_switch: true,
-    }), { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+
+  if (SMS_STAGE_MODE) {
+    try {
+      const authHeader = req.headers.get('Authorization');
+      if (!authHeader) {
+        return new Response(JSON.stringify({ error: 'Missing Authorization' }), {
+          status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      const supabase = createClient(
+        Deno.env.get('SUPABASE_URL')!,
+        Deno.env.get('SUPABASE_ANON_KEY')!,
+        { global: { headers: { Authorization: authHeader } } }
+      );
+      const admin = createClient(
+        Deno.env.get('SUPABASE_URL')!,
+        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+      );
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+          status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      const payload = await req.json().catch(() => ({}));
+      const name: string = (payload?.name || 'Untitled blast').toString().slice(0, 200);
+      const text: string = (payload?.body || '').toString();
+      const media_urls: string[] = Array.isArray(payload?.media_urls) ? payload.media_urls : [];
+      const contact_ids: string[] = Array.isArray(payload?.contact_ids) ? payload.contact_ids : [];
+      const channel: 'sms' | 'whatsapp' = payload?.channel === 'whatsapp' ? 'whatsapp' : 'sms';
+      if (!text.trim() || contact_ids.length === 0) {
+        return new Response(JSON.stringify({ error: 'body and contact_ids are required to stage a blast' }), {
+          status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      const { data: contacts } = await admin
+        .from('crm_contacts').select('id, first_name, last_name, phone')
+        .in('id', contact_ids).not('phone', 'is', null);
+      const valid = (contacts || [])
+        .map((c: any) => ({ contact: c, phone: normalizePhone(c.phone) }))
+        .filter((r: any) => r.phone) as { contact: any; phone: string }[];
+      if (valid.length === 0) {
+        return new Response(JSON.stringify({ error: 'No recipients with valid phone numbers' }), {
+          status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      const { data: campaign } = await admin.from('crm_sms_campaigns').insert({
+        name: `[STAGED] ${name}`,
+        body: text, media_urls,
+        segment_filter: { contact_ids: valid.map(v => v.contact.id) },
+        recipients_count: valid.length,
+        status: 'draft',
+        throttle_per_min: 60,
+        created_by: user.id,
+        channel,
+      }).select('id').single();
+      // Stage one crm_sms_log row per recipient so the topnav badge reflects
+      // total staged messages (not just campaigns) and Discard works per-row.
+      const rows = valid.map(r => ({
+        user_id: user.id,
+        contact_id: r.contact.id,
+        direction: 'outbound' as const,
+        to_number: r.phone,
+        from_number: null as string | null,
+        body: renderTemplate(text, r.contact),
+        media_urls,
+        message_type: media_urls.length > 0 ? 'mms' : 'sms',
+        status: 'staged' as const,
+        campaign_id: campaign?.id ?? null,
+        channel,
+        error_message: 'STAGED (bulk) — admin must release before this is sent.',
+      }));
+      for (let i = 0; i < rows.length; i += 500) {
+        await admin.from('crm_sms_log').insert(rows.slice(i, i + 500));
+      }
+      return new Response(JSON.stringify({
+        ok: true, staged: true, campaign_id: campaign?.id, recipient_count: valid.length,
+        message: 'Blast staged. An admin must release the staged queue before it is sent.',
+      }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Unknown error';
+      return new Response(JSON.stringify({ error: msg, staged: false }), {
+        status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
   }
 
   try {
