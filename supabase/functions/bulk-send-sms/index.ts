@@ -31,7 +31,17 @@ function normalizePhone(input: string): string | null {
   return d.length >= 8 ? `+${d}` : null;
 }
 
+// 🚨 KILL SWITCH 2026-05-16 — bulk SMS disabled after billing incident.
+const SMS_KILL_SWITCH_ACTIVE = true;
+
 Deno.serve(async (req) => {
+  if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
+  if (SMS_KILL_SWITCH_ACTIVE) {
+    return new Response(JSON.stringify({
+      error: 'Bulk SMS sending is temporarily disabled by your admin (billing safeguard).',
+      kill_switch: true,
+    }), { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+  }
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
 
   try {
