@@ -18,7 +18,17 @@ function nextRetryIso(attempt: number): string {
   return new Date(Date.now() + delayMs).toISOString();
 }
 
+// 🚨 KILL SWITCH 2026-05-16 — scheduled SMS processor disabled after billing incident.
+const SMS_KILL_SWITCH_ACTIVE = true;
+
 Deno.serve(async (req) => {
+  if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
+  if (SMS_KILL_SWITCH_ACTIVE) {
+    return new Response(JSON.stringify({
+      ok: true, killSwitch: true,
+      message: 'Scheduled SMS processor is disabled (billing safeguard).',
+    }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+  }
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
 
   try {
