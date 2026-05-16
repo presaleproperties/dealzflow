@@ -1306,6 +1306,7 @@ export type Database = {
           bcc: string | null
           body: string | null
           bot_open_count: number
+          campaign_id: string | null
           cc: string | null
           click_count: number
           clicked_at: string | null
@@ -1336,6 +1337,7 @@ export type Database = {
           bcc?: string | null
           body?: string | null
           bot_open_count?: number
+          campaign_id?: string | null
           cc?: string | null
           click_count?: number
           clicked_at?: string | null
@@ -1366,6 +1368,7 @@ export type Database = {
           bcc?: string | null
           body?: string | null
           bot_open_count?: number
+          campaign_id?: string | null
           cc?: string | null
           click_count?: number
           clicked_at?: string | null
@@ -1393,6 +1396,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "crm_email_log_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "crm_email_campaigns"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "crm_email_log_contact_id_fkey"
             columns: ["contact_id"]
@@ -1799,6 +1809,7 @@ export type Database = {
       }
       crm_email_threads: {
         Row: {
+          campaign_id: string | null
           contact_id: string | null
           created_at: string
           gmail_thread_id: string | null
@@ -1815,6 +1826,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          campaign_id?: string | null
           contact_id?: string | null
           created_at?: string
           gmail_thread_id?: string | null
@@ -1831,6 +1843,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          campaign_id?: string | null
           contact_id?: string | null
           created_at?: string
           gmail_thread_id?: string | null
@@ -1847,6 +1860,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "crm_email_threads_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "crm_email_campaigns"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "crm_email_threads_contact_id_fkey"
             columns: ["contact_id"]
