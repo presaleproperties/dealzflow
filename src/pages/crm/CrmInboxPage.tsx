@@ -13,9 +13,11 @@
  */
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
-import { Search, Phone } from 'lucide-react';
+import { Search, Phone, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Button } from '@/components/ui/button';
+import { openComposer } from '@/stores/useComposer';
 
 const CrmEmailWorkspacePage = lazy(() => import('./CrmEmailWorkspacePage'));
 const CrmChatsShell = lazy(() => import('./CrmChatsShell'));
@@ -112,6 +114,16 @@ export default function CrmInboxPage() {
         {/* Title + search row */}
         <div className="hidden md:flex px-4 lg:px-6 pt-3 pb-2 items-center gap-3">
           <h1 className="text-[15px] font-semibold tracking-tight">Inbox</h1>
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-7 px-2.5 text-[12px] gap-1.5"
+            onClick={() => openComposer({
+              channel: active === 'text' ? 'text' : 'email',
+            })}
+          >
+            <Plus className="w-3.5 h-3.5" /> Compose
+          </Button>
           <div className="ml-auto relative w-full max-w-[360px]">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" strokeWidth={1.8} />
             <input
