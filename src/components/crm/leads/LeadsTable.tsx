@@ -727,6 +727,7 @@ export function LeadsTable({
   selectedIds, onSelectionChange,
   page, pageSize, onPageChange, onPageSizeChange,
   sortKey, sortDir, onSort, visibleColumns, hidePagination = false,
+  onSelectAllFiltered,
 }: LeadsTableProps) {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
