@@ -100,6 +100,50 @@ function inVancouverQuietHours(d = new Date()): boolean {
   return hour >= 21 || hour < 8;
 }
 
+// ---- Recipient parsing helpers (Segment + Custom list)
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+// Conservative: 10–15 digits after stripping non-digits, optional leading +.
+function normalizePhone(raw: string): string | null {
+  const trimmed = raw.trim();
+  if (!trimmed) return null;
+  const hasPlus = trimmed.startsWith('+');
+  const digits = trimmed.replace(/\D/g, '');
+  if (digits.length < 10 || digits.length > 15) return null;
+  if (!hasPlus && digits.length === 10) return `+1${digits}`;
+  return `+${digits}`;
+}
+function normalizeEmail(raw: string): string | null {
+  const v = raw.trim().toLowerCase();
+  return EMAIL_RE.test(v) ? v : null;
+}
+
+export type CustomListParse = {
+  valid: string[];          // deduped, normalized
+  invalid: string[];        // unparseable rows
+  duplicates: number;       // count removed by dedup
+  totalRows: number;        // non-empty rows entered
+};
+
+function parseCustomList(input: string, channel: 'email' | 'text'): CustomListParse {
+  const rows = input
+    .split(/[\n,;\t]+/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+  const seen = new Set<string>();
+  const valid: string[] = [];
+  const invalid: string[] = [];
+  let duplicates = 0;
+  for (const row of rows) {
+    const normalized = channel === 'email' ? normalizeEmail(row) : normalizePhone(row);
+    if (!normalized) { invalid.push(row); continue; }
+    if (seen.has(normalized)) { duplicates++; continue; }
+    seen.add(normalized);
+    valid.push(normalized);
+  }
+  return { valid, invalid, duplicates, totalRows: rows.length };
+}
+
 export function UnifiedComposer() {
   const {
     open, channel, mode, leadId, threadId, initialSubject, initialBody,
