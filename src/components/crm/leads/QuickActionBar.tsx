@@ -376,9 +376,14 @@ export function QuickActionBar({ contact }: Props) {
             {(mode === 'email' || mode === 'text') && (
               <button
                 type="button"
-                onClick={() => mode === 'email' ? setShowAdvancedEmail(true) : setShowAdvancedText(true)}
+                onClick={() => openComposer({
+                  channel: mode === 'email' ? 'email' : 'text',
+                  leadId: contact.id,
+                  subject,
+                  body,
+                })}
                 className="inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground font-medium"
-                title="Open full composer (templates, scheduling, attachments)"
+                title="Open unified composer (templates, scheduling, variables)"
               >
                 <Settings2 className="w-3 h-3" />
                 Advanced
@@ -400,8 +405,6 @@ export function QuickActionBar({ contact }: Props) {
       </div>
     </div>
 
-    <ComposeEmailDialog contact={contact} open={showAdvancedEmail} onOpenChange={setShowAdvancedEmail} />
-    <SendTextDialog contact={contact} open={showAdvancedText} onOpenChange={setShowAdvancedText} initialChannel={textChannel} />
     </>
   );
 }
