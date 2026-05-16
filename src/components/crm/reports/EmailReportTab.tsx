@@ -9,7 +9,11 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
 } from 'recharts';
 import { format, subDays, startOfDay, parseISO } from 'date-fns';
-import { Mail, Eye, MousePointerClick, AlertTriangle, Send, Users } from 'lucide-react';
+import { Mail, Eye, MousePointerClick, AlertTriangle, Send, Users, Download, ExternalLink, Copy } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Link } from 'react-router-dom';
+import { toast } from 'sonner';
 
 type EmailLog = {
   id: string;
