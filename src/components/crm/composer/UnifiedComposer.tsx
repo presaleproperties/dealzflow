@@ -567,7 +567,7 @@ export function UnifiedComposer() {
             </div>
 
             {/* Attachments */}
-            <div className="space-y-1">
+            <div className="space-y-1.5">
               <div className="flex items-center justify-between">
                 <Label className="text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
                   {activeChannel === 'email' ? 'Attachments' : 'MMS media'}
@@ -575,30 +575,63 @@ export function UnifiedComposer() {
                 <label className="inline-flex items-center gap-1 text-[11px] text-primary cursor-pointer hover:underline">
                   <Paperclip className="w-3 h-3" /> Add
                   <input
-                    type="file" multiple className="hidden"
-                    onChange={(e) => setAttachments((a) => [...a, ...Array.from(e.target.files ?? [])])}
+                    type="file"
+                    multiple
+                    accept={activeChannel === 'text' ? 'image/*,video/*,audio/*,application/pdf' : undefined}
+                    className="hidden"
+                    onChange={(e) => {
+                      addFiles(Array.from(e.target.files ?? []));
+                      e.currentTarget.value = '';
+                    }}
                   />
                 </label>
               </div>
+              <p className="text-[10.5px] text-muted-foreground">
+                {activeChannel === 'email'
+                  ? `Up to ${EMAIL_MAX_COUNT} files · ${fmtBytes(EMAIL_MAX_FILE)} each · ${fmtBytes(EMAIL_MAX_TOTAL)} total. Sent as secure download links (30-day expiry).`
+                  : `Up to ${MMS_MAX_COUNT} files · 5MB each · images, video, audio, or PDF only.`}
+              </p>
               {attachments.length > 0 && (
-                <ul className="text-[11.5px] text-muted-foreground space-y-0.5">
-                  {attachments.map((f, i) => (
-                    <li key={i} className="flex items-center justify-between">
-                      <span className="truncate">{f.name}</span>
-                      <button
-                        type="button"
-                        onClick={() => setAttachments((a) => a.filter((_, j) => j !== i))}
-                        className="text-[10px] text-destructive hover:underline"
+                <div className="grid grid-cols-2 gap-2">
+                  {attachments.map((f, i) => {
+                    const key = `${f.name}:${f.size}:${f.lastModified}`;
+                    const url = previewUrls[key];
+                    return (
+                      <div
+                        key={key + i}
+                        className="relative rounded-md border border-border/60 bg-muted/30 p-2 flex items-center gap-2"
                       >
-                        Remove
-                      </button>
-                    </li>
-                  ))}
-                </ul>
+                        {url ? (
+                          <img
+                            src={url}
+                            alt={f.name}
+                            className="w-10 h-10 rounded object-cover shrink-0 border border-border/40"
+                          />
+                        ) : (
+                          <div className="w-10 h-10 rounded shrink-0 bg-muted flex items-center justify-center">
+                            <FileText className="w-4 h-4 text-muted-foreground" />
+                          </div>
+                        )}
+                        <div className="min-w-0 flex-1">
+                          <p className="text-[11.5px] font-medium truncate">{f.name}</p>
+                          <p className="text-[10.5px] text-muted-foreground tabular-nums">
+                            {fmtBytes(f.size)}
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setAttachments((a) => a.filter((_, j) => j !== i))}
+                          className="text-muted-foreground hover:text-destructive shrink-0 p-1 rounded hover:bg-background"
+                          aria-label={`Remove ${f.name}`}
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
               )}
             </div>
-
-            {/* Schedule */}
             <div className="rounded-md border border-border/60 p-3 space-y-2">
               <div className="flex items-center justify-between">
                 <Label className="text-[12px] font-medium inline-flex items-center gap-1.5">
