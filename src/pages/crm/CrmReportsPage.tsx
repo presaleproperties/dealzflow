@@ -89,7 +89,7 @@ export default function CrmReportsPage() {
           <SmsReportTab />
         </TabsContent>
         <TabsContent value="agents">
-          <AgentPerformanceTab contacts={contacts} showings={showings} messages={messages} />
+          <AgentPerformanceTab contacts={contacts} showings={showings} emails={emails} />
         </TabsContent>
         <TabsContent value="funnel">
           <FunnelTab contacts={contacts} />
