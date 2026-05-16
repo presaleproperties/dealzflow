@@ -1080,7 +1080,6 @@ function PreviewPane({
                     <Pencil className="w-3.5 h-3.5" /> Edit
                   </Button>
                 )}
-                {/* Tier 3: per-template Send removed — open a lead or campaign to send. */}
                 <Button
                   size="sm"
                   variant="outline"
@@ -1090,9 +1089,7 @@ function PreviewPane({
                 >
                   <History className="w-3.5 h-3.5" /> History
                 </Button>
-                <Button size="sm" className="h-8 gap-1.5 text-[12px]" onClick={onSend}>
-                  <Send className="w-3.5 h-3.5" /> Send
-                </Button>
+                {/* Tier 3: per-template Send removed — open a lead or campaign to send. */}
                 {editable && item.kind === 'email' && (
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
