@@ -187,6 +187,17 @@ export default function CrmTemplatesPage() {
         </div>
       </div>
 
+      {/* Tier 3: management-only banner */}
+      <div className="px-4 sm:px-8 pt-3 shrink-0">
+        <div className="max-w-[1500px] mx-auto rounded-lg border border-amber-500/40 bg-amber-500/10 text-amber-900 dark:text-amber-200 px-3.5 py-2.5 text-[12.5px] leading-snug flex items-start gap-2">
+          <span aria-hidden className="mt-px">⚠️</span>
+          <span>
+            <strong className="font-semibold">Templates are used from compose</strong> — this library is for management only.
+            To send a template, open a lead or campaign and pick from the Templates dropdown.
+          </span>
+        </div>
+      </div>
+
       {/* Body */}
       <div
         className="flex-1 overflow-hidden"
