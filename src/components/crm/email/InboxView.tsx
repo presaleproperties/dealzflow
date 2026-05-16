@@ -8,7 +8,7 @@ import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { EmailMessageView } from '@/components/crm/chats/EmailMessageView';
-import { ComposeEmailDialog } from '@/components/crm/leads/ComposeEmailDialog';
+import { openComposer } from '@/stores/useComposer';
 import { useCrmContact } from '@/hooks/useCrmLeadDetail';
 import { useEmailSignatures, pickSignatureForKind } from '@/hooks/useEmailSignatures';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -218,12 +218,21 @@ export default function InboxView() {
   const openReply = useCallback(() => {
     if (!selectedThread) return;
     if (selectedThread.contact_id) {
-      setComposeOpen(true);
+      // Tier 4: route to <UnifiedComposer/> instead of legacy ComposeEmailDialog.
+      openComposer({
+        channel: 'email',
+        mode: 'reply',
+        leadId: selectedThread.contact_id,
+        threadId: selectedThread.id,
+        subject: replySubject,
+        toEmail: (selectedThread.participants ?? []).find((p) => p.includes('@')) ?? '',
+        toName: selectedThread.last_message_from ?? '',
+      });
     } else {
       setReplyOpen(true);
       setTimeout(() => replyRef.current?.focus(), 30);
     }
-  }, [selectedThread]);
+  }, [selectedThread, replySubject]);
 
   // Mark thread read when opened
   useEffect(() => {
@@ -375,22 +384,8 @@ export default function InboxView() {
   }, [filteredThreads, selectedThreadId, selectedThread?.id, isCompact, markUnread]);
 
 
-  // Shared compose dialog (mounted from both desktop & mobile branches).
-  const composeNode = replyContact ? (
-    <ComposeEmailDialog
-      contact={replyContact}
-      open={composeOpen}
-      onOpenChange={setComposeOpen}
-      initialSubject={replySubject}
-      onSent={() => {
-        setComposeOpen(false);
-        if (selectedThread) {
-          qc.invalidateQueries({ queryKey: ['crm-inbox-threads'] });
-          qc.invalidateQueries({ queryKey: ['crm-inbox-messages', selectedThread.id] });
-        }
-      }}
-    />
-  ) : null;
+  // Tier 4: legacy ComposeEmailDialog removed — reply now opens <UnifiedComposer/>.
+  const composeNode = null;
 
   // ───────────────── Mobile (list-or-detail) ─────────────────
   if (isCompact) {
