@@ -77,6 +77,7 @@ export function Header({
 
         {/* Right — page-specific actions only. Theme/Search/Bell/Avatar live in the right rail. */}
         <div className="flex items-center gap-1.5 shrink-0">
+          <SmsStagedBadge />
           {action}
           {showAddDeal && (
             <Link to="/deals/new">
