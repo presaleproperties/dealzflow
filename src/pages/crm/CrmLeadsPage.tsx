@@ -967,6 +967,7 @@ export default function CrmLeadsPage() {
             page={page} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={handlePageSizeChange}
             sortKey={sortKey} sortDir={sortDir} onSort={handleSort} visibleColumns={visibleColumns}
             hidePagination={isMobile}
+            onSelectAllFiltered={handleSelectAllFiltered}
           />
 
           {/* Mobile infinite-scroll loader */}
