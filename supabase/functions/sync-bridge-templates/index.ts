@@ -62,15 +62,13 @@ Deno.serve(async (req) => {
     const callerSlug: string | null = member.slug ?? null;
     const isAdmin = member.role === "owner" || member.role === "admin";
 
-    // Feature flag — Presale hasn't shipped the scoped `bridge-list-templates`
-    // contract yet. Return a soft "not ready" so the UI shows a friendly note
-    // instead of a red error toast. Flip PRESALE_TEMPLATE_SYNC_ENABLED to "true"
-    // once Presale deploys.
-    const syncEnabled = (Deno.env.get("PRESALE_TEMPLATE_SYNC_ENABLED") ?? "").toLowerCase() === "true";
-    if (!syncEnabled) {
-      return json({ ok: true, skipped: "presale_sync_disabled", count: 0, results: [] });
-    }
-    if (!BRIDGE_SECRET || !PRESALE_ANON) {
+    // Try Presale's scoped bridge-list-templates first, then fall back to the
+    // public serve-auto-templates endpoint that's been live for months. The
+    // earlier feature flag (PRESALE_TEMPLATE_SYNC_ENABLED) was a stub for the
+    // scoped contract — when set to "false" we still attempt the fallback so
+    // the agent's "Sync from Presale" button always returns real data.
+    const preferScoped = (Deno.env.get("PRESALE_TEMPLATE_SYNC_ENABLED") ?? "").toLowerCase() === "true";
+    if (!BRIDGE_SECRET) {
       return json({ error: "bridge_not_configured" }, 500);
     }
 
