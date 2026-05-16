@@ -526,7 +526,7 @@ export function UnifiedComposer() {
             body: rendered.text,
             status: 'pending_approval',
             reason,
-            scheduled_for: scheduleOn && scheduleAt ? new Date(scheduleAt).toISOString() : null,
+            scheduled_for: effectiveSendAt,
             metadata: {
               staged_via: 'unified_composer',
               quiet_hours: quietHoursWarn,
