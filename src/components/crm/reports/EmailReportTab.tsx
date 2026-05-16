@@ -256,10 +256,21 @@ export function EmailReportTab() {
     () => [...logs.filter(l => l.direction === 'outbound'), ...massJobs],
     [logs, massJobs],
   );
+  // Prefer verified human opens. Fallback to raw open_count for legacy rows
+  // (sent before bot filtering was deployed) so historical data isn't zeroed out.
+  const humanOpens = (l: EmailLog) => {
+    const h = l.human_open_count ?? null;
+    const b = l.bot_open_count ?? 0;
+    const raw = l.open_count ?? 0;
+    if (h !== null && (h > 0 || b > 0)) return h; // post-filter row
+    return raw; // legacy row, no classification available
+  };
   const totalSent = outbound.length;
   const sentOk = outbound.filter(l => l.status === 'sent').length;
   const failed = outbound.filter(l => l.status === 'failed' || !!l.failed_at).length;
-  const opened = outbound.filter(l => (l.open_count ?? 0) > 0).length;
+  const opened = outbound.filter(l => humanOpens(l) > 0).length;
+  const rawOpened = outbound.filter(l => (l.open_count ?? 0) > 0).length;
+  const botOpened = rawOpened - opened;
   const clicked = outbound.filter(l => (l.click_count ?? 0) > 0).length;
   const uniqueRecipients = new Set(outbound.map(l => l.contact_id)).size;
   const openRate = sentOk ? (opened / sentOk) * 100 : 0;
@@ -276,7 +287,7 @@ export function EmailReportTab() {
     outbound.forEach(l => {
       const d = format(startOfDay(parseISO(l.sent_at)), 'yyyy-MM-dd');
       if (buckets[d]) buckets[d].sent++;
-      if (l.opened_at) {
+      if (l.opened_at && humanOpens(l) > 0) {
         const od = format(startOfDay(parseISO(l.opened_at)), 'yyyy-MM-dd');
         if (buckets[od]) buckets[od].opened++;
       }
@@ -296,7 +307,7 @@ export function EmailReportTab() {
     outbound.forEach(l => {
       const h = parseISO(l.sent_at).getHours();
       arr[h].sent++;
-      if ((l.open_count ?? 0) > 0) arr[h].opened++;
+      if (humanOpens(l) > 0) arr[h].opened++;
     });
     return arr;
   }, [outbound]);
@@ -307,7 +318,7 @@ export function EmailReportTab() {
       const s = (l.subject || '(no subject)').slice(0, 80);
       if (!map[s]) map[s] = { subject: s, sent: 0, opened: 0, clicked: 0 };
       map[s].sent++;
-      if ((l.open_count ?? 0) > 0) map[s].opened++;
+      if (humanOpens(l) > 0) map[s].opened++;
       if ((l.click_count ?? 0) > 0) map[s].clicked++;
     });
     return Object.values(map)
@@ -324,7 +335,7 @@ export function EmailReportTab() {
       const name = agentMap[k] || 'Unknown';
       if (!map[k]) map[k] = { agent: name, sent: 0, opened: 0, clicked: 0, failed: 0 };
       map[k].sent++;
-      if ((l.open_count ?? 0) > 0) map[k].opened++;
+      if (humanOpens(l) > 0) map[k].opened++;
       if ((l.click_count ?? 0) > 0) map[k].clicked++;
       if (l.status === 'failed' || l.failed_at) map[k].failed++;
     });
@@ -334,14 +345,14 @@ export function EmailReportTab() {
   const funnel = [
     { stage: 'Sent', value: totalSent, color: 'hsl(var(--primary))' },
     { stage: 'Delivered', value: sentOk, color: 'hsl(210 62% 46%)' },
-    { stage: 'Opened', value: opened, color: 'hsl(142 71% 45%)' },
+    { stage: 'Opened (human)', value: opened, color: 'hsl(142 71% 45%)' },
     { stage: 'Clicked', value: clicked, color: 'hsl(38 92% 50%)' },
   ];
   const maxF = Math.max(...funnel.map(f => f.value), 1);
 
   const kpis = [
     { label: 'Sent', value: totalSent.toLocaleString(), icon: Send, sub: `${uniqueRecipients} recipients` },
-    { label: 'Open Rate', value: `${openRate.toFixed(1)}%`, icon: Eye, sub: `${opened.toLocaleString()} opens` },
+    { label: 'Open Rate', value: `${openRate.toFixed(1)}%`, icon: Eye, sub: `${opened.toLocaleString()} human opens${botOpened > 0 ? ` · ${botOpened} bot` : ''}` },
     { label: 'Click Rate', value: `${clickRate.toFixed(1)}%`, icon: MousePointerClick, sub: `${clicked.toLocaleString()} clicks` },
     { label: 'CTOR', value: `${ctor.toFixed(1)}%`, icon: Users, sub: 'click-to-open' },
     { label: 'Bounce / Fail', value: `${bounceRate.toFixed(1)}%`, icon: AlertTriangle, sub: `${failed.toLocaleString()} failed` },
