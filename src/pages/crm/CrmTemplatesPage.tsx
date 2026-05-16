@@ -1080,6 +1080,7 @@ function PreviewPane({
                     <Pencil className="w-3.5 h-3.5" /> Edit
                   </Button>
                 )}
+                {/* Tier 3: per-template Send removed — open a lead or campaign to send. */}
                 <Button
                   size="sm"
                   variant="outline"
