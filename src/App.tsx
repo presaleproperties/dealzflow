@@ -30,6 +30,7 @@ import { useLiveNotificationToasts } from "@/hooks/useLiveNotificationToasts";
 import { useVisualViewport } from "@/hooks/useVisualViewport";
 import { DialerWidget } from "@/components/crm/dialer/DialerWidget";
 import { NewChatDialog } from "@/components/crm/chats/NewChatDialog";
+import { ComposerMount } from "@/components/crm/composer/ComposerMount";
 import { ViewportDebugOverlay } from "@/components/dev/ViewportDebugOverlay";
 
 // ── Eager-loaded pages ────────────────────────────────────────────────────
@@ -235,6 +236,7 @@ function NativeBootstrap({ children }: { children: React.ReactNode }) {
       <EmailIdentitySetupDialog />
       <DialerWidget />
       <NewChatDialog />
+      <ComposerMount />
       <ViewportDebugOverlay />
     </>
   );
