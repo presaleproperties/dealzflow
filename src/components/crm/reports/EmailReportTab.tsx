@@ -53,7 +53,7 @@ export function EmailReportTab() {
       while (more) {
         const { data, error } = await supabase
           .from('crm_email_log')
-          .select('id,contact_id,user_id,subject,sent_at,direction,status,open_count,click_count,opened_at,clicked_at,failed_at')
+          .select('id,contact_id,user_id,subject,sent_at,direction,status,open_count,click_count,human_open_count,bot_open_count,opened_at,clicked_at,failed_at')
           .gte('sent_at', since)
           .order('sent_at', { ascending: false })
           .range(from, from + PAGE - 1);
