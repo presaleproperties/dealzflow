@@ -187,6 +187,17 @@ export default function CrmTemplatesPage() {
         </div>
       </div>
 
+      {/* Tier 3: management-only banner */}
+      <div className="px-4 sm:px-8 pt-3 shrink-0">
+        <div className="max-w-[1500px] mx-auto rounded-lg border border-amber-500/40 bg-amber-500/10 text-amber-900 dark:text-amber-200 px-3.5 py-2.5 text-[12.5px] leading-snug flex items-start gap-2">
+          <span aria-hidden className="mt-px">⚠️</span>
+          <span>
+            <strong className="font-semibold">Templates are used from compose</strong> — this library is for management only.
+            To send a template, open a lead or campaign and pick from the Templates dropdown.
+          </span>
+        </div>
+      </div>
+
       {/* Body */}
       <div
         className="flex-1 overflow-hidden"
@@ -884,16 +895,7 @@ function TemplateCard({
               </a>
             </Button>
           )}
-          <Button
-            size="icon"
-            variant="outline"
-            className="h-8 w-8"
-            onClick={(e) => { stop(e); onSend(); }}
-            aria-label="Send"
-            title="Send"
-          >
-            <Send className="w-3.5 h-3.5" />
-          </Button>
+          {/* Tier 3: Send button removed — templates are management-only. Send happens from the composer (lead/campaign). */}
           <Button
             size="icon"
             variant="outline"
@@ -1098,9 +1100,7 @@ function PreviewPane({
                 >
                   <History className="w-3.5 h-3.5" /> History
                 </Button>
-                <Button size="sm" className="h-8 gap-1.5 text-[12px]" onClick={onSend}>
-                  <Send className="w-3.5 h-3.5" /> Send
-                </Button>
+                {/* Tier 3: per-template Send removed — open a lead or campaign to send. */}
                 {editable && item.kind === 'email' && (
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
