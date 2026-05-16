@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Sidebar } from './Sidebar';
 import { ChevronLeft, Menu } from 'lucide-react';
+import { SmsStagedBadge } from '@/components/crm/sms/SmsStagedBadge';
 
 interface HeaderProps {
   title: string;
@@ -77,6 +78,7 @@ export function Header({
 
         {/* Right — page-specific actions only. Theme/Search/Bell/Avatar live in the right rail. */}
         <div className="flex items-center gap-1.5 shrink-0">
+          <SmsStagedBadge />
           {action}
           {showAddDeal && (
             <Link to="/deals/new">

@@ -365,7 +365,13 @@ export function useSendSms() {
         qc.invalidateQueries({ queryKey: ['crm-sms-log', vars.contact_id] });
       }
       qc.invalidateQueries({ queryKey: ['crm-chats'] });
-      if (data?.queued_offline) {
+      if (data?.staged) {
+        toast.success('Text staged — admin must release before it sends', {
+          description: 'Check the staged-queue badge in the top nav.',
+        });
+        qc.invalidateQueries({ queryKey: ['crm-sms-staged-count'] });
+        qc.invalidateQueries({ queryKey: ['crm-sms-staged-list'] });
+      } else if (data?.queued_offline) {
         toast.success(
           data.queue_reason === 'offline'
             ? 'Saved — will send when you’re back online'
@@ -459,8 +465,14 @@ export function useBulkSendSms() {
     onSuccess: (data) => {
       qc.invalidateQueries({ queryKey: ['crm-sms-campaigns'] });
       qc.invalidateQueries({ queryKey: ['crm-sms-log-all'] });
+      qc.invalidateQueries({ queryKey: ['crm-sms-staged-count'] });
+      qc.invalidateQueries({ queryKey: ['crm-sms-staged-list'] });
       if (!data?.dry_run) {
-        if (data?.scheduled) toast.success(`Blast scheduled for ${data.recipient_count} recipients`);
+        if (data?.staged) {
+          toast.success(`Blast staged — ${data.recipient_count} recipients`, {
+            description: 'Admin must release before they send. Check the staged-queue badge.',
+          });
+        } else if (data?.scheduled) toast.success(`Blast scheduled for ${data.recipient_count} recipients`);
         else toast.success(`Blast started — ${data.recipient_count} recipients`);
       }
     },

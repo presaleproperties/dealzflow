@@ -47,17 +47,79 @@ function isTransientStatus(status: number): boolean {
   return status === 408 || status === 409 || status === 425 || status === 429 || status >= 500;
 }
 
-// 🚨 KILL SWITCH 2026-05-16 — Twilio outbound disabled after billing incident (43k unintended SMS).
-// To re-enable: set SMS_KILL_SWITCH_DISABLED to true in this file (and bulk-send-sms + process-scheduled-sms).
-const SMS_KILL_SWITCH_ACTIVE = true;
+// 🚨 STAGE MODE 2026-05-16 — after 43k unintended SMS billing incident, all
+// outbound SMS is staged (written to crm_sms_log with status='staged') instead
+// of being handed to Twilio. The UI shows a staged-queue badge in the topnav.
+// An admin must later release or discard staged messages. To restore live
+// sending, set SMS_STAGE_MODE = false in send-sms, bulk-send-sms and
+// process-scheduled-sms.
+const SMS_STAGE_MODE = true;
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
-  if (SMS_KILL_SWITCH_ACTIVE) {
-    return new Response(JSON.stringify({
-      error: 'SMS sending is temporarily disabled by your admin (billing safeguard). Contact your workspace admin to re-enable.',
-      kill_switch: true,
-    }), { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+
+  // STAGE MODE short-circuit: authenticate, validate minimally, write a
+  // staged row, return 200 so the optimistic bubble sticks. Never touches
+  // Twilio. We do NOT enforce opt-out / quiet-hours here because nothing
+  // is actually leaving the system — admin review will catch issues.
+  if (SMS_STAGE_MODE) {
+    try {
+      const authHeader = req.headers.get('Authorization');
+      if (!authHeader) {
+        return new Response(JSON.stringify({ error: 'Missing Authorization' }), {
+          status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      const supabase = createClient(
+        Deno.env.get('SUPABASE_URL')!,
+        Deno.env.get('SUPABASE_ANON_KEY')!,
+        { global: { headers: { Authorization: authHeader } } }
+      );
+      const admin = createClient(
+        Deno.env.get('SUPABASE_URL')!,
+        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+      );
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+          status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      const body = await req.json().catch(() => ({}));
+      const to = normalizePhone(body?.to || '');
+      const text = (body?.body || '').toString();
+      if (!to || !text.trim()) {
+        return new Response(JSON.stringify({ error: 'to and body are required' }), {
+          status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      const media_urls: string[] = Array.isArray(body?.media_urls) ? body.media_urls.filter((u: unknown) => typeof u === 'string') : [];
+      const channel: 'sms' | 'whatsapp' = body?.channel === 'whatsapp' ? 'whatsapp' : 'sms';
+      const { data: logged } = await admin.from('crm_sms_log').insert({
+        user_id: user.id,
+        contact_id: body?.contact_id ?? null,
+        direction: 'outbound',
+        to_number: to,
+        from_number: body?.from ?? null,
+        body: text,
+        media_urls,
+        message_type: media_urls.length > 0 ? 'mms' : 'sms',
+        status: 'staged',
+        campaign_id: body?.campaign_id ?? null,
+        channel,
+        client_dedupe_id: typeof body?.client_dedupe_id === 'string' ? body.client_dedupe_id : null,
+        error_message: 'STAGED — admin must release before this is sent.',
+      }).select('id').maybeSingle();
+      return new Response(JSON.stringify({
+        ok: true, staged: true, log_id: logged?.id,
+        message: 'Message staged. An admin must release the staged queue before it is sent.',
+      }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Unknown error';
+      return new Response(JSON.stringify({ error: msg, staged: false }), {
+        status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
   }
 
   let supabaseAdmin: any = null;
