@@ -123,21 +123,14 @@ function inVancouverQuietHours(d = new Date()): boolean {
  * time reads 08:00 — DST-safe without pulling in a tz library.
  */
 function nextVancouver8amISO(d = new Date()): string {
-  const v = vancouverParts(d);
-  // If it's currently before 8am same day, target today 8am; else tomorrow 8am.
+  // Walk forward in 15-min steps (max 48h) until Vancouver-local reads 08:00–08:14.
   const probe = new Date(d.getTime());
-  // Coarse jump: advance to roughly next 8am UTC window, then refine.
-  if (v.hour >= 21) {
-    probe.setTime(probe.getTime() + 11 * 3600_000); // ~11h forward → into next morning
-  } else if (v.hour < 8) {
-    probe.setTime(probe.getTime() + (8 - v.hour) * 3600_000);
-  }
-  // Refine in 5-min increments until Vancouver-local hour===8 && minute<5.
-  for (let i = 0; i < 24 * 12; i++) {
+  for (let i = 0; i < 4 * 24 * 2; i++) {
     const pv = vancouverParts(probe);
-    if (pv.hour === 8 && pv.minute < 5) return probe.toISOString();
-    if (pv.hour < 8) probe.setTime(probe.getTime() + 5 * 60_000);
-    else if (pv.hour > 8 || (pv.hour === 8 && pv.minute >= 5)) probe.setTime(probe.getTime() + 5 * 60_000);
+    if (pv.hour === 8 && pv.minute < 15 && probe.getTime() > d.getTime()) {
+      return probe.toISOString();
+    }
+    probe.setTime(probe.getTime() + 15 * 60_000);
   }
   return probe.toISOString();
 }
