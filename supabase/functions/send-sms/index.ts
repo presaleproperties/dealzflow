@@ -59,7 +59,6 @@ Deno.serve(async (req) => {
       kill_switch: true,
     }), { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   }
-  if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
 
   let supabaseAdmin: any = null;
   let fallbackLog: Record<string, unknown> | null = null;
