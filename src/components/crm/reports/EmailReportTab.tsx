@@ -209,8 +209,6 @@ export function EmailReportTab() {
     toast.success(`Copied ${badAddresses.length} addresses`);
   };
 
-  // dummy to keep formatting (real code follows)
-  void 0;
 
   const outbound = useMemo(() => logs.filter(l => l.direction === 'outbound'), [logs]);
   const totalSent = outbound.length;
