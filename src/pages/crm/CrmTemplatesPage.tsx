@@ -157,6 +157,17 @@ export default function CrmTemplatesPage() {
           </div>
           <div className="flex items-center gap-2">
             <ChannelToggle channel={channel} onChange={setChannel} />
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-9 gap-1.5"
+              onClick={handleSyncFromPresale}
+              disabled={syncing}
+              title="Pull the latest email templates from Presale Properties"
+            >
+              <RefreshCw className={cn('w-3.5 h-3.5', syncing && 'animate-spin')} />
+              {syncing ? 'Syncing…' : 'Sync from Presale'}
+            </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button size="sm" className="h-9 gap-1.5">
