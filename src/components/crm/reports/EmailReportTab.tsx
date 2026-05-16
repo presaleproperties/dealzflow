@@ -91,6 +91,127 @@ export function EmailReportTab() {
     [agents],
   );
 
+  // Bounced / failed addresses — pulled from mass send log (has email_to)
+  const { data: badSendRows = [] } = useQuery({
+    queryKey: ['crm-reports-email-bounces', days],
+    queryFn: async () => {
+      const since = subDays(new Date(), days).toISOString();
+      const { data, error } = await supabase
+        .from('crm_email_send_jobs')
+        .select('email_to, contact_id, recipient_name, status, error_message, sent_at, created_at')
+        .in('status', ['failed', 'bounced', 'complained', 'suppressed', 'rejected'])
+        .gte('created_at', since)
+        .order('created_at', { ascending: false })
+        .limit(2000);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  // Also pull failed 1:1 sends from crm_email_log + join contacts for emails
+  const { data: badLogContacts = [] } = useQuery({
+    queryKey: ['crm-reports-email-bounces-1to1', days],
+    queryFn: async () => {
+      const since = subDays(new Date(), days).toISOString();
+      const { data: logs, error } = await supabase
+        .from('crm_email_log')
+        .select('contact_id, status, error_message, failed_at, sent_at')
+        .eq('direction', 'outbound')
+        .or('status.eq.failed,status.eq.bounced,status.eq.complained,failed_at.not.is.null')
+        .gte('sent_at', since)
+        .limit(1000);
+      if (error) throw error;
+      const ids = Array.from(new Set((logs ?? []).map((l: any) => l.contact_id).filter(Boolean)));
+      if (ids.length === 0) return [];
+      const { data: contacts } = await supabase
+        .from('crm_contacts')
+        .select('id, email, first_name, last_name')
+        .in('id', ids);
+      const cmap = new Map((contacts ?? []).map((c: any) => [c.id, c]));
+      return (logs ?? []).map((l: any) => {
+        const c = cmap.get(l.contact_id);
+        return {
+          email_to: c?.email ?? null,
+          contact_id: l.contact_id,
+          recipient_name: c ? `${c.first_name ?? ''} ${c.last_name ?? ''}`.trim() : null,
+          status: l.status ?? 'failed',
+          error_message: l.error_message,
+          sent_at: l.failed_at ?? l.sent_at,
+          created_at: l.failed_at ?? l.sent_at,
+        };
+      });
+    },
+  });
+
+  const badAddresses = useMemo(() => {
+    type Row = {
+      email: string; contactId: string | null; name: string | null;
+      count: number; lastStatus: string; lastError: string | null; lastAt: string;
+    };
+    const map = new Map<string, Row>();
+    const ingest = (rows: any[]) => {
+      rows.forEach(r => {
+        const email = (r.email_to || '').toLowerCase().trim();
+        if (!email) return;
+        const cur = map.get(email);
+        const at = r.sent_at || r.created_at;
+        if (!cur) {
+          map.set(email, {
+            email,
+            contactId: r.contact_id ?? null,
+            name: r.recipient_name ?? null,
+            count: 1,
+            lastStatus: r.status,
+            lastError: r.error_message ?? null,
+            lastAt: at,
+          });
+        } else {
+          cur.count += 1;
+          if (!cur.lastAt || (at && at > cur.lastAt)) {
+            cur.lastAt = at;
+            cur.lastStatus = r.status;
+            cur.lastError = r.error_message ?? cur.lastError;
+          }
+          if (!cur.contactId && r.contact_id) cur.contactId = r.contact_id;
+          if (!cur.name && r.recipient_name) cur.name = r.recipient_name;
+        }
+      });
+    };
+    ingest(badSendRows as any[]);
+    ingest(badLogContacts as any[]);
+    return Array.from(map.values()).sort((a, b) => b.count - a.count || (b.lastAt || '').localeCompare(a.lastAt || ''));
+  }, [badSendRows, badLogContacts]);
+
+  const totalBadAddresses = badAddresses.length;
+  const totalBadEvents = badAddresses.reduce((s, r) => s + r.count, 0);
+
+  const exportBadCsv = () => {
+    const headers = ['email', 'name', 'failures', 'last_status', 'last_error', 'last_failed_at', 'contact_id'];
+    const lines = [headers.join(',')];
+    badAddresses.forEach(r => {
+      const esc = (v: any) => {
+        const s = v == null ? '' : String(v);
+        return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+      };
+      lines.push([r.email, r.name, r.count, r.lastStatus, r.lastError, r.lastAt, r.contactId].map(esc).join(','));
+    });
+    const blob = new Blob([lines.join('\n')], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `bounced-emails-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const copyAllEmails = async () => {
+    await navigator.clipboard.writeText(badAddresses.map(r => r.email).join('\n'));
+    toast.success(`Copied ${badAddresses.length} addresses`);
+  };
+
+  // dummy to keep formatting (real code follows)
+  void 0;
+
   const outbound = useMemo(() => logs.filter(l => l.direction === 'outbound'), [logs]);
   const totalSent = outbound.length;
   const sentOk = outbound.filter(l => l.status === 'sent').length;
