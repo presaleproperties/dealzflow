@@ -94,12 +94,45 @@ function smsSegmentCount(body: string): { chars: number; segments: number; gsm: 
   return { chars, segments: seg, gsm };
 }
 
+function vancouverParts(d = new Date()) {
+  const fmt = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/Vancouver',
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', hour12: false,
+  });
+  const parts = Object.fromEntries(fmt.formatToParts(d).map((p) => [p.type, p.value]));
+  return {
+    year: parseInt(parts.year, 10),
+    month: parseInt(parts.month, 10),
+    day: parseInt(parts.day, 10),
+    hour: parseInt(parts.hour === '24' ? '0' : parts.hour, 10),
+    minute: parseInt(parts.minute, 10),
+  };
+}
+
 function inVancouverQuietHours(d = new Date()): boolean {
   // 21:00–08:00 America/Vancouver
-  const opts: Intl.DateTimeFormatOptions = { hour: '2-digit', hour12: false, timeZone: 'America/Vancouver' };
-  const hourStr = new Intl.DateTimeFormat('en-US', opts).format(d);
-  const hour = parseInt(hourStr, 10);
+  const { hour } = vancouverParts(d);
   return hour >= 21 || hour < 8;
+}
+
+/**
+ * Returns the ISO timestamp for the next 8:00 AM in America/Vancouver,
+ * relative to `d`. Used to auto-queue sends that land in quiet hours.
+ * Implementation walks forward in 30-minute steps until Vancouver-local
+ * time reads 08:00 — DST-safe without pulling in a tz library.
+ */
+function nextVancouver8amISO(d = new Date()): string {
+  // Walk forward in 15-min steps (max 48h) until Vancouver-local reads 08:00–08:14.
+  const probe = new Date(d.getTime());
+  for (let i = 0; i < 4 * 24 * 2; i++) {
+    const pv = vancouverParts(probe);
+    if (pv.hour === 8 && pv.minute < 15 && probe.getTime() > d.getTime()) {
+      return probe.toISOString();
+    }
+    probe.setTime(probe.getTime() + 15 * 60_000);
+  }
+  return probe.toISOString();
 }
 
 // ---- Recipient parsing helpers (Segment + Custom list)
@@ -348,7 +381,7 @@ export function UnifiedComposer() {
     (settingsQuery.data?.killSwitch ?? true) ||
     (smsCountQuery.data ?? 0) >= (settingsQuery.data?.dailyCap ?? 500)
   );
-  const quietHoursWarn = activeChannel === 'text' && inVancouverQuietHours();
+  const quietHoursWarn = inVancouverQuietHours();
   const senderName = profile?.full_name || presaleAgent?.name || user?.email || '';
   const senderEmail = user?.email || presaleAgent?.email || '';
   const senderPhone = presaleAgent?.phone || '';
@@ -444,6 +477,13 @@ export function UnifiedComposer() {
     // Re-validate attachments against current channel (channel toggle may have changed)
     const attachErr = validateAttachments(attachments, activeChannel);
     if (attachErr) { toast.error(attachErr); return; }
+    // Resolve effective send time:
+    //  - explicit schedule wins
+    //  - otherwise, if we're inside Vancouver quiet hours (9pm–8am), auto-queue
+    //    for the next 8am Vancouver. Applies to BOTH email and text.
+    const explicitSchedule = scheduleOn && scheduleAt ? new Date(scheduleAt).toISOString() : null;
+    const autoQueued = !explicitSchedule && inVancouverQuietHours();
+    const effectiveSendAt = explicitSchedule ?? (autoQueued ? nextVancouver8amISO() : null);
     setSending(true);
     try {
       if (activeChannel === 'email') {
@@ -458,13 +498,17 @@ export function UnifiedComposer() {
             subject: rendered.subject || subject,
             html,
             contact_id: leadId,
-            send_at: scheduleOn && scheduleAt ? new Date(scheduleAt).toISOString() : null,
+            send_at: effectiveSendAt,
             attachments: uploaded.map((a) => ({ name: a.name, url: a.url, type: a.type, size: a.size })),
           },
         });
         if (error) throw new Error(error.message);
         if ((data as any)?.error) throw new Error((data as any).error);
-        toast.success(scheduleOn ? 'Email scheduled' : 'Email sent');
+        toast.success(
+          effectiveSendAt
+            ? (autoQueued ? 'Email auto-queued for 8am Vancouver' : 'Email scheduled')
+            : 'Email sent'
+        );
         closeComposer();
       } else {
         if (!toPhone.trim()) { toast.error('Recipient phone required'); return; }
@@ -482,7 +526,7 @@ export function UnifiedComposer() {
             body: rendered.text,
             status: 'pending_approval',
             reason,
-            scheduled_for: scheduleOn && scheduleAt ? new Date(scheduleAt).toISOString() : null,
+            scheduled_for: effectiveSendAt,
             metadata: {
               staged_via: 'unified_composer',
               quiet_hours: quietHoursWarn,
@@ -502,12 +546,16 @@ export function UnifiedComposer() {
               to: toPhone.trim(),
               body: rendered.text,
               media_urls: mediaUrls,
-              scheduled_for: scheduleOn && scheduleAt ? new Date(scheduleAt).toISOString() : null,
+              scheduled_for: effectiveSendAt,
             },
           });
           if (error) throw new Error(error.message);
           if ((data as any)?.error) throw new Error((data as any).error);
-          toast.success(mediaUrls.length > 0 ? 'MMS sent' : 'Text sent');
+          toast.success(
+            effectiveSendAt
+              ? (autoQueued ? 'Text auto-queued for 8am Vancouver' : 'Text scheduled')
+              : (mediaUrls.length > 0 ? 'MMS sent' : 'Text sent')
+          );
           closeComposer();
         }
       }
@@ -529,9 +577,10 @@ export function UnifiedComposer() {
     }
   };
 
+  const autoQueueLabel = quietHoursWarn && !scheduleOn ? 'Queue for 8am' : null;
   const sendLabel = activeChannel === 'email'
-    ? (scheduleOn ? 'Schedule' : 'Send now')
-    : (channelBlocked ? 'Stage for approval' : (scheduleOn ? 'Schedule' : 'Send now'));
+    ? (scheduleOn ? 'Schedule' : (autoQueueLabel ?? 'Send now'))
+    : (channelBlocked ? 'Stage for approval' : (scheduleOn ? 'Schedule' : (autoQueueLabel ?? 'Send now')));
 
   return (
     <>
@@ -932,10 +981,12 @@ export function UnifiedComposer() {
                   className="h-9 text-[13px]"
                 />
               )}
-              {quietHoursWarn && (
+              {quietHoursWarn && !scheduleOn && (
                 <div className="rounded border border-amber-500/40 bg-amber-500/10 px-2.5 py-2 text-[11.5px] text-amber-700 dark:text-amber-300 flex items-start gap-1.5">
                   <AlertTriangle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
-                  <span>Outside quiet hours (9pm–8am Vancouver) — auto-queue for 8am.</span>
+                  <span>
+                    It's quiet hours in Vancouver (9pm–8am). This {activeChannel === 'email' ? 'email' : 'text'} will auto-queue for 8am unless you pick a different time.
+                  </span>
                 </div>
               )}
             </div>
