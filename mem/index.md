@@ -4,7 +4,7 @@
 - **Tech Stack**: React, TS, Supabase, Tailwind, Vite. RLS strictly scoped to `auth.uid() = user_id`.
 - **Style**: Gold (#D7A542) & Dark (#14181F), Plus Jakarta Sans. 'Editorial' minimal: text-only badges, no generic icons.
 - **Data Security**: PII masked. Realtime disabled for `crm_contacts`. QueryClient ignores 401/403.
-- **Constraints**: WhatsApp, Meta Ads, ManyChat, MailerLite, AI chat, external email senders are removed. Do not re-add. SMS via Twilio is now active (see SMS Ecosystem memory).
+- **Constraints**: WhatsApp, Meta Ads, ManyChat, MailerLite, AI chat, external email senders, **Twilio (SMS + Voice)** are removed. Do not re-add. SMS edge functions return HTTP 410 "disabled"; in-app dialer (`useDialer`, `DialerWidget`, `CallButton`) are no-op stubs. SMS UI shell + `crm_sms_log`/`crm_sms_numbers`/`crm_sms_settings` tables remain so a future non-Twilio provider can be plugged in.
 - **Financials**: Timeline from Jan 1, 2023. Team splits: Ravish/Sarb 30% net. Earned YTD uses net payout for teams.
 - **Lead Architecture**: First-match-wins segmentation. Missing last names default to `(unknown)`. Fraser Valley cities only.
 - **PWA**: Command Center is `start_url`. Web Push via aesgcm VAPID. No layout animations for native selects.
@@ -101,7 +101,7 @@
 - [Lofty Conversation Sync](mem://features/integrations/lofty-conversation-sync) — Outbound migration tool: `lofty-sync-conversations` edge fn pulls emails/SMS/calls per contact; idempotent dedupe via `lofty:` prefix in gmail_message_id/twilio_message_sid + `[lofty-call:<id>]` marker in notes; "Pull from Lofty" button on lead detail
 - [Integrations Hub](mem://features/crm/integrations-hub-v4) — Deprecated integrations listed
 - [Central Hub Architecture](mem://features/crm/central-hub-architecture) — crm_lead_sources registry, crm_source_events audit log, assignment-based notification routing
-- [SMS Ecosystem](mem://features/crm/sms-ecosystem-v1) — Twilio SMS: single send, bulk from Leads, Chats page, templates, STOP/HELP, quiet hours, MMS via crm-sms-media bucket
+- [SMS Ecosystem — DISABLED](mem://features/crm/sms-ecosystem-v1) — Historical. Twilio removed; send-sms/bulk-send-sms/process-scheduled-sms return 410. UI/tables/templates/queue remain for future provider.
 - [Last Activity Rule](mem://features/crm/last-touch-rule) — last_touch_at = manual actions only; bulk/automation must SET app.skip_touch=on
 - [CRM Mobile Premium Polish v4](mem://style/crm-mobile-premium-polish-v4) — Shared crm-mobile-* utility classes (page-enter motion, airier rows, premium FAB, skeleton shimmer, sheet header) applied to all 6 CRM mobile screens
 - [CRM Leads Search Rules](mem://features/crm/leads-search-rules) — Tokenized AND search across name/email/phone with PostgREST escaping, useRef debounce, mobile bar close clears query, count: 'estimated'
