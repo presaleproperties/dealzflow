@@ -82,7 +82,7 @@ export function SmsReportTab() {
       const since = subDays(new Date(), days).toISOString();
       const { data } = await supabase
         .from('crm_sms_campaigns')
-        .select('id,name,sent_at,recipients_count,delivered_count,failed_count,status,channel')
+        .select('id,name,completed_at,recipients_count,delivered_count,failed_count,status,channel')
         .gte('created_at', since)
         .order('created_at', { ascending: false });
       return data ?? [];
