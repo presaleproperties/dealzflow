@@ -67,9 +67,8 @@ export default function CrmReportsPage() {
     <div className="space-y-4 sm:space-y-6">
       <h1 className="text-xl sm:text-2xl font-bold text-foreground">Reports</h1>
       <Tabs defaultValue="top-leads">
-        <TabsList className="w-full sm:w-auto grid grid-cols-3 sm:grid-cols-6 sm:flex">
+        <TabsList className="w-full sm:w-auto grid grid-cols-3 sm:grid-cols-5 sm:flex">
           <TabsTrigger value="top-leads" className="text-[12px] sm:text-sm min-h-[44px] sm:min-h-0">🔥 Top Leads</TabsTrigger>
-          <TabsTrigger value="overview" className="text-[12px] sm:text-sm min-h-[44px] sm:min-h-0">Overview</TabsTrigger>
           <TabsTrigger value="email" className="text-[12px] sm:text-sm min-h-[44px] sm:min-h-0">Email</TabsTrigger>
           <TabsTrigger value="sms" className="text-[12px] sm:text-sm min-h-[44px] sm:min-h-0">SMS</TabsTrigger>
           <TabsTrigger value="agents" className="text-[12px] sm:text-sm min-h-[44px] sm:min-h-0">Agents</TabsTrigger>
@@ -78,9 +77,6 @@ export default function CrmReportsPage() {
 
         <TabsContent value="top-leads">
           <TopLeadsTab />
-        </TabsContent>
-        <TabsContent value="overview">
-          <OverviewTab contacts={contacts} showings={showings} />
         </TabsContent>
         <TabsContent value="email">
           <EmailReportTab />
