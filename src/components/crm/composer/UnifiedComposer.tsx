@@ -40,8 +40,40 @@ import { usePresaleAgentStore } from '@/stores/usePresaleAgent';
 import { useComposerStore } from '@/stores/useComposer';
 import { TemplatePickerSheet } from '@/components/crm/templates/TemplatePickerSheet';
 import type { PickerTemplate } from '@/lib/templatePicker';
+import { uploadSmsMedia } from '@/lib/smsMediaUpload';
 
 type RecipientTab = 'single' | 'segment' | 'custom';
+
+// ---- Attachment validation limits
+const EMAIL_MAX_FILE = 20 * 1024 * 1024; // 20MB / file
+const EMAIL_MAX_TOTAL = 25 * 1024 * 1024; // 25MB combined
+const EMAIL_MAX_COUNT = 10;
+const MMS_MAX_FILE = 5 * 1024 * 1024;    // Twilio hard limit
+const MMS_MAX_COUNT = 10;
+const MMS_ALLOWED = /^(image\/|video\/|audio\/|application\/pdf)/;
+
+function fmtBytes(n: number): string {
+  if (n < 1024) return `${n} B`;
+  if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
+  return `${(n / 1024 / 1024).toFixed(1)} MB`;
+}
+
+function validateAttachments(files: File[], channel: 'email' | 'text'): string | null {
+  if (channel === 'email') {
+    if (files.length > EMAIL_MAX_COUNT) return `Max ${EMAIL_MAX_COUNT} attachments`;
+    const total = files.reduce((s, f) => s + f.size, 0);
+    if (total > EMAIL_MAX_TOTAL) return `Total exceeds ${fmtBytes(EMAIL_MAX_TOTAL)}`;
+    const oversized = files.find((f) => f.size > EMAIL_MAX_FILE);
+    if (oversized) return `${oversized.name} exceeds ${fmtBytes(EMAIL_MAX_FILE)}`;
+  } else {
+    if (files.length > MMS_MAX_COUNT) return `Max ${MMS_MAX_COUNT} MMS attachments`;
+    const oversized = files.find((f) => f.size > MMS_MAX_FILE);
+    if (oversized) return `${oversized.name} exceeds 5MB (Twilio MMS limit)`;
+    const bad = files.find((f) => !MMS_ALLOWED.test(f.type));
+    if (bad) return `${bad.name}: unsupported MMS type (${bad.type || 'unknown'})`;
+  }
+  return null;
+}
 
 const LEAD_VARS = [
   'first_name', 'last_name', 'full_name', 'email', 'phone',
