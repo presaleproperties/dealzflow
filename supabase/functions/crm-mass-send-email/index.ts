@@ -269,6 +269,7 @@ Deno.serve(async (req) => {
               subject: subj,
               html,
               contact_id: c.id,
+              campaign_id: body.campaign_id ?? null,
             }),
           });
           if (upstream.ok) {
