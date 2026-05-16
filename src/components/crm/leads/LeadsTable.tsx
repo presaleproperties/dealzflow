@@ -874,8 +874,38 @@ export function LeadsTable({
     );
   }
 
+  // "Select all N filtered" banner — appears when the user has selected
+  // every row on the current page but more matching leads exist beyond
+  // this page. One click escalates the selection to every filtered lead
+  // (capped server-side at 1,500 — matches crm-mass-send-email's max).
+  const pageFullySelected = allSelected && contacts.length > 0;
+  const moreFiltered = totalCount > selectedIds.length;
+  const showSelectAllBanner = !!onSelectAllFiltered && pageFullySelected && moreFiltered;
+  const allFilteredSelected = selectedIds.length >= Math.min(totalCount, 1500);
+
   return (
     <div>
+      {showSelectAllBanner && (
+        <div className="mb-2 flex items-center justify-between gap-3 rounded-xl border border-primary/20 bg-primary/10 px-3 py-2 text-xs">
+          <span className="text-foreground">
+            All <strong>{contacts.length}</strong> on this page are selected.
+          </span>
+          {allFilteredSelected ? (
+            <span className="text-muted-foreground">
+              All {selectedIds.length.toLocaleString()} filtered leads selected (max 1,500 per mass send).
+            </span>
+          ) : (
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-7 px-2 text-xs text-primary hover:bg-primary/20"
+              onClick={() => { void onSelectAllFiltered(); }}
+            >
+              Select all {Math.min(totalCount, 1500).toLocaleString()}{totalCount > 1500 ? ` of ${totalCount.toLocaleString()}` : ''} filtered leads
+            </Button>
+          )}
+        </div>
+      )}
       <div className="h-0.5 w-full overflow-hidden rounded-full mb-1 bg-transparent">
         {isFetching && (
           <div className="h-full w-full bg-primary/20 rounded-full overflow-hidden">
