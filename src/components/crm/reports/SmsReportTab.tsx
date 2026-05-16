@@ -379,7 +379,7 @@ export function SmsReportTab() {
                     <TableRow key={c.id}>
                       <TableCell className="font-medium max-w-[280px] truncate">{c.name || 'Untitled'}</TableCell>
                       <TableCell className="uppercase text-xs">{c.channel || 'sms'}</TableCell>
-                      <TableCell className="text-xs text-muted-foreground whitespace-nowrap">{c.sent_at ? format(parseISO(c.sent_at), 'MMM d, yyyy') : '—'}</TableCell>
+                      <TableCell className="text-xs text-muted-foreground whitespace-nowrap">{c.completed_at ? format(parseISO(c.completed_at), 'MMM d, yyyy') : '—'}</TableCell>
                       <TableCell className="text-right">{rec.toLocaleString()}</TableCell>
                       <TableCell className="text-right">{(c.delivered_count ?? 0).toLocaleString()}</TableCell>
                       <TableCell className="text-right text-destructive">{(c.failed_count ?? 0).toLocaleString()}</TableCell>
