@@ -179,6 +179,10 @@ export default function CrmLeadsPage() {
     filterLanguage?: string[];
     filterTags?: string[];
     filterExcludeTags?: string[];
+    filterExcludeContactTypes?: string[];
+    filterExcludeStatuses?: string[];
+    filterExcludeSources?: string[];
+    filterExcludeLeadTypes?: string[];
     filterPropertyType?: string[];
     filterCity?: string[];
     filterPreApproved?: string[];
