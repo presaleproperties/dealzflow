@@ -962,20 +962,7 @@ export function LeadsTable({
         <PaginationBar page={page} pageSize={pageSize} totalCount={totalCount} isFetching={isFetching}
           onPageChange={onPageChange} onPageSizeChange={onPageSizeChange} isMobile={false} />
       </div>
-      {smsContact && (
-        <SendTextDialog
-          contact={smsContact}
-          open={!!smsContact}
-          onOpenChange={(o) => !o && setSmsContact(null)}
-        />
-      )}
-      {emailContact && (
-        <ComposeEmailDialog
-          contact={emailContact}
-          open={!!emailContact}
-          onOpenChange={(o) => !o && setEmailContact(null)}
-        />
-      )}
+      {/* Tier 4: row-action icons route to <UnifiedComposer/> — no local dialogs here. */}
     </div>
   );
 }
