@@ -4,7 +4,6 @@ import { BottomNav } from '@/components/layout/BottomNav';
 import { MobileAppHeader } from '@/components/layout/MobileAppHeader';
 import { CrmRouteGuard } from './CrmRouteGuard';
 import { CrmSubNav } from './CrmSubNav';
-import { CrmSideRail } from './CrmSideRail';
 import { CrmSectionScope } from './CrmSectionScope';
 import { PageTransition } from '@/components/layout/PageTransition';
 import { useLocation } from 'react-router-dom';
@@ -28,7 +27,7 @@ export function CrmLayout({ requireRole, children }: CrmLayoutProps) {
     <CrmRouteGuard requireRole={requireRole}>
       <CrmSectionScope />
       <div
-        className="h-dvh flex flex-col app-ambient-bg overflow-hidden lg:pr-[52px] lg:pl-[52px]"
+        className="h-dvh flex flex-col app-ambient-bg overflow-hidden lg:pr-[52px]"
       >
         <TopNav />
         <MobileAppHeader />
@@ -41,7 +40,6 @@ export function CrmLayout({ requireRole, children }: CrmLayoutProps) {
           {isImmersiveChatThread ? children : <PageTransition>{children}</PageTransition>}
         </div>
       </div>
-      <CrmSideRail />
       <RightRail />
       <BottomNav />
       <SafeAreaPreview />
