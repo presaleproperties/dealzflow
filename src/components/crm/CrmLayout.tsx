@@ -27,7 +27,7 @@ export function CrmLayout({ requireRole, children }: CrmLayoutProps) {
     <CrmRouteGuard requireRole={requireRole}>
       <CrmSectionScope />
       <div
-        className="h-dvh flex flex-col app-ambient-bg overflow-hidden lg:pr-[52px] lg:pl-[52px]"
+        className="h-dvh flex flex-col app-ambient-bg overflow-hidden lg:pr-[52px]"
       >
         <TopNav />
         <MobileAppHeader />
@@ -40,7 +40,6 @@ export function CrmLayout({ requireRole, children }: CrmLayoutProps) {
           {isImmersiveChatThread ? children : <PageTransition>{children}</PageTransition>}
         </div>
       </div>
-      <CrmSideRail />
       <RightRail />
       <BottomNav />
       <SafeAreaPreview />
