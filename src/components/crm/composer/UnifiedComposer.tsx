@@ -632,13 +632,137 @@ export function UnifiedComposer() {
                 </div>
               )}
               {recipientTab === 'segment' && (
-                <div className="rounded-md border border-dashed border-border/60 p-3 text-[12px] text-muted-foreground">
-                  Segment recipients — pick from Leads → Save filter. Mass-send fan-out goes through campaigns, not the inbox.
+                <div className="space-y-2">
+                  <Select value={segmentId} onValueChange={setSegmentId}>
+                    <SelectTrigger className="h-9 text-[13px]">
+                      <SelectValue placeholder="Choose a pipeline / segment…" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {(segmentsQuery.data ?? []).map((s) => (
+                        <SelectItem key={s.id} value={s.id} className="text-[13px]">
+                          {s.emoji ? `${s.emoji} ` : ''}{s.name}
+                        </SelectItem>
+                      ))}
+                      {(!segmentsQuery.data || segmentsQuery.data.length === 0) && (
+                        <div className="px-2 py-2 text-[11.5px] text-muted-foreground">
+                          No segments — create one in Leads first.
+                        </div>
+                      )}
+                    </SelectContent>
+                  </Select>
+
+                  {!segmentId ? (
+                    <p className="text-[11px] text-muted-foreground">
+                      Pick a segment to see reachable recipient counts.
+                    </p>
+                  ) : segmentRecipientsQuery.isLoading ? (
+                    <p className="text-[11px] text-muted-foreground inline-flex items-center gap-1.5">
+                      <Loader2 className="w-3 h-3 animate-spin" /> Counting recipients…
+                    </p>
+                  ) : segmentRecipientsQuery.isError ? (
+                    <p className="text-[11px] text-destructive">Could not load segment recipients.</p>
+                  ) : (
+                    (() => {
+                      const r = segmentRecipientsQuery.data!;
+                      const total = segmentTotalQuery.data ?? r.totalContacts;
+                      const isEmpty = r.reachable === 0;
+                      return (
+                        <div
+                          className={cn(
+                            'rounded-md border px-3 py-2 text-[11.5px] space-y-1',
+                            isEmpty
+                              ? 'border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-300'
+                              : 'border-border/60 bg-muted/30 text-foreground/80',
+                          )}
+                        >
+                          <div className="flex items-center justify-between tabular-nums">
+                            <span className="font-medium">
+                              {r.reachable} reachable {activeChannel === 'email' ? 'email' : 'phone'}{r.reachable === 1 ? '' : 's'}
+                            </span>
+                            <span className="text-muted-foreground">{total} in segment</span>
+                          </div>
+                          <div className="text-[10.5px] text-muted-foreground tabular-nums">
+                            {r.unreachable > 0 && <>· {r.unreachable} missing {activeChannel === 'email' ? 'email' : 'phone'} </>}
+                            {r.duplicates > 0 && <>· {r.duplicates} duplicate{r.duplicates === 1 ? '' : 's'} removed</>}
+                          </div>
+                          {isEmpty && (
+                            <div className="flex items-start gap-1.5 pt-1">
+                              <AlertTriangle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+                              <span>
+                                Nobody in this segment has a {activeChannel === 'email' ? 'valid email' : 'valid phone'} —
+                                pick another segment or switch channels.
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()
+                  )}
                 </div>
               )}
               {recipientTab === 'custom' && (
-                <div className="rounded-md border border-dashed border-border/60 p-3 text-[12px] text-muted-foreground">
-                  Custom list — paste emails/phones (one per line). Coming in Tier 5.
+                <div className="space-y-2">
+                  <Textarea
+                    value={customInput}
+                    onChange={(e) => setCustomInput(e.target.value)}
+                    placeholder={activeChannel === 'email'
+                      ? 'paste emails — one per line, comma, or semicolon\nalex@example.com\nsam@example.com'
+                      : 'paste phones — one per line\n+1 604 555 0100\n604-555-0101'}
+                    className="text-[13px] min-h-[110px] resize-none font-mono"
+                  />
+                  {(() => {
+                    const p = customParse;
+                    if (p.totalRows === 0) {
+                      return (
+                        <p className="text-[11px] text-muted-foreground">
+                          {activeChannel === 'email'
+                            ? 'Paste email addresses. Duplicates and bad rows are flagged automatically.'
+                            : 'Paste phone numbers. 10-digit numbers default to +1 (Canada/US). Duplicates and bad rows flagged.'}
+                        </p>
+                      );
+                    }
+                    const isEmpty = p.valid.length === 0;
+                    return (
+                      <div
+                        className={cn(
+                          'rounded-md border px-3 py-2 text-[11.5px] space-y-1',
+                          isEmpty
+                            ? 'border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-300'
+                            : 'border-border/60 bg-muted/30 text-foreground/80',
+                        )}
+                      >
+                        <div className="flex items-center justify-between tabular-nums">
+                          <span className="font-medium">
+                            {p.valid.length} valid {activeChannel === 'email' ? 'email' : 'phone'}{p.valid.length === 1 ? '' : 's'}
+                          </span>
+                          <span className="text-muted-foreground">{p.totalRows} entered</span>
+                        </div>
+                        <div className="text-[10.5px] text-muted-foreground tabular-nums">
+                          {p.duplicates > 0 && <>· {p.duplicates} duplicate{p.duplicates === 1 ? '' : 's'} removed </>}
+                          {p.invalid.length > 0 && <>· {p.invalid.length} invalid row{p.invalid.length === 1 ? '' : 's'}</>}
+                        </div>
+                        {p.invalid.length > 0 && (
+                          <details className="pt-1">
+                            <summary className="cursor-pointer text-[10.5px] text-muted-foreground hover:text-foreground">
+                              Show invalid rows
+                            </summary>
+                            <ul className="mt-1 max-h-24 overflow-y-auto text-[10.5px] text-destructive/90 font-mono space-y-0.5">
+                              {p.invalid.slice(0, 25).map((row, i) => (
+                                <li key={i} className="truncate">{row}</li>
+                              ))}
+                              {p.invalid.length > 25 && <li className="text-muted-foreground">…and {p.invalid.length - 25} more</li>}
+                            </ul>
+                          </details>
+                        )}
+                        {isEmpty && (
+                          <div className="flex items-start gap-1.5 pt-1">
+                            <AlertTriangle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+                            <span>No valid recipients yet — fix the rows above before sending.</span>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
                 </div>
               )}
             </div>
