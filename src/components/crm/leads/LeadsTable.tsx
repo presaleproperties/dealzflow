@@ -70,6 +70,11 @@ interface LeadsTableProps {
   onSort: (key: SortKey) => void;
   visibleColumns: Set<string>;
   hidePagination?: boolean;
+  /** When provided, the LeadsTable shows a "Select all N filtered" banner
+   *  whenever every row on the current page is selected but more matching
+   *  leads exist. The callback should fetch every filtered id (capped at
+   *  the server max) and call onSelectionChange with the full set. */
+  onSelectAllFiltered?: () => void | Promise<void>;
 }
 
 const STATUS_BORDER_COLORS: Record<string, string> = {
