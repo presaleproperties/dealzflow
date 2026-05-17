@@ -241,7 +241,7 @@ function whyForLead(p: any, c: any): string {
     bits.push(`${p.city} location`);
   }
   const bMax = Number(c.budget_max ?? 0);
-  if (bMax > 0 && p.price_min && bMax >= p.price_min && bMax <= (p.price_max ?? p.price_min) * 1.15) {
+  if (bMax > 0 && p.price_from && bMax >= p.price_from && bMax <= (p.price_to ?? p.price_from) * 1.15) {
     bits.push(`fits your budget`);
   }
   if (p.developer) bits.push(`built by ${p.developer}`);
