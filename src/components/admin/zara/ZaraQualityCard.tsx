@@ -7,8 +7,8 @@ export function ZaraQualityCard() {
   const { data: byIntent = [] } = useQuery({
     queryKey: ['zara-metrics-by-intent'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('zara_metrics_by_intent' as any)
+      const { data, error } = await (supabase as any)
+        .from('zara_metrics_by_intent')
         .select('*');
       if (error) throw error;
       return (data ?? []) as Array<{
@@ -21,8 +21,8 @@ export function ZaraQualityCard() {
   const { data: daily = [] } = useQuery({
     queryKey: ['zara-metrics-daily'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('zara_metrics_daily' as any)
+      const { data, error } = await (supabase as any)
+        .from('zara_metrics_daily')
         .select('*')
         .order('day', { ascending: false })
         .limit(14);
