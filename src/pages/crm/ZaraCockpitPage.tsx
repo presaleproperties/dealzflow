@@ -277,7 +277,7 @@ export default function ZaraCockpitPage() {
       if (!activeId) return [];
       const { data } = await supabase
         .from('zara_messages')
-        .select('id,role,content,tool_calls,tool_call_id,tool_name,tool_result,created_at')
+        .select('id,role,content,tool_calls,tool_call_id,tool_name,tool_result,created_at,metadata')
         .eq('conversation_id', activeId)
         .order('created_at', { ascending: true });
       return (data as StoredMsg[]) ?? [];
