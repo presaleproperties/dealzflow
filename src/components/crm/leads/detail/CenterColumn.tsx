@@ -9,6 +9,7 @@ import { useCrmEmailLog } from '@/hooks/useCrmEmailLog';
 import { useCrmContactSmsLog, type CrmSmsLogRow } from '@/hooks/useCrmContactSmsLog';
 import { useCrmContactActivityEvents } from '@/hooks/useCrmLeadCommunications';
 import { QuickActionBar } from '@/components/crm/leads/QuickActionBar';
+import { EngagementTimeline } from '@/components/crm/leads/EngagementTimeline';
 import { EmailNoteCard } from '@/components/crm/leads/EmailNoteCard';
 import { EmailPreviewDialog, type EmailLogRow } from '@/components/crm/leads/EmailPreviewDialog';
 import { LeadEmailThreadDialog } from '@/components/crm/leads/LeadEmailThreadDialog';
