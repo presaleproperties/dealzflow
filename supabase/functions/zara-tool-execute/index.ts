@@ -136,15 +136,30 @@ async function confirm_update_lead(args: any, ctx: Ctx) {
 async function draft_email(args: any, ctx: Ctx) {
   if (!args.contact_id) return fail("contact_id required");
   const sb = svc();
-  // Per-contact zara_enabled gate
   const { data: c } = await sb.from("crm_contacts").select("zara_enabled,status,language,first_name,last_name").eq("id", args.contact_id).maybeSingle();
   if (c && (c as any).zara_enabled === false) return fail("Zara is disabled for this contact — drafts blocked.");
+
+  // Render the draft as fully-branded HTML using a matched template scaffold
+  // + the actor agent's signature. SMS/WhatsApp drafts stay plain text.
+  const { renderBrandedEmail } = await import("../_shared/zara-email-render.ts");
+  const rendered = await renderBrandedEmail(sb as any, {
+    userId: ctx.user_id,
+    contactId: args.contact_id,
+    intent: args.purpose ?? null,
+    bodyText: String(args.body ?? ""),
+    subject: args.subject ?? null,
+    cta_text: args.cta_text ?? null,
+    cta_url: args.cta_url ?? null,
+  });
+
   const now = new Date().toISOString();
   const payload: Record<string, unknown> = {
     contact_id: args.contact_id,
     channel: "email",
-    draft_subject: args.subject ?? null,
-    draft_text: args.body,
+    draft_subject: rendered.subject ?? args.subject ?? null,
+    draft_text: rendered.text,
+    draft_html: rendered.html,
+    template_id_used: rendered.template_id_used,
     inbound_text: args.purpose ?? "(agent-initiated via Zara cockpit)",
     inbound_at: now,
     intent: args.purpose ?? null,
@@ -154,31 +169,11 @@ async function draft_email(args: any, ctx: Ctx) {
   const { data, error } = await sb.from("zara_suggested_replies").insert(payload).select("id").single();
   if (error) return fail(error.message);
 
-  // Tier 6 — auto-suggest a relevant template (best-effort, never blocks).
-  let suggestion: { id: string; name: string; subject?: string } | null = null;
-  try {
-    const { data: tpls } = await sb.from("crm_email_templates")
-      .select("id, name, subject, category, is_active")
-      .eq("is_active", true).limit(50);
-    const pool = (tpls ?? []) as any[];
-    const status = String((c as any)?.status ?? "").toLowerCase();
-    const lang = String((c as any)?.language ?? "en").toLowerCase();
-    const ranked = pool.map((t) => {
-      let score = 0;
-      const hay = `${t.name ?? ""} ${t.category ?? ""}`.toLowerCase();
-      if (status && hay.includes(status)) score += 2;
-      if (lang && lang !== "en" && hay.includes(lang)) score += 3;
-      if (args.purpose && hay.includes(String(args.purpose).toLowerCase().slice(0, 12))) score += 2;
-      return { t, score };
-    }).filter((r) => r.score > 0).sort((a, b) => b.score - a.score);
-    if (ranked[0]) suggestion = { id: ranked[0].t.id, name: ranked[0].t.name, subject: ranked[0].t.subject };
-  } catch (_) { /* ignore */ }
-
   return ok({
     draft_id: data.id,
-    preview: String(args.body).slice(0, 200),
-    template_suggestion: suggestion,
-    note: suggestion ? `Consider using template: ${suggestion.name}` : undefined,
+    preview: rendered.text.slice(0, 200),
+    template_id_used: rendered.template_id_used,
+    has_html: true,
   });
 }
 
