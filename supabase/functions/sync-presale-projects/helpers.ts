@@ -38,3 +38,61 @@ export const coalesce = <T>(existingVal: T | null | undefined, incoming: T | nul
   };
   return normalize(existingVal) ?? normalize(incoming) ?? null;
 };
+
+// Audit helper: classify what coalesce did to one field.
+//  - 'preserved' : existing had a value; incoming differed but was ignored
+//  - 'unchanged' : existing == incoming (or both null) — no-op
+//  - 'updated'   : existing was null and incoming filled it in
+//  - 'inserted'  : no prior row existed and incoming has a value
+export type FieldAction = "inserted" | "updated" | "preserved" | "unchanged";
+
+const normalizeForCompare = (v: unknown): string | null => {
+  if (v === null || v === undefined) return null;
+  if (typeof v === "string") {
+    const t = v.trim();
+    return t === "" ? null : t;
+  }
+  return String(v);
+};
+
+export const classifyField = (
+  existingVal: unknown,
+  incomingVal: unknown,
+  isNewRow: boolean,
+): FieldAction => {
+  const e = normalizeForCompare(existingVal);
+  const i = normalizeForCompare(incomingVal);
+  if (isNewRow) return i === null ? "unchanged" : "inserted";
+  if (e !== null && i !== null && e !== i) return "preserved";
+  if (e === null && i !== null) return "updated";
+  return "unchanged";
+};
+
+export interface FieldAudit {
+  field: string;
+  action: FieldAction;
+  old_value: string | null;
+  new_value: string | null;
+}
+
+export const buildFieldAudits = (
+  existing: Record<string, unknown> | null | undefined,
+  incoming: Record<string, unknown>,
+  fields: string[],
+): FieldAudit[] => {
+  const isNewRow = !existing;
+  const out: FieldAudit[] = [];
+  for (const f of fields) {
+    const e = existing?.[f];
+    const i = incoming[f];
+    const action = classifyField(e, i, isNewRow);
+    if (action === "unchanged") continue;
+    out.push({
+      field: f,
+      action,
+      old_value: normalizeForCompare(e),
+      new_value: normalizeForCompare(i),
+    });
+  }
+  return out;
+};
