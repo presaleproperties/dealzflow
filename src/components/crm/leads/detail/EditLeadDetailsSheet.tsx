@@ -537,6 +537,8 @@ function initialForm(contact: CrmContact) {
     budget_min: contact.budget_min != null ? String(contact.budget_min) : '',
     budget_max: contact.budget_max != null ? String(contact.budget_max) : '',
     status: contact.status ?? 'New Lead',
+    pipeline_segment_id:
+      (contact as unknown as { pipeline_segment_id?: string | null }).pipeline_segment_id ?? '',
     assigned_to: contact.assigned_to ?? '',
     source: contact.source ?? '',
     lead_types: leadTypes,
