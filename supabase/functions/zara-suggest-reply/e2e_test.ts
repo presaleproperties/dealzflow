@@ -142,9 +142,9 @@ Deno.test({
       // 4. Tool dispatch: enrich_lead must return a contact dossier for the
       //    same contact. This proves zara-tool-execute is wired and reachable.
       const tool = await callFn("zara-tool-execute", {
-        contact_id: contactId,
         tool: "enrich_lead",
-        args: {},
+        args: { contact_id: contactId },
+        ctx: { user_id: "00000000-0000-0000-0000-000000000000", zara_enabled: true, test_phones: [] },
       });
       // tool-execute may require admin auth depending on RLS. Accept either a
       // 200 with a payload, or 401/403 which proves the function is up and
