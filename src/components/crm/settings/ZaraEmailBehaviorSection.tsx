@@ -11,31 +11,22 @@ type Settings = {
   fallback_template_id: string | null;
 };
 
-const DEFAULTS: Settings = { use_scaffold: true, append_signature: true, fallback_template_id: null };
-
-const KEYS = {
-  use_scaffold: 'zara.email.use_template_scaffold',
-  append_signature: 'zara.email.append_signature',
-  fallback: 'zara.email.fallback_template_id',
-} as const;
-
 export function ZaraEmailBehaviorSection() {
-  const [s, setS] = useState<Settings>(DEFAULTS);
+  const [s, setS] = useState<Settings>({ use_scaffold: true, append_signature: true, fallback_template_id: null });
   const [templates, setTemplates] = useState<Array<{ id: string; name: string }>>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     (async () => {
       const [{ data: cfg }, { data: tpls }] = await Promise.all([
-        supabase.from('crm_settings').select('key, value').in('key', [KEYS.use_scaffold, KEYS.append_signature, KEYS.fallback]),
+        supabase.from('zara_settings').select('email_use_template_scaffold, email_append_signature, email_fallback_template_id').eq('id', 1).maybeSingle(),
         supabase.from('crm_email_templates').select('id, name').eq('is_active', true).order('name'),
       ]);
-      const map = new Map<string, any>();
-      (cfg ?? []).forEach((r: any) => map.set(r.key, r.value));
+      const c = (cfg as any) ?? {};
       setS({
-        use_scaffold: map.get(KEYS.use_scaffold) !== false,
-        append_signature: map.get(KEYS.append_signature) !== false,
-        fallback_template_id: (map.get(KEYS.fallback) as string) ?? null,
+        use_scaffold: c.email_use_template_scaffold !== false,
+        append_signature: c.email_append_signature !== false,
+        fallback_template_id: c.email_fallback_template_id ?? null,
       });
       setTemplates((tpls ?? []) as any);
       setLoading(false);
@@ -45,12 +36,12 @@ export function ZaraEmailBehaviorSection() {
   const save = async (patch: Partial<Settings>) => {
     const next = { ...s, ...patch };
     setS(next);
-    const rows = [
-      { key: KEYS.use_scaffold, value: next.use_scaffold },
-      { key: KEYS.append_signature, value: next.append_signature },
-      { key: KEYS.fallback, value: next.fallback_template_id },
-    ];
-    const { error } = await supabase.from('crm_settings').upsert(rows as any, { onConflict: 'key' });
+    const { error } = await supabase.from('zara_settings').upsert({
+      id: 1,
+      email_use_template_scaffold: next.use_scaffold,
+      email_append_signature: next.append_signature,
+      email_fallback_template_id: next.fallback_template_id,
+    } as any, { onConflict: 'id' });
     if (error) toast.error(error.message);
   };
 
