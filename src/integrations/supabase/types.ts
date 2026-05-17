@@ -2943,6 +2943,48 @@ export type Database = {
         }
         Relationships: []
       }
+      crm_presale_sync_audit: {
+        Row: {
+          action: string
+          actor: string | null
+          created_at: string
+          field: string
+          id: number
+          mode: string | null
+          new_value: string | null
+          old_value: string | null
+          project_id: string | null
+          run_id: string
+          slug: string
+        }
+        Insert: {
+          action: string
+          actor?: string | null
+          created_at?: string
+          field: string
+          id?: number
+          mode?: string | null
+          new_value?: string | null
+          old_value?: string | null
+          project_id?: string | null
+          run_id: string
+          slug: string
+        }
+        Update: {
+          action?: string
+          actor?: string | null
+          created_at?: string
+          field?: string
+          id?: number
+          mode?: string | null
+          new_value?: string | null
+          old_value?: string | null
+          project_id?: string | null
+          run_id?: string
+          slug?: string
+        }
+        Relationships: []
+      }
       crm_projects: {
         Row: {
           aliases: string[] | null

@@ -148,3 +148,46 @@ Deno.test("payload merge: bridge returning nulls leaves existing nulls as null (
   assertEquals(payload.hero_image_url, null);
   assertEquals(payload.notes, null);
 });
+
+import { buildFieldAudits, classifyField } from "./helpers.ts";
+
+Deno.test("classifyField: inserted for new row with value", () => {
+  assertEquals(classifyField(undefined, "x", true), "inserted");
+  assertEquals(classifyField(undefined, null, true), "unchanged");
+});
+
+Deno.test("classifyField: updated when existing null and incoming present", () => {
+  assertEquals(classifyField(null, "x", false), "updated");
+  assertEquals(classifyField("", "x", false), "updated");
+});
+
+Deno.test("classifyField: preserved when existing differs from incoming", () => {
+  assertEquals(classifyField("keep", "fresh", false), "preserved");
+});
+
+Deno.test("classifyField: unchanged when equal or both null", () => {
+  assertEquals(classifyField("same", "same", false), "unchanged");
+  assertEquals(classifyField(null, null, false), "unchanged");
+  assertEquals(classifyField("keep", null, false), "unchanged");
+});
+
+Deno.test("buildFieldAudits: existing row mixes preserved + updated, skips unchanged", () => {
+  const existing = { brochure_url: "old.pdf", hero_image_url: null, city: "Surrey" };
+  const incoming = { brochure_url: "new.pdf", hero_image_url: "hero.jpg", city: "Surrey", notes: null };
+  const audits = buildFieldAudits(existing, incoming, ["brochure_url","hero_image_url","city","notes"]);
+  assertEquals(audits.length, 2);
+  const a = Object.fromEntries(audits.map(x => [x.field, x]));
+  assertEquals(a.brochure_url.action, "preserved");
+  assertEquals(a.brochure_url.old_value, "old.pdf");
+  assertEquals(a.brochure_url.new_value, "new.pdf");
+  assertEquals(a.hero_image_url.action, "updated");
+  assertEquals(a.hero_image_url.new_value, "hero.jpg");
+});
+
+Deno.test("buildFieldAudits: new row marks present fields as inserted", () => {
+  const audits = buildFieldAudits(null, { city: "Langley", notes: null }, ["city","notes"]);
+  assertEquals(audits.length, 1);
+  assertEquals(audits[0].field, "city");
+  assertEquals(audits[0].action, "inserted");
+  assertEquals(audits[0].old_value, null);
+});
