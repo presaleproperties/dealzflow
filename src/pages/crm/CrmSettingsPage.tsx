@@ -19,6 +19,7 @@ import {
 } from '@/lib/timelineLinkPref';
 import DataImportSection from '@/components/crm/settings/DataImportSection';
 import DataManagerSection from '@/components/crm/settings/DataManagerSection';
+import { ZaraModeSection } from '@/components/crm/settings/ZaraModeSection';
 import EmailSettingsSection from '@/components/crm/settings/EmailSettingsSection';
 import ReplySignatureCard from '@/components/crm/settings/ReplySignatureCard';
 import ProjectsManagerSection from '@/components/crm/settings/ProjectsManagerSection';
@@ -94,7 +95,7 @@ type TabId =
   | 'setup'
   | 'profile' | 'email' | 'notifications' | 'timeline'
   | 'team' | 'integrations' | 'projects' | 'import' | 'data'
-  | 'leadflow' | 'sources' | 'plan';
+  | 'leadflow' | 'sources' | 'plan' | 'zara';
 
 interface TabDef {
   id: TabId;
@@ -125,6 +126,7 @@ const TABS: TabDef[] = [
   { id: 'leadflow',      label: 'Lead Flow',         icon: GitBranch,     group: 'owner',     audience: 'owner',  description: 'Sources, ingestion, errors' },
   { id: 'sources',       label: 'Source Library',    icon: Layers,        group: 'owner',     audience: 'owner',  description: 'Rename & merge lead sources' },
   { id: 'plan',          label: 'Plan & Billing',    icon: CreditCard,    group: 'owner',     audience: 'owner',  description: 'Subscription, ownership' },
+  { id: 'zara',          label: 'Zara AI',           icon: Sparkles,      group: 'owner',     audience: 'owner',  description: 'Off / Sandbox / Live mode' },
 ];
 
 /* ─────────────────────────────────────────────────────────────
@@ -277,6 +279,7 @@ export default function CrmSettingsPage() {
           {activeTab === 'leadflow'      && <SectionErrorBoundary name="Lead Flow"><LeadFlowSection /></SectionErrorBoundary>}
           {activeTab === 'sources'       && <SectionErrorBoundary name="Source Library"><SourceManagerSection /></SectionErrorBoundary>}
           {activeTab === 'plan'          && <SectionErrorBoundary name="Plan & Billing"><PlanBillingSection /></SectionErrorBoundary>}
+          {activeTab === 'zara'          && <SectionErrorBoundary name="Zara AI"><ZaraModeSection /></SectionErrorBoundary>}
         </div>
       </div>
     </div>

@@ -1,10 +1,13 @@
-import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/useAuth';
 
-export function ZaraQueueBadge() {
+interface Props {
+  className?: string;
+}
+
+export function ZaraQueueBadge({ className = '' }: Props) {
   const { user } = useAuth();
   const qc = useQueryClient();
   const { data: count = 0 } = useQuery({
@@ -31,18 +34,18 @@ export function ZaraQueueBadge() {
     return () => { supabase.removeChannel(ch); };
   }, [qc]);
 
+  if (!count) return null;
+
   const tone =
-    count === 0 ? 'bg-muted text-muted-foreground' :
     count <= 10 ? 'bg-warning/15 text-warning' :
                   'bg-destructive/15 text-destructive';
 
   return (
-    <Link
-      to="/crm/zara/queue"
-      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10.5px] font-medium ${tone}`}
-      title="Zara approval queue"
+    <span
+      className={`inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-semibold ${tone} ${className}`}
+      title={`${count} pending Zara draft${count === 1 ? '' : 's'}`}
     >
-      <span>Zara</span><span>{count}</span>
-    </Link>
+      {count}
+    </span>
   );
 }

@@ -9,6 +9,7 @@ import { UpcomingMini } from '@/components/crm/leads/UpcomingMini';
 import { RecentCallsCard } from '@/components/crm/leads/RecentCallsCard';
 import type { CrmContact } from '@/hooks/useCrmContacts';
 import type { LeadScore } from './types';
+import { ZaraLeadCard } from './ZaraLeadCard';
 
 interface Props {
   contact: CrmContact;
@@ -70,6 +71,9 @@ export function RightSidebar({
         onAddTask={onAddTask}
         onAddShowing={onAddShowing}
       />
+
+      {/* Zara — AI assistant memory & draft toggle */}
+      <ZaraLeadCard contactId={contact.id} />
 
       {/* ③ Engagement (Emails / Behavior) */}
       <EngagementTabs contact={contact} />

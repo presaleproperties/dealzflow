@@ -104,6 +104,7 @@ const CrmAutomationsPage = lazy(() => import("./pages/crm/CrmAutomationsPage"));
 const CrmCalendarPage = lazy(() => import("./pages/crm/CrmCalendarPage"));
 const CrmReportsPage = lazy(() => import("./pages/crm/CrmReportsPage"));
 const CrmEngagementReportsPage = lazy(() => import("./pages/crm/CrmEngagementReportsPage"));
+const ZaraQueuePage = lazy(() => import("./pages/crm/ZaraQueuePage"));
 const CrmSettingsPage = lazy(() => import("./pages/crm/CrmSettingsPage"));
 const CrmIntegrationsPage = lazy(() => import("./pages/crm/CrmIntegrationsPage"));
 const CrmBehaviorLeadsPage = lazy(() => import("./pages/crm/CrmBehaviorLeadsPage"));
@@ -334,6 +335,7 @@ const App = () => (
                     <Route path="/crm/calendar" element={<ProtectedRoute><CrmLayout><CrmCalendarPage /></CrmLayout></ProtectedRoute>} />
                     <Route path="/crm/reports" element={<ProtectedRoute><CrmLayout><CrmReportsPage /></CrmLayout></ProtectedRoute>} />
                     <Route path="/crm/reports/engagement" element={<ProtectedRoute><CrmLayout><CrmEngagementReportsPage /></CrmLayout></ProtectedRoute>} />
+                    <Route path="/crm/zara" element={<ProtectedRoute><CrmLayout><ZaraQueuePage /></CrmLayout></ProtectedRoute>} />
                     <Route path="/crm/settings" element={<ProtectedRoute><CrmLayout><CrmSettingsPage /></CrmLayout></ProtectedRoute>} />
                     <Route path="/crm/integrations" element={<ProtectedRoute><CrmLayout requireRole={['owner', 'admin']}><CrmIntegrationsPage /></CrmLayout></ProtectedRoute>} />
                     <Route path="/crm/behavior-leads" element={<ProtectedRoute><CrmLayout requireRole={['owner', 'admin']}><CrmBehaviorLeadsPage /></CrmLayout></ProtectedRoute>} />
