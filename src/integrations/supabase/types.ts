@@ -7115,24 +7115,36 @@ export type Database = {
       zara_lead_memory: {
         Row: {
           contact_id: string
+          facts: Json
+          last_rolled_at: string | null
           refresh_reason: string | null
           refreshed_at: string
           signals: Json
           summary: string
+          turn_count: number
+          version: number
         }
         Insert: {
           contact_id: string
+          facts?: Json
+          last_rolled_at?: string | null
           refresh_reason?: string | null
           refreshed_at?: string
           signals?: Json
           summary: string
+          turn_count?: number
+          version?: number
         }
         Update: {
           contact_id?: string
+          facts?: Json
+          last_rolled_at?: string | null
           refresh_reason?: string | null
           refreshed_at?: string
           signals?: Json
           summary?: string
+          turn_count?: number
+          version?: number
         }
         Relationships: [
           {
@@ -8505,6 +8517,10 @@ export type Database = {
           intent: string
           model: string
         }[]
+      }
+      zara_request_memory_rebuild: {
+        Args: { _contact_id: string }
+        Returns: undefined
       }
     }
     Enums: {
