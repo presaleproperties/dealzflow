@@ -51,7 +51,7 @@ Deno.serve(async (req) => {
 
     // 3. Context
     const [{ data: memoryRow }, { data: events }] = await Promise.all([
-      admin.from('zara_lead_memory').select('summary, signals').eq('contact_id', contactId).maybeSingle(),
+      admin.from('zara_lead_memory').select('summary, signals, facts, turn_count, version, last_rolled_at').eq('contact_id', contactId).maybeSingle(),
       admin
         .from('crm_engagement_events')
         .select('event_type, source, direction, occurred_at, metadata')
