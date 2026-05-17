@@ -62,7 +62,7 @@ function fail(msg: string) { return { ok: false, error: msg }; }
 
 // ── Tool implementations ───────────────────────────────────────────────
 
-async function get_lead_context(args: any, ctx: Ctx) {
+async function get_lead_context(args: any, _ctx: Ctx) {
   const sb = svc();
   let row: any = null;
   if (args.contact_id) {
@@ -71,7 +71,7 @@ async function get_lead_context(args: any, ctx: Ctx) {
   } else if (args.name_or_email) {
     const q = String(args.name_or_email);
     const { data } = await sb.from("crm_contacts").select("*")
-      .or(`email.ilike.%${q}%,display_name.ilike.%${q}%,phone.ilike.%${q}%`)
+      .or(`email.ilike.%${q}%,first_name.ilike.%${q}%,last_name.ilike.%${q}%,phone.ilike.%${q}%`)
       .limit(1).maybeSingle();
     row = data;
   }
@@ -80,10 +80,11 @@ async function get_lead_context(args: any, ctx: Ctx) {
     .select("event_type,description,occurred_at").eq("contact_id", row.id)
     .order("occurred_at", { ascending: false }).limit(10);
   let projects: any[] = [];
-  if (row.project_interest || (row.tags ?? []).some((t: string) => t?.startsWith?.("project:"))) {
-    const cityFilter = row.city ? sb.from("crm_projects").select("name,slug,city,status").ilike("city", `%${row.city}%`).limit(5)
-      : sb.from("crm_projects").select("name,slug,city,status").limit(5);
-    const { data } = await cityFilter;
+  const hasProjectInterest = row.project || row.projects?.length || (row.tags ?? []).some((t: string) => t?.startsWith?.("project:"));
+  if (hasProjectInterest) {
+    let q2 = sb.from("crm_projects").select("name,slug,city,status").limit(5);
+    if (row.city_pref || row.city) q2 = q2.ilike("city", `%${row.city_pref ?? row.city}%`);
+    const { data } = await q2;
     projects = data ?? [];
   }
   return ok({ contact: row, recent_activity: acts ?? [], relevant_projects: projects });
@@ -91,10 +92,10 @@ async function get_lead_context(args: any, ctx: Ctx) {
 
 async function search_leads(args: any) {
   const sb = svc();
-  let q = sb.from("crm_contacts").select("id,display_name,email,phone,status,tags,city,last_touch_at").limit(Math.min(args.limit ?? 25, 50));
+  let q = sb.from("crm_contacts").select("id,first_name,last_name,email,phone,status,tags,city,last_touch_at").limit(Math.min(args.limit ?? 25, 50));
   if (args.query) {
     const s = String(args.query);
-    q = q.or(`display_name.ilike.%${s}%,email.ilike.%${s}%,phone.ilike.%${s}%`);
+    q = q.or(`first_name.ilike.%${s}%,last_name.ilike.%${s}%,email.ilike.%${s}%,phone.ilike.%${s}%`);
   }
   if (args.status) q = q.eq("status", args.status);
   if (args.tag) q = q.contains("tags", [args.tag]);
