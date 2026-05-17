@@ -590,7 +590,7 @@ export default function ZaraCockpitPage() {
             </div>
             <div className="mt-2 text-center text-[10.5px] text-muted-foreground">
               <Link to="/crm/zara/about" className="hover:text-foreground transition-colors">
-                Cmd/Ctrl+Enter to send · {streaming ? 'streaming…' : 'ready'}
+                Cmd/Ctrl+Enter to send · Hold mic to talk · {ptt.state === 'recording' ? 'recording…' : ptt.state === 'transcribing' ? 'transcribing…' : streaming ? 'streaming…' : 'ready'}
               </Link>
             </div>
           </div>
