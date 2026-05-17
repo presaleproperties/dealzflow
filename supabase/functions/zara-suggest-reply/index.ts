@@ -1,7 +1,7 @@
 // zara-suggest-reply — drafts a reply using Claude Haiku 4.5 and queues for human approval.
 // Gates: zara_settings.mode != 'off' AND (contact.zara_enabled OR contact.tags has 'zara_test_contact').
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
-import { corsHeaders, detectLanguage, evaluateGuardrails, ZARA_SYSTEM_PROMPT } from '../_shared/zara-guardrails.ts';
+import { corsHeaders, detectLanguage, evaluateGuardrails, resolveAssignedToUuid, ZARA_SYSTEM_PROMPT } from '../_shared/zara-guardrails.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -126,16 +126,9 @@ Draft Zara's reply now. Return ONLY the JSON object.`;
     });
 
     // Resolve contact.assigned_to (stored as display_name string) into a user UUID
-    // for the zara_suggested_replies.assigned_to UUID column.
-    let assignedUserId: string | null = null;
-    if (contact.assigned_to) {
-      const { data: team } = await admin
-        .from('crm_team')
-        .select('user_id')
-        .eq('display_name', contact.assigned_to)
-        .maybeSingle();
-      assignedUserId = team?.user_id ?? null;
-    }
+    // for the zara_suggested_replies.assigned_to UUID column. Falls back to null
+    // on no match or error so the insert never fails.
+    const assignedUserId = await resolveAssignedToUuid(admin, contact.assigned_to);
 
     // 9. Insert draft
     const { data: draft, error: insertErr } = await admin

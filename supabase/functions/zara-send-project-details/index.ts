@@ -13,6 +13,7 @@ import {
   htmlToPlain,
   getZaraEmailPrefs,
 } from "../_shared/zara-email-render.ts";
+import { resolveAssignedToUuid } from "../_shared/zara-guardrails.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
