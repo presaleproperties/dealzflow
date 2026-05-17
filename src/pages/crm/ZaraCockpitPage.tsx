@@ -879,6 +879,13 @@ export default function ZaraCockpitPage() {
                 </div>
               </div>
             )}
+            <div ref={inputWrapRef} className="relative">
+              <SlashCommandPalette
+                input={input}
+                onSelect={(v) => { setInput(v); setTimeout(() => inputRef.current?.focus(), 0); }}
+                onCompose={(text) => { setInput(text); setTimeout(() => { inputRef.current?.focus(); onSend(); }, 0); }}
+                anchorRef={inputWrapRef}
+              />
             <div className="relative flex items-end gap-2 rounded-2xl border border-border bg-card focus-within:border-primary/60 focus-within:ring-2 focus-within:ring-primary/15 transition-all p-2">
               <textarea
                 ref={inputRef}
