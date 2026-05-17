@@ -133,14 +133,14 @@ async function confirm_update_lead(args: any, ctx: Ctx) {
   return ok({ contact_id: p.contact_id, applied: p.patch });
 }
 
-async function draft_email(args: any, _ctx: Ctx) {
+async function draft_email(args: any, ctx: Ctx) {
   if (!args.contact_id) return fail("contact_id required");
   const sb = svc();
   // Per-contact zara_enabled gate
-  const { data: c } = await sb.from("crm_contacts").select("zara_enabled").eq("id", args.contact_id).maybeSingle();
-  if (c && c.zara_enabled === false) return fail("Zara is disabled for this contact — drafts blocked.");
+  const { data: c } = await sb.from("crm_contacts").select("zara_enabled,status,language,first_name,last_name").eq("id", args.contact_id).maybeSingle();
+  if (c && (c as any).zara_enabled === false) return fail("Zara is disabled for this contact — drafts blocked.");
   const now = new Date().toISOString();
-  const { data, error } = await sb.from("zara_suggested_replies").insert({
+  const payload: Record<string, unknown> = {
     contact_id: args.contact_id,
     channel: "email",
     draft_subject: args.subject ?? null,
@@ -149,27 +149,123 @@ async function draft_email(args: any, _ctx: Ctx) {
     inbound_at: now,
     intent: args.purpose ?? null,
     status: "pending",
-  }).select("id").single();
+  };
+  if ((ctx as any).consulted_sources) payload.consulted_sources = (ctx as any).consulted_sources;
+  const { data, error } = await sb.from("zara_suggested_replies").insert(payload).select("id").single();
   if (error) return fail(error.message);
-  return ok({ draft_id: data.id, preview: String(args.body).slice(0, 200) });
+
+  // Tier 6 — auto-suggest a relevant template (best-effort, never blocks).
+  let suggestion: { id: string; name: string; subject?: string } | null = null;
+  try {
+    const { data: tpls } = await sb.from("crm_email_templates")
+      .select("id, name, subject, category, is_active")
+      .eq("is_active", true).limit(50);
+    const pool = (tpls ?? []) as any[];
+    const status = String((c as any)?.status ?? "").toLowerCase();
+    const lang = String((c as any)?.language ?? "en").toLowerCase();
+    const ranked = pool.map((t) => {
+      let score = 0;
+      const hay = `${t.name ?? ""} ${t.category ?? ""}`.toLowerCase();
+      if (status && hay.includes(status)) score += 2;
+      if (lang && lang !== "en" && hay.includes(lang)) score += 3;
+      if (args.purpose && hay.includes(String(args.purpose).toLowerCase().slice(0, 12))) score += 2;
+      return { t, score };
+    }).filter((r) => r.score > 0).sort((a, b) => b.score - a.score);
+    if (ranked[0]) suggestion = { id: ranked[0].t.id, name: ranked[0].t.name, subject: ranked[0].t.subject };
+  } catch (_) { /* ignore */ }
+
+  return ok({
+    draft_id: data.id,
+    preview: String(args.body).slice(0, 200),
+    template_suggestion: suggestion,
+    note: suggestion ? `Consider using template: ${suggestion.name}` : undefined,
+  });
 }
 
-async function draft_sms(args: any, _ctx: Ctx) {
+async function draft_sms(args: any, ctx: Ctx) {
+  return draftMessage(args, ctx, "sms");
+}
+
+async function draft_whatsapp(args: any, ctx: Ctx) {
+  return draftMessage(args, ctx, "whatsapp");
+}
+
+async function draftMessage(args: any, ctx: Ctx, channel: "sms" | "whatsapp") {
   if (!args.contact_id) return fail("contact_id required");
   const sb = svc();
   const { data: c } = await sb.from("crm_contacts").select("zara_enabled").eq("id", args.contact_id).maybeSingle();
   if (c && c.zara_enabled === false) return fail("Zara is disabled for this contact — drafts blocked.");
   const now = new Date().toISOString();
-  const { data, error } = await sb.from("zara_suggested_replies").insert({
+  const payload: Record<string, unknown> = {
     contact_id: args.contact_id,
-    channel: "sms",
+    channel,
     draft_text: args.body,
     inbound_text: "(agent-initiated via Zara cockpit)",
     inbound_at: now,
     status: "pending",
-  }).select("id").single();
+  };
+  if ((ctx as any).consulted_sources) payload.consulted_sources = (ctx as any).consulted_sources;
+  const { data, error } = await sb.from("zara_suggested_replies").insert(payload).select("id").single();
   if (error) return fail(error.message);
-  return ok({ draft_id: data.id, preview: String(args.body).slice(0, 160) });
+  return ok({ draft_id: data.id, preview: String(args.body).slice(0, 160), channel });
+}
+
+async function create_template(args: any, ctx: Ctx) {
+  if (!args?.title || !args?.channel || !args?.body) return fail("title, channel, body required");
+  const sb = svc();
+  const slug = String(args.title).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 60) || `tpl-${Date.now()}`;
+  const tags: string[] = Array.isArray(args.tags) ? args.tags : [];
+  let row: any = null;
+  if (args.channel === "email") {
+    const { data, error } = await sb.from("crm_email_templates").insert({
+      name: args.title,
+      subject: args.subject ?? args.title,
+      body_html: args.body,
+      slug,
+      category: "general",
+      source: "zara",
+      merge_tags: tags,
+    }).select("id, slug").single();
+    if (error) return fail(error.message);
+    row = data;
+  } else if (args.channel === "sms") {
+    const { data, error } = await sb.from("crm_sms_templates").insert({
+      name: args.title, body: args.body, channel: "sms", category: "general", merge_tags: tags,
+    }).select("id").single();
+    if (error) return fail(error.message);
+    row = { ...data, slug };
+  } else if (args.channel === "whatsapp") {
+    const { data, error } = await sb.from("crm_whatsapp_templates").insert({
+      name: args.title, body_text: args.body, category: "utility", status: "approved", language: "en",
+    }).select("id").single();
+    if (error) return fail(error.message);
+    row = { ...data, slug };
+  } else {
+    return fail("channel must be email | sms | whatsapp");
+  }
+  await logAction(ctx, "create_template", args, "created");
+  return ok({ template_id: row.id, slug: row.slug, channel: args.channel });
+}
+
+async function update_template(args: any, ctx: Ctx) {
+  if (!args?.template_id || !args?.fields_to_update) return fail("template_id and fields_to_update required");
+  const sb = svc();
+  const f = args.fields_to_update as Record<string, unknown>;
+  const channel = args.channel ?? "email";
+  const tableName = channel === "sms" ? "crm_sms_templates" : channel === "whatsapp" ? "crm_whatsapp_templates" : "crm_email_templates";
+  const patch: Record<string, unknown> = {};
+  if (typeof f.title === "string") patch[channel === "whatsapp" || channel === "sms" ? "name" : "name"] = f.title;
+  if (typeof f.subject === "string" && channel === "email") patch.subject = f.subject;
+  if (typeof f.body === "string") {
+    if (channel === "email") patch.body_html = f.body;
+    else if (channel === "sms") patch.body = f.body;
+    else patch.body_text = f.body;
+  }
+  if (Array.isArray(f.tags) && channel !== "whatsapp") patch.merge_tags = f.tags;
+  const { error } = await sb.from(tableName as any).update(patch).eq("id", args.template_id);
+  if (error) return fail(error.message);
+  await logAction(ctx, "update_template", args, "updated");
+  return ok({ template_id: args.template_id, updated_fields: Object.keys(patch) });
 }
 
 async function add_lead_note(args: any, ctx: Ctx) {
@@ -397,10 +493,11 @@ async function get_market_context(args: any) {
 
 const REGISTRY: Record<string, (args: any, ctx: Ctx) => Promise<unknown>> = {
   get_lead_context, search_leads, update_lead, confirm_update_lead,
-  draft_email, draft_sms, add_lead_note, add_lead_tag, set_lead_status,
+  draft_email, draft_sms, draft_whatsapp, add_lead_note, add_lead_tag, set_lead_status,
   schedule_follow_up, list_pending_drafts, approve_draft, send_briefing_summary,
   list_projects, project_details, recommend_projects_for_lead, web_research,
   log_training_feedback, show_engagement_score,
+  create_template, update_template,
   // RAG
   search_knowledge, get_winning_pattern, get_project_deep_dive, get_market_context,
 };

@@ -44,7 +44,8 @@ Rules:
 - When the user names a lead, call get_lead_context first.
 - Keep responses tight, scannable, markdown-formatted.
 - For projects, prefer recommend_projects_for_lead when a lead context exists.
-- A <current_view> block tells you what Uzair is looking at right now. When his message uses pronouns ("this lead", "him", "her", "this project") or is ambiguous, resolve them to whatever's in <current_view>. If <current_view> shows a lead and Uzair says "draft a follow-up", draft it for THAT lead — no need to ask which one.`;
+- A <current_view> block tells you what Uzair is looking at right now. When his message uses pronouns ("this lead", "him", "her", "this project") or is ambiguous, resolve them to whatever's in <current_view>. If <current_view> shows a lead and Uzair says "draft a follow-up", draft it for THAT lead — no need to ask which one.
+- CITATION RULE: When you draft a reply (draft_email, draft_sms, draft_whatsapp) AND your <retrieved_context> includes playbook chunks, past wins, or project deep-dives, you MUST end your assistant text with one short line: "Grounded in: <source-ids>" listing which sources you grounded the draft in (e.g. "Grounded in: K1 brand_voice, K3 first_touch, W1 punjabi_close").`;
 
 type ToolCtx = { user_id: string; conversation_id: string; zara_enabled: boolean; test_phones: string[] };
 
@@ -422,7 +423,7 @@ Deno.serve(async (req) => {
     if (mode === "off") {
       return new Response("Zara is currently off.", { status: 423, headers: corsHeaders });
     }
-    const ctx: ToolCtx = {
+    const ctx: ToolCtx & { consulted_sources?: any } = {
       user_id: user.id, conversation_id,
       zara_enabled: true,
       test_phones: settings?.test_phone_numbers ?? [],
@@ -527,7 +528,10 @@ Deno.serve(async (req) => {
                 continue;
               }
               send("tool_start", { id: tu.id, name: tu.name, input: tu.input });
-              const out = await runTool(tu.name, tu.input, ctx);
+              // Attach RAG sources to ctx for draft tools so they persist to zara_suggested_replies.consulted_sources
+              const callCtx = (tu.name === "draft_email" || tu.name === "draft_sms" || tu.name === "draft_whatsapp") && ragSources
+                ? { ...ctx, consulted_sources: ragSources } : ctx;
+              const out = await runTool(tu.name, tu.input, callCtx as any);
               await persistToolResult(conversation_id, tu.id, tu.name, out);
               toolResultsById.set(tu.id, out);
               send("tool_result", { id: tu.id, name: tu.name, output: out });
