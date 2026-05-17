@@ -1159,7 +1159,7 @@ export type Database = {
             columns: ["zara_enabled_by"]
             isOneToOne: false
             referencedRelation: "profiles"
-            referencedColumns: ["id"]
+            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -2012,7 +2012,7 @@ export type Database = {
             columns: ["actor_id"]
             isOneToOne: false
             referencedRelation: "profiles"
-            referencedColumns: ["id"]
+            referencedColumns: ["user_id"]
           },
           {
             foreignKeyName: "crm_engagement_events_contact_id_fkey"
@@ -6905,7 +6905,7 @@ export type Database = {
             columns: ["decided_by"]
             isOneToOne: false
             referencedRelation: "profiles"
-            referencedColumns: ["id"]
+            referencedColumns: ["user_id"]
           },
           {
             foreignKeyName: "zara_approval_decisions_draft_id_fkey"
@@ -7057,7 +7057,7 @@ export type Database = {
             columns: ["uploaded_by"]
             isOneToOne: false
             referencedRelation: "profiles"
-            referencedColumns: ["id"]
+            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -7318,7 +7318,7 @@ export type Database = {
             columns: ["enabled_by"]
             isOneToOne: false
             referencedRelation: "profiles"
-            referencedColumns: ["id"]
+            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -7410,14 +7410,14 @@ export type Database = {
             columns: ["approved_by"]
             isOneToOne: false
             referencedRelation: "profiles"
-            referencedColumns: ["id"]
+            referencedColumns: ["user_id"]
           },
           {
             foreignKeyName: "zara_suggested_replies_assigned_to_fkey"
             columns: ["assigned_to"]
             isOneToOne: false
             referencedRelation: "profiles"
-            referencedColumns: ["id"]
+            referencedColumns: ["user_id"]
           },
           {
             foreignKeyName: "zara_suggested_replies_contact_id_fkey"
@@ -7564,7 +7564,7 @@ export type Database = {
             columns: ["agent_id"]
             isOneToOne: false
             referencedRelation: "profiles"
-            referencedColumns: ["id"]
+            referencedColumns: ["user_id"]
           },
           {
             foreignKeyName: "zara_whatsapp_message_map_draft_id_fkey"
@@ -7636,7 +7636,7 @@ export type Database = {
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "profiles"
-            referencedColumns: ["id"]
+            referencedColumns: ["user_id"]
           },
           {
             foreignKeyName: "zara_winning_conversations_source_contact_id_fkey"
@@ -8095,6 +8095,10 @@ export type Database = {
           p_trigger_data?: Json
         }
         Returns: string
+      }
+      ensure_profile_for_user: {
+        Args: { _full_name?: string; _user_id: string }
+        Returns: undefined
       }
       find_potential_duplicate: {
         Args: {
