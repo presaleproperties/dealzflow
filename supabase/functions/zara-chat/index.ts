@@ -435,8 +435,6 @@ Deno.serve(async (req) => {
       page_context: page_context ?? null,
     });
     await sb.from("zara_conversations").update({ last_message_at: new Date().toISOString() }).eq("id", conversation_id);
-    if (ragSourcesPlaceholder()) { /* no-op marker */ }
-    function ragSourcesPlaceholder() { return false; }
 
     // Load history + load system prompt addenda
     const history = await loadHistory(conversation_id);
