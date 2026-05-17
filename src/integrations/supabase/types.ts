@@ -5669,6 +5669,42 @@ export type Database = {
           },
         ]
       }
+      market_intel: {
+        Row: {
+          area: string
+          building_type: string | null
+          created_at: string
+          id: string
+          metric: string
+          notes: string | null
+          source: string
+          value: number
+          week_starting: string
+        }
+        Insert: {
+          area: string
+          building_type?: string | null
+          created_at?: string
+          id?: string
+          metric: string
+          notes?: string | null
+          source: string
+          value: number
+          week_starting: string
+        }
+        Update: {
+          area?: string
+          building_type?: string | null
+          created_at?: string
+          id?: string
+          metric?: string
+          notes?: string | null
+          source?: string
+          value?: number
+          week_starting?: string
+        }
+        Relationships: []
+      }
       messages: {
         Row: {
           body: string
@@ -6026,18 +6062,23 @@ export type Database = {
           brochure_url: string | null
           building_type: string | null
           city: string | null
+          common_objections: string[] | null
           completion_quarter: string | null
           completion_year: number | null
           created_at: string
+          deep_dive_embedding: string | null
+          deep_dive_updated_at: string | null
           deposit_structure: string | null
           description: string | null
           developer: string | null
           hero_image_url: string | null
+          honest_caveats: string | null
           id: string
           key_features: Json
           last_synced_at: string | null
           last_synced_source: string | null
           marketing_url: string | null
+          mortgage_broker_note: string | null
           name: string
           neighborhood: string | null
           price_range_high: number | null
@@ -6047,24 +6088,32 @@ export type Database = {
           status: string
           unit_count: number | null
           unit_types: string[] | null
+          uzair_pitch: string | null
           vip_access: boolean
+          who_this_doesnt_fit: string | null
+          who_this_fits: string | null
         }
         Insert: {
           brochure_url?: string | null
           building_type?: string | null
           city?: string | null
+          common_objections?: string[] | null
           completion_quarter?: string | null
           completion_year?: number | null
           created_at?: string
+          deep_dive_embedding?: string | null
+          deep_dive_updated_at?: string | null
           deposit_structure?: string | null
           description?: string | null
           developer?: string | null
           hero_image_url?: string | null
+          honest_caveats?: string | null
           id?: string
           key_features?: Json
           last_synced_at?: string | null
           last_synced_source?: string | null
           marketing_url?: string | null
+          mortgage_broker_note?: string | null
           name: string
           neighborhood?: string | null
           price_range_high?: number | null
@@ -6074,24 +6123,32 @@ export type Database = {
           status?: string
           unit_count?: number | null
           unit_types?: string[] | null
+          uzair_pitch?: string | null
           vip_access?: boolean
+          who_this_doesnt_fit?: string | null
+          who_this_fits?: string | null
         }
         Update: {
           brochure_url?: string | null
           building_type?: string | null
           city?: string | null
+          common_objections?: string[] | null
           completion_quarter?: string | null
           completion_year?: number | null
           created_at?: string
+          deep_dive_embedding?: string | null
+          deep_dive_updated_at?: string | null
           deposit_structure?: string | null
           description?: string | null
           developer?: string | null
           hero_image_url?: string | null
+          honest_caveats?: string | null
           id?: string
           key_features?: Json
           last_synced_at?: string | null
           last_synced_source?: string | null
           marketing_url?: string | null
+          mortgage_broker_note?: string | null
           name?: string
           neighborhood?: string | null
           price_range_high?: number | null
@@ -6101,7 +6158,10 @@ export type Database = {
           status?: string
           unit_count?: number | null
           unit_types?: string[] | null
+          uzair_pitch?: string | null
           vip_access?: boolean
+          who_this_doesnt_fit?: string | null
+          who_this_fits?: string | null
         }
         Relationships: []
       }
@@ -6886,6 +6946,115 @@ export type Database = {
         }
         Relationships: []
       }
+      zara_knowledge_chunks: {
+        Row: {
+          chunk_index: number
+          content: string
+          created_at: string
+          document_id: string
+          embedding: string | null
+          id: string
+          metadata: Json
+          token_count: number | null
+        }
+        Insert: {
+          chunk_index: number
+          content: string
+          created_at?: string
+          document_id: string
+          embedding?: string | null
+          id?: string
+          metadata?: Json
+          token_count?: number | null
+        }
+        Update: {
+          chunk_index?: number
+          content?: string
+          created_at?: string
+          document_id?: string
+          embedding?: string | null
+          id?: string
+          metadata?: Json
+          token_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "zara_knowledge_chunks_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "zara_knowledge_documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      zara_knowledge_documents: {
+        Row: {
+          error_message: string | null
+          file_name: string | null
+          file_size_bytes: number | null
+          id: string
+          indexed_at: string | null
+          last_retrieved_at: string | null
+          raw_content: string
+          retrieval_count: number
+          source: string | null
+          source_type: string
+          status: string
+          tags: string[]
+          title: string
+          total_chunks: number
+          total_tokens: number | null
+          uploaded_at: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          error_message?: string | null
+          file_name?: string | null
+          file_size_bytes?: number | null
+          id?: string
+          indexed_at?: string | null
+          last_retrieved_at?: string | null
+          raw_content: string
+          retrieval_count?: number
+          source?: string | null
+          source_type: string
+          status?: string
+          tags?: string[]
+          title: string
+          total_chunks?: number
+          total_tokens?: number | null
+          uploaded_at?: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          error_message?: string | null
+          file_name?: string | null
+          file_size_bytes?: number | null
+          id?: string
+          indexed_at?: string | null
+          last_retrieved_at?: string | null
+          raw_content?: string
+          retrieval_count?: number
+          source?: string | null
+          source_type?: string
+          status?: string
+          tags?: string[]
+          title?: string
+          total_chunks?: number
+          total_tokens?: number | null
+          uploaded_at?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "zara_knowledge_documents_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       zara_lead_memory: {
         Row: {
           contact_id: string
@@ -7387,6 +7556,78 @@ export type Database = {
             columns: ["draft_id"]
             isOneToOne: false
             referencedRelation: "zara_suggested_replies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      zara_winning_conversations: {
+        Row: {
+          budget_range: string | null
+          close_date: string | null
+          created_at: string
+          created_by: string | null
+          embedding: string | null
+          full_thread: string
+          id: string
+          initial_situation: string
+          lead_profile: string
+          outcome: string
+          primary_language: string | null
+          project_type: string | null
+          source_contact_id: string | null
+          tags: string[]
+          turning_message: string
+          why_it_worked: string
+        }
+        Insert: {
+          budget_range?: string | null
+          close_date?: string | null
+          created_at?: string
+          created_by?: string | null
+          embedding?: string | null
+          full_thread: string
+          id?: string
+          initial_situation: string
+          lead_profile: string
+          outcome: string
+          primary_language?: string | null
+          project_type?: string | null
+          source_contact_id?: string | null
+          tags?: string[]
+          turning_message: string
+          why_it_worked: string
+        }
+        Update: {
+          budget_range?: string | null
+          close_date?: string | null
+          created_at?: string
+          created_by?: string | null
+          embedding?: string | null
+          full_thread?: string
+          id?: string
+          initial_situation?: string
+          lead_profile?: string
+          outcome?: string
+          primary_language?: string | null
+          project_type?: string | null
+          source_contact_id?: string | null
+          tags?: string[]
+          turning_message?: string
+          why_it_worked?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "zara_winning_conversations_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "zara_winning_conversations_source_contact_id_fkey"
+            columns: ["source_contact_id"]
+            isOneToOne: false
+            referencedRelation: "crm_contacts"
             referencedColumns: ["id"]
           },
         ]
@@ -8017,7 +8258,58 @@ export type Database = {
         }
         Returns: undefined
       }
+      zara_bump_retrieval_counts: {
+        Args: { doc_ids: string[] }
+        Returns: undefined
+      }
       zara_can_send_to: { Args: { _contact_id: string }; Returns: Json }
+      zara_match_knowledge_chunks: {
+        Args: {
+          match_count?: number
+          match_threshold?: number
+          query_embedding: string
+        }
+        Returns: {
+          chunk_index: number
+          content: string
+          document_id: string
+          id: string
+          metadata: Json
+          similarity: number
+        }[]
+      }
+      zara_match_project_deep_dives: {
+        Args: {
+          match_count?: number
+          match_threshold?: number
+          query_embedding: string
+        }
+        Returns: {
+          city: string
+          common_objections: string[]
+          honest_caveats: string
+          id: string
+          name: string
+          similarity: number
+          uzair_pitch: string
+        }[]
+      }
+      zara_match_winning_conversations: {
+        Args: {
+          match_count?: number
+          match_threshold?: number
+          query_embedding: string
+        }
+        Returns: {
+          id: string
+          initial_situation: string
+          lead_profile: string
+          outcome: string
+          similarity: number
+          turning_message: string
+          why_it_worked: string
+        }[]
+      }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
