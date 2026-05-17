@@ -411,6 +411,9 @@ export default function ZaraCockpitPage() {
   const [transcript, setTranscript] = useState<string | null>(null);
   const transcriptRef = useRef<HTMLTextAreaElement>(null);
 
+  const pttStartYRef = useRef<number | null>(null);
+  const pttCancelArmedRef = useRef(false);
+
   const ptt = usePushToTalk({
     onTranscript: (t) => {
       setTranscript((prev) => (prev ? `${prev.trim()} ${t}` : t));
