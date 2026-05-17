@@ -306,6 +306,7 @@ Deno.serve(async (req) => {
   return new Response(
     JSON.stringify({
       actor,
+      run_id: runId,
       mode: singleSlug ? "single" : "full",
       slug: singleSlug,
       sweep_queries: singleSlug ? 0 : SWEEP_QUERIES.length,
@@ -313,6 +314,7 @@ Deno.serve(async (req) => {
       inserted,
       updated,
       skipped,
+      audit_rows: auditWritten,
       errors: errors.slice(0, 20),
     }, null, 2),
     { headers: { ...cors, "Content-Type": "application/json" } },
