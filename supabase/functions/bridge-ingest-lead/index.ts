@@ -493,7 +493,7 @@ Deno.serve(async (req) => {
         phone: L.phone || null,
         presale_user_id: await safePresaleUserId(supabase, L.presale_user_id, email, phone) || null,
         source: "PresaleProperties.com",
-        contact_type: personaType,
+        contact_type: personaType ?? "lead",
         notes: noteAppendix,
         project: incomingProjects[0] || null,
         projects: incomingProjects,
