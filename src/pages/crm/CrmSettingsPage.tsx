@@ -125,6 +125,7 @@ const TABS: TabDef[] = [
   { id: 'leadflow',      label: 'Lead Flow',         icon: GitBranch,     group: 'owner',     audience: 'owner',  description: 'Sources, ingestion, errors' },
   { id: 'sources',       label: 'Source Library',    icon: Layers,        group: 'owner',     audience: 'owner',  description: 'Rename & merge lead sources' },
   { id: 'plan',          label: 'Plan & Billing',    icon: CreditCard,    group: 'owner',     audience: 'owner',  description: 'Subscription, ownership' },
+  { id: 'zara',          label: 'Zara AI',           icon: Sparkles,      group: 'owner',     audience: 'owner',  description: 'Off / Sandbox / Live mode' },
 ];
 
 /* ─────────────────────────────────────────────────────────────
