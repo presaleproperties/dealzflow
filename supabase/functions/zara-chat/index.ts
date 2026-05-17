@@ -326,7 +326,26 @@ Deno.serve(async (req) => {
     // Load history + load system prompt addenda
     const history = await loadHistory(conversation_id);
     const { data: addenda } = await sb.from("zara_system_prompt_addenda").select("addendum").eq("active", true);
-    const system = [SYSTEM_PROMPT_BASE, ...(addenda?.map((a: any) => a.addendum) ?? [])].join("\n\n");
+
+    // RAG retrieval — embed the user's message and pull top playbook chunks,
+    // past wins, project deep-dives, and recent market intel.
+    let ragBlock = "";
+    let ragSources: any = null;
+    let ragWarning: string | null = null;
+    if (!OPENAI_API_KEY) {
+      ragWarning = "OPENAI_API_KEY not configured — Zara is replying without retrieval grounding. Add the secret under Lovable Cloud settings to enable Zara Brain.";
+    } else {
+      const r = await retrieveContext(message);
+      ragBlock = r.block;
+      ragSources = r.sources;
+    }
+
+    // System assembly: <retrieved_context> goes BEFORE addenda so addenda
+    // (which encode the agent's voice / corrections) still get the final say.
+    const systemParts = [SYSTEM_PROMPT_BASE];
+    if (ragBlock) systemParts.push(ragBlock);
+    for (const a of (addenda ?? [])) systemParts.push((a as any).addendum);
+    const system = systemParts.join("\n\n");
 
     // SSE response
     const stream = new ReadableStream({
@@ -335,6 +354,9 @@ Deno.serve(async (req) => {
         const send = (event: string, data: unknown) => controller.enqueue(enc.encode(sseEvent(event, data)));
         const abort = new AbortController();
         try {
+          if (ragWarning) send("warning", { message: ragWarning });
+          if (ragSources) send("sources", ragSources);
+
           // Auto-title from first user msg
           const userTurns = history.filter((r) => r.role === "user").length;
           if (userTurns === 0) {
@@ -354,7 +376,10 @@ Deno.serve(async (req) => {
             const assistantContent: any[] = [];
             if (text) assistantContent.push({ type: "text", text });
             for (const tu of toolUses) assistantContent.push({ type: "tool_use", id: tu.id, name: tu.name, input: tu.input });
-            lastAssistantId = await persistAssistantTurn(conversation_id, text, toolUses, usage);
+            // Persist consulted_sources only on the first assistant turn (the
+            // one that actually used the retrieved context).
+            const persistSources = turn === 1 ? ragSources : undefined;
+            lastAssistantId = await persistAssistantTurn(conversation_id, text, toolUses, usage, persistSources);
             messages.push({ role: "assistant", content: assistantContent });
 
             if (stopReason !== "tool_use" || toolUses.length === 0) {
