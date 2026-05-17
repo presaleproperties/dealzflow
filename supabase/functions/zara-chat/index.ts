@@ -445,10 +445,18 @@ Deno.serve(async (req) => {
     };
 
     // Persist the user message (with page_context snapshot)
+    const pinnedContactId = (page_context && typeof page_context === "object" && (page_context as any).contact_id) || null;
     await sb.from("zara_messages").insert({
       conversation_id, role: "user", content: message,
       page_context: page_context ?? null,
     });
+    // Shadow-write to new single-rolling table
+    sb.from("zara_chat_messages").insert({
+      agent_user_id: user.id,
+      role: "user",
+      parts: [{ type: "text", text: message }, ...(page_context ? [{ type: "page_context", page_context }] : [])],
+      pinned_contact_id: pinnedContactId,
+    }).then(() => {}, (e) => console.warn("zara_chat_messages user write failed", e));
     await sb.from("zara_conversations").update({ last_message_at: new Date().toISOString() }).eq("id", conversation_id);
 
     // Load history + load system prompt addenda
@@ -509,7 +517,7 @@ Deno.serve(async (req) => {
             for (const tu of toolUses) assistantContent.push({ type: "tool_use", id: tu.id, name: tu.name, input: tu.input });
             const persistSources = turn === 1 ? ragSources : undefined;
             const referencedIds = extractReferencedIds(toolUses, toolResultsById);
-            lastAssistantId = await persistAssistantTurn(conversation_id, text, toolUses, usage, persistSources, referencedIds);
+            lastAssistantId = await persistAssistantTurn(conversation_id, text, toolUses, usage, persistSources, referencedIds, user.id, pinnedContactId);
             messages.push({ role: "assistant", content: assistantContent });
 
             if (stopReason !== "tool_use" || toolUses.length === 0) {
