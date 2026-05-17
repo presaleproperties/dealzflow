@@ -1,31 +1,12 @@
-import { useMemo } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useCrmContacts } from '@/hooks/useCrmContacts';
-
-const STAGES = [
-  { label: 'New Lead', color: 'hsl(var(--primary))' },
-  { label: 'Contacted', color: 'hsl(38 92% 50%)' },
-  { label: 'Nurturing', color: 'hsl(210 62% 46%)' },
-  { label: 'Hot / Engaged', color: 'hsl(0 84% 60%)' },
-  { label: 'Showing Booked', color: 'hsl(270 60% 55%)' },
-  { label: 'Offer Made', color: 'hsl(142 71% 45%)' },
-  { label: 'Closed', color: 'hsl(142 71% 35%)' },
-  { label: 'Lost / Cold', color: 'hsl(0 0% 45%)' },
-];
+import { useContactsByPipeline } from '@/hooks/useContactsByPipeline';
+import { getSegmentColor } from '@/lib/segmentColors';
 
 export function CrmPipelineSnapshot() {
-  const { data: contacts = [], isLoading } = useCrmContacts();
-
-  const data = useMemo(() => {
-    const counts: Record<string, number> = {};
-    STAGES.forEach((s) => (counts[s.label] = 0));
-    contacts.forEach((c) => {
-      if (c.status && counts[c.status] !== undefined) counts[c.status]++;
-    });
-    return counts;
-  }, [contacts]);
-
-  const total = Object.values(data).reduce((s, v) => s + v, 0);
+  const { data: contacts = [], isLoading: contactsLoading } = useCrmContacts();
+  const { buckets, total, isLoading: pipelinesLoading } = useContactsByPipeline(contacts);
+  const isLoading = contactsLoading || pipelinesLoading;
 
   return (
     <div className="bg-card rounded-[10px] lg:rounded-xl border border-border p-3 sm:p-4 lg:p-5 shadow-sm">
@@ -36,19 +17,18 @@ export function CrmPipelineSnapshot() {
         <p className="text-sm text-muted-foreground py-4 text-center">No contacts in pipeline yet.</p>
       ) : (
         <>
-          {/* Funnel bar */}
           <div className="overflow-x-auto -mx-3 px-3 sm:mx-0 sm:px-0 snap-x snap-mandatory no-scrollbar">
             <div className="flex h-10 rounded-lg overflow-hidden mb-3 min-w-[480px] sm:min-w-0">
-              {STAGES.map((stage) => {
-                const count = data[stage.label] ?? 0;
+              {buckets.map(({ segment, count }) => {
                 if (count === 0) return null;
                 const pct = (count / total) * 100;
+                const { dot } = getSegmentColor(segment);
                 return (
                   <div
-                    key={stage.label}
+                    key={segment.id}
                     className="flex items-center justify-center text-[10px] font-bold text-white transition-all duration-300 min-w-[24px] snap-start"
-                    style={{ width: `${pct}%`, background: stage.color }}
-                    title={`${stage.label}: ${count}`}
+                    style={{ width: `${pct}%`, background: dot }}
+                    title={`${segment.name}: ${count}`}
                   >
                     {pct > 6 ? count : ''}
                   </div>
@@ -57,18 +37,17 @@ export function CrmPipelineSnapshot() {
             </div>
           </div>
 
-          {/* Legend */}
           <div className="flex flex-wrap gap-x-3 sm:gap-x-4 gap-y-1">
-            {STAGES.map((stage) => {
-              const count = data[stage.label] ?? 0;
+            {buckets.map(({ segment, count }) => {
+              const { dot } = getSegmentColor(segment);
               return (
-                <div key={stage.label} className="flex items-center gap-1.5">
+                <div key={segment.id} className="flex items-center gap-1.5">
                   <span
                     className="w-2.5 h-2.5 rounded-sm flex-shrink-0"
-                    style={{ background: stage.color }}
+                    style={{ background: dot }}
                   />
                   <span className="text-[11px] sm:text-xs text-muted-foreground">
-                    {stage.label} ({count})
+                    {segment.name} ({count})
                   </span>
                 </div>
               );
