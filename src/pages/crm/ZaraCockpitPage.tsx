@@ -16,6 +16,12 @@ import {
 } from 'lucide-react';
 import { usePushToTalk } from '@/hooks/usePushToTalk';
 import { MicPermissionDialog } from '@/components/crm/zara/MicPermissionDialog';
+import { useZaraPin } from '@/hooks/useZaraPin';
+import { PinnedLeadChip } from '@/components/crm/zara/PinnedLeadChip';
+import { SlashCommandPalette } from '@/components/crm/zara/SlashCommandPalette';
+import { ZaraKillSwitch } from '@/components/crm/zara/ZaraKillSwitch';
+import { AutonomyControl } from '@/components/crm/zara/AutonomyControl';
+import { DynamicSuggestions } from '@/components/crm/zara/DynamicSuggestions';
 
 type Conv = {
   id: string; title: string; pinned: boolean; archived: boolean;
