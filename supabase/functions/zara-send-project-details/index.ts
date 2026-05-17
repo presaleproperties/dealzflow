@@ -64,37 +64,44 @@ Deno.serve(async (req) => {
   if (cErr || !contact) return reply({ ok: false, error: "contact not found" }, 404);
 
   // ── Match projects ───────────────────────────────────────────────────
+  // NB: real columns on crm_projects are price_from/price_to/property_type;
+  // there is no hero_image_url — we fall back to a branded placeholder card.
+  const PROJ_COLS = "id,name,slug,city,developer,property_type,price_from,price_to,marketing_url,website_url,brochure_url,completion_date,status";
   const cityHint = (contact as any).city_pref || (contact as any).city || null;
-  let q = sb.from("crm_projects")
-    .select("id,name,slug,city,developer,building_type,price_min,price_max,hero_image_url,marketing_url,brochure_url,completion_date,status")
-    .limit(20);
+  let q = sb.from("crm_projects").select(PROJ_COLS).eq("is_active", true).limit(20);
   if (cityHint) q = q.ilike("city", `%${cityHint}%`);
-  let { data: projects } = await q;
+  let { data: projects, error: pErr } = await q;
+  if (pErr) return reply({ ok: false, error: `project lookup failed: ${pErr.message}` }, 500);
   let projectList = (projects ?? []) as any[];
   if (projectList.length < count) {
     // Backfill from any active project
-    const { data: extras } = await sb.from("crm_projects")
-      .select("id,name,slug,city,developer,building_type,price_min,price_max,hero_image_url,marketing_url,brochure_url,completion_date,status")
-      .limit(20);
+    const { data: extras, error: eErr } = await sb.from("crm_projects")
+      .select(PROJ_COLS).eq("is_active", true).limit(20);
+    if (eErr) return reply({ ok: false, error: `project backfill failed: ${eErr.message}` }, 500);
     const have = new Set(projectList.map((p) => p.id));
     (extras ?? []).forEach((p: any) => { if (!have.has(p.id)) { have.add(p.id); projectList.push(p); } });
   }
 
-  // Score by budget overlap and recency-ish
+  // Score by budget overlap and city match
   const bMax = Number((contact as any).budget_max ?? 0);
   const ranked = projectList.map((p) => {
     let score = 0;
     if (cityHint && p.city && String(p.city).toLowerCase().includes(String(cityHint).toLowerCase())) score += 5;
-    if (bMax > 0 && p.price_min && p.price_max) {
-      if (bMax >= p.price_min && bMax <= p.price_max * 1.15) score += 4;
-      else if (bMax >= p.price_min) score += 2;
+    if (bMax > 0 && p.price_from && p.price_to) {
+      if (bMax >= p.price_from && bMax <= p.price_to * 1.15) score += 4;
+      else if (bMax >= p.price_from) score += 2;
     }
-    if (p.hero_image_url) score += 1;
+    if (p.marketing_url || p.website_url) score += 1;
+    if (p.brochure_url) score += 1;
     return { p, score };
   }).sort((a, b) => b.score - a.score);
 
   const top = ranked.slice(0, count).map((r) => r.p);
-  if (top.length === 0) return reply({ ok: false, error: "no projects available to recommend" }, 404);
+  if (top.length === 0) return reply({
+    ok: false,
+    error: "no projects available to recommend",
+    diagnostics: { city_hint: cityHint, candidates_scanned: projectList.length },
+  }, 404);
 
   // ── Per-contact zara_enabled gate (does NOT block — drafting is opt-in regardless) ──
   // We allow drafting because this is an explicit agent action ("Send Project Details" button click).
