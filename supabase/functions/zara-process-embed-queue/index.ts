@@ -94,6 +94,15 @@ Deno.serve(async (req) => {
           .update({ embedding: vector as unknown as number[] })
           .eq("id", job.target_id);
         if (e) writeErr = e.message;
+      } else if (job.kind === "presale_project") {
+        const { error: e } = await sb
+          .from("presale_projects")
+          .update({
+            deep_dive_embedding: vector as unknown as number[],
+            deep_dive_updated_at: new Date().toISOString(),
+          })
+          .eq("id", job.target_id);
+        if (e) writeErr = e.message;
       } else if (job.kind === "knowledge_document") {
         // Defer to the ingest pipeline so it re-chunks + re-embeds.
         const r = await fetch(`${FUNCTIONS_BASE}/zara-ingest-document`, {
