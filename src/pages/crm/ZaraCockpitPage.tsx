@@ -725,6 +725,10 @@ export default function ZaraCockpitPage() {
             <span className="flex items-center gap-1.5"><Brain className="w-3.5 h-3.5" />Self-awareness</span>
             <ChevronRight className="w-3 h-3 text-muted-foreground" />
           </Link>
+          <Link to="/crm/zara/templates" className="flex items-center justify-between text-[12px] px-2 py-1.5 rounded-md hover:bg-muted/60 transition-colors">
+            <span className="flex items-center gap-1.5"><FileText className="w-3.5 h-3.5" />Reply templates</span>
+            <ChevronRight className="w-3 h-3 text-muted-foreground" />
+          </Link>
           <Link to="/crm/settings#zara" className="flex items-center justify-between text-[12px] px-2 py-1.5 rounded-md hover:bg-muted/60 transition-colors">
             <span>Mode</span>
             <Pill size="sm" tone={modePill.tone}>{modePill.label}</Pill>
