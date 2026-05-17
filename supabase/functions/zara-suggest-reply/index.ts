@@ -1,7 +1,22 @@
-// zara-suggest-reply — drafts a reply using Claude Haiku 4.5 and queues for human approval.
-// Gates: zara_settings.mode != 'off' AND (contact.zara_enabled OR contact.tags has 'zara_test_contact').
+// zara-suggest-reply — drafts a reply with Claude and queues for human approval.
+// Phase 1: heuristic intent classifier → per-intent system prompt → Haiku draft.
+// If guardrails fire (legal/complaint/high-value/low-confidence/self-escalated),
+// auto re-draft with Sonnet for higher quality. Persists escalate, latency,
+// and escalation_model for Phase 2 analytics.
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
-import { coerceUuid, corsHeaders, detectLanguage, evaluateGuardrails, resolveAssignedToUuid, ZARA_SYSTEM_PROMPT } from '../_shared/zara-guardrails.ts';
+import {
+  buildZaraSystemPrompt,
+  coerceUuid,
+  corsHeaders,
+  detectLanguage,
+  evaluateGuardrails,
+  guessIntent,
+  resolveAssignedToUuid,
+  shouldEscalateModel,
+  ZARA_MODEL_DEFAULT,
+  ZARA_MODEL_ESCALATION,
+  type ZaraIntent,
+} from '../_shared/zara-guardrails.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -78,43 +93,56 @@ INBOUND MESSAGE (channel=${channel}, at=${inboundAt}):
 
 Draft Zara's reply now. Return ONLY the JSON object.`;
 
-    // 6. Claude call
-    const t0 = Date.now();
-    const claudeRes = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'x-api-key': ANTHROPIC_API_KEY,
-        'anthropic-version': '2023-06-01',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001',
-        max_tokens: 1024,
-        system: ZARA_SYSTEM_PROMPT,
-        messages: [{ role: 'user', content: userPrompt }],
-      }),
-    });
-    const claudeJson = await claudeRes.json();
-    if (!claudeRes.ok) {
-      console.error('[zara-suggest-reply] claude error', claudeJson);
-      return json({ error: 'claude_failed', detail: claudeJson }, 502);
+    // 6. Two-tier model routing.
+    // Pass 1: heuristic intent + Haiku with intent-specific system prompt.
+    const guessedIntent: ZaraIntent = guessIntent(inboundText);
+
+    const callClaude = async (model: string, intent: ZaraIntent) => {
+      const t0 = Date.now();
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'x-api-key': ANTHROPIC_API_KEY,
+          'anthropic-version': '2023-06-01',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model,
+          max_tokens: 1024,
+          system: buildZaraSystemPrompt(intent),
+          messages: [{ role: 'user', content: userPrompt }],
+        }),
+      });
+      const body = await res.json();
+      return { ok: res.ok, body, latency: Date.now() - t0 };
+    };
+
+    let attempt = await callClaude(ZARA_MODEL_DEFAULT, guessedIntent);
+    if (!attempt.ok) {
+      console.error('[zara-suggest-reply] claude error (pass 1)', attempt.body);
+      return json({ error: 'claude_failed', detail: attempt.body }, 502);
     }
-    const latency_ms = Date.now() - t0;
-    const rawText = claudeJson?.content?.[0]?.text ?? '';
-    const input_tokens = claudeJson?.usage?.input_tokens ?? null;
-    const output_tokens = claudeJson?.usage?.output_tokens ?? null;
+    let usedModel = ZARA_MODEL_DEFAULT;
+    let escalationModel: string | null = null;
+    let totalLatency = attempt.latency;
+    let rawText = attempt.body?.content?.[0]?.text ?? '';
+    let input_tokens = attempt.body?.usage?.input_tokens ?? null;
+    let output_tokens = attempt.body?.usage?.output_tokens ?? null;
 
     // 7. Parse JSON
-    let parsed: any;
-    try {
-      const m = rawText.match(/\{[\s\S]*\}/);
-      parsed = JSON.parse(m ? m[0] : rawText);
-    } catch (e) {
-      return json({ error: 'parse_failed', raw: rawText }, 502);
-    }
+    const parseDraft = (txt: string): any | null => {
+      try {
+        const m = txt.match(/\{[\s\S]*\}/);
+        return JSON.parse(m ? m[0] : txt);
+      } catch {
+        return null;
+      }
+    };
+    let parsed = parseDraft(rawText);
+    if (!parsed) return json({ error: 'parse_failed', raw: rawText }, 502);
 
-    // 8. Guardrails
-    const guardrails_hit = evaluateGuardrails({
+    // 8. Guardrails — run on first-pass output
+    let guardrails_hit = evaluateGuardrails({
       draft_text: parsed.draft_text ?? '',
       draft_language: parsed.draft_language ?? 'en',
       detected_inbound_lang: detectedLang,
@@ -124,6 +152,37 @@ Draft Zara's reply now. Return ONLY the JSON object.`;
       contact_budget_max: contact.budget_max,
       context_event_texts: (events ?? []).map((e: any) => JSON.stringify(e.metadata ?? {})),
     });
+
+    // 8b. If guardrails fire and the model's intent is known, re-draft with Sonnet
+    //     using the model-reported intent (more accurate than the heuristic).
+    const modelIntent: ZaraIntent = (parsed.intent as ZaraIntent) ?? guessedIntent;
+    if (shouldEscalateModel(guardrails_hit, Number(parsed.confidence ?? 0))) {
+      const retry = await callClaude(ZARA_MODEL_ESCALATION, modelIntent);
+      if (retry.ok) {
+        const retryParsed = parseDraft(retry.body?.content?.[0]?.text ?? '');
+        if (retryParsed) {
+          parsed = retryParsed;
+          usedModel = ZARA_MODEL_ESCALATION;
+          escalationModel = ZARA_MODEL_ESCALATION;
+          totalLatency += retry.latency;
+          input_tokens = (input_tokens ?? 0) + (retry.body?.usage?.input_tokens ?? 0);
+          output_tokens = (output_tokens ?? 0) + (retry.body?.usage?.output_tokens ?? 0);
+          // Re-evaluate guardrails on the escalated draft
+          guardrails_hit = evaluateGuardrails({
+            draft_text: parsed.draft_text ?? '',
+            draft_language: parsed.draft_language ?? 'en',
+            detected_inbound_lang: detectedLang,
+            confidence: Number(parsed.confidence ?? 0),
+            escalate: Boolean(parsed.escalate),
+            contact_tags: tags,
+            contact_budget_max: contact.budget_max,
+            context_event_texts: (events ?? []).map((e: any) => JSON.stringify(e.metadata ?? {})),
+          });
+        }
+      } else {
+        console.warn('[zara-suggest-reply] escalation_failed (keeping pass 1)', retry.body);
+      }
+    }
 
     // Resolve contact.assigned_to (stored as display_name string) into a user UUID
     // for the zara_suggested_replies.assigned_to UUID column. Falls back to null
@@ -143,12 +202,16 @@ Draft Zara's reply now. Return ONLY the JSON object.`;
         draft_text: parsed.draft_text ?? '',
         draft_subject: parsed.draft_subject ?? null,
         draft_language: parsed.draft_language ?? detectedLang,
-        intent: parsed.intent ?? 'unknown',
+        intent: parsed.intent ?? modelIntent,
         confidence: Number(parsed.confidence ?? 0),
         reasoning: parsed.reasoning ?? null,
         guardrails_hit,
+        escalate: Boolean(parsed.escalate),
+        escalate_reason: parsed.escalate_reason ?? null,
+        latency_ms: totalLatency,
+        escalation_model: escalationModel,
         assigned_to: safeAssignedTo,
-        model: 'claude-haiku-4-5-20251001',
+        model: usedModel,
         input_tokens,
         output_tokens,
       })

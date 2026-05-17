@@ -7398,6 +7398,11 @@ export type Database = {
           draft_language: string | null
           draft_subject: string | null
           draft_text: string
+          edit_distance: number | null
+          edited_text: string | null
+          escalate: boolean | null
+          escalate_reason: string | null
+          escalation_model: string | null
           expires_at: string
           guardrails_hit: string[]
           id: string
@@ -7406,6 +7411,7 @@ export type Database = {
           inbound_text: string
           input_tokens: number | null
           intent: string | null
+          latency_ms: number | null
           model: string
           output_tokens: number | null
           reasoning: string | null
@@ -7427,6 +7433,11 @@ export type Database = {
           draft_language?: string | null
           draft_subject?: string | null
           draft_text: string
+          edit_distance?: number | null
+          edited_text?: string | null
+          escalate?: boolean | null
+          escalate_reason?: string | null
+          escalation_model?: string | null
           expires_at?: string
           guardrails_hit?: string[]
           id?: string
@@ -7435,6 +7446,7 @@ export type Database = {
           inbound_text: string
           input_tokens?: number | null
           intent?: string | null
+          latency_ms?: number | null
           model?: string
           output_tokens?: number | null
           reasoning?: string | null
@@ -7456,6 +7468,11 @@ export type Database = {
           draft_language?: string | null
           draft_subject?: string | null
           draft_text?: string
+          edit_distance?: number | null
+          edited_text?: string | null
+          escalate?: boolean | null
+          escalate_reason?: string | null
+          escalation_model?: string | null
           expires_at?: string
           guardrails_hit?: string[]
           id?: string
@@ -7464,6 +7481,7 @@ export type Database = {
           inbound_text?: string
           input_tokens?: number | null
           intent?: string | null
+          latency_ms?: number | null
           model?: string
           output_tokens?: number | null
           reasoning?: string | null
@@ -7760,6 +7778,33 @@ export type Database = {
           total_opens: number | null
           total_replies: number | null
           total_sends: number | null
+        }
+        Relationships: []
+      }
+      zara_metrics_by_intent: {
+        Row: {
+          avg_confidence: number | null
+          avg_edit_distance: number | null
+          drafts: number | null
+          intent: string | null
+          sent: number | null
+          sent_unedited: number | null
+          unedited_pct: number | null
+        }
+        Relationships: []
+      }
+      zara_metrics_daily: {
+        Row: {
+          avg_confidence: number | null
+          avg_edit_distance: number | null
+          avg_latency_ms: number | null
+          day: string | null
+          drafts: number | null
+          escalated: number | null
+          flagged_for_human: number | null
+          intent: string | null
+          sent: number | null
+          sent_unedited: number | null
         }
         Relationships: []
       }
@@ -8401,6 +8446,21 @@ export type Database = {
           similarity: number
           turning_message: string
           why_it_worked: string
+        }[]
+      }
+      zara_recent_high_edits: {
+        Args: { p_limit?: number }
+        Returns: {
+          channel: string
+          created_at: string
+          draft_text: string
+          edit_distance: number
+          edited_text: string
+          escalation_model: string
+          guardrails_hit: string[]
+          id: string
+          intent: string
+          model: string
         }[]
       }
     }

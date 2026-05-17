@@ -114,7 +114,9 @@ Deno.serve(async (req) => {
       return json({ error: 'send_failed', detail: sendErr }, 502);
     }
 
-    // Update draft + log engagement event
+    // Update draft + log engagement event.
+    // Phase 1 analytics: persist edited_text + edit_distance onto the draft row
+    // so dashboards can compute acceptance rate without a join.
     const sent_at = new Date().toISOString();
     await admin
       .from('zara_suggested_replies')
@@ -124,6 +126,8 @@ Deno.serve(async (req) => {
         approved_by: decidedBy ?? null,
         approved_at: sent_at,
         approval_method: decidedVia,
+        edited_text: finalText,
+        edit_distance,
       })
       .eq('id', draftId);
 
