@@ -7398,6 +7398,11 @@ export type Database = {
           draft_language: string | null
           draft_subject: string | null
           draft_text: string
+          edit_distance: number | null
+          edited_text: string | null
+          escalate: boolean | null
+          escalate_reason: string | null
+          escalation_model: string | null
           expires_at: string
           guardrails_hit: string[]
           id: string
@@ -7406,6 +7411,7 @@ export type Database = {
           inbound_text: string
           input_tokens: number | null
           intent: string | null
+          latency_ms: number | null
           model: string
           output_tokens: number | null
           reasoning: string | null
@@ -7427,6 +7433,11 @@ export type Database = {
           draft_language?: string | null
           draft_subject?: string | null
           draft_text: string
+          edit_distance?: number | null
+          edited_text?: string | null
+          escalate?: boolean | null
+          escalate_reason?: string | null
+          escalation_model?: string | null
           expires_at?: string
           guardrails_hit?: string[]
           id?: string
@@ -7435,6 +7446,7 @@ export type Database = {
           inbound_text: string
           input_tokens?: number | null
           intent?: string | null
+          latency_ms?: number | null
           model?: string
           output_tokens?: number | null
           reasoning?: string | null
@@ -7456,6 +7468,11 @@ export type Database = {
           draft_language?: string | null
           draft_subject?: string | null
           draft_text?: string
+          edit_distance?: number | null
+          edited_text?: string | null
+          escalate?: boolean | null
+          escalate_reason?: string | null
+          escalation_model?: string | null
           expires_at?: string
           guardrails_hit?: string[]
           id?: string
@@ -7464,6 +7481,7 @@ export type Database = {
           inbound_text?: string
           input_tokens?: number | null
           intent?: string | null
+          latency_ms?: number | null
           model?: string
           output_tokens?: number | null
           reasoning?: string | null
