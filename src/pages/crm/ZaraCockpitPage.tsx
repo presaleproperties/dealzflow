@@ -530,7 +530,7 @@ export default function ZaraCockpitPage() {
       }
     }
     return out;
-  }, [messages]);
+  }, [messages, pendingByUseId]);
 
   return (
     <div className="flex flex-1 min-h-0 h-full -mx-4 -my-4 bg-background">
