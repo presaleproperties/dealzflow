@@ -303,6 +303,26 @@ Return strict JSON per the system spec.`;
       },
     });
 
+    admin.from('crm_engagement_events').insert({
+      contact_id,
+      event_type: 'zara_escalation',
+      source: 'zara',
+      metadata: { intent, confidence, channel, message_id, notified_email: uzair?.email ?? null },
+    }).then(() => {});
+
+    const SUPABASE_URL_ESC = Deno.env.get('SUPABASE_URL')!;
+    const SERVICE_KEY_ESC = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    fetch(`${SUPABASE_URL_ESC}/functions/v1/zara-roll-memory`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${SERVICE_KEY_ESC}` },
+      body: JSON.stringify({
+        contact_id,
+        inbound_text: message_text,
+        draft_text: null,
+        kind: 'escalated',
+      }),
+    }).catch((e) => console.warn('[zara-reply] roll-memory kick (escalation) failed', e));
+
     return json({ sent: false, escalated: true, intent, confidence, suggested_reply: reply, notified: uzair?.email ?? null });
   }
 
