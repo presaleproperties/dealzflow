@@ -514,10 +514,16 @@ export default function ZaraCockpitPage() {
         const toolUses = (m.tool_calls ?? []) as Array<{ id: string; name: string; input: any }>;
         const tools: ToolUiState[] = toolUses.map((tu) => {
           const result = messages.find((x) => x.role === 'tool' && x.tool_call_id === tu.id);
+          const pend = pendingByUseId.get(tu.id);
+          const isPending = pend?.status === 'pending';
+          const isDenied = pend?.status === 'denied';
           return {
             id: tu.id, name: tu.name,
-            status: result ? (result.tool_result?.ok === false ? 'error' : 'done') : 'done',
+            status: isPending ? 'pending'
+              : isDenied ? 'denied'
+              : result ? (result.tool_result?.ok === false ? 'error' : 'done') : 'done',
             input: tu.input, output: result?.tool_result,
+            pending_id: isPending ? pend?.pending_id : undefined,
           };
         });
         out.push({ kind: 'assistant', id: m.id, text: m.content ?? '', tools });
