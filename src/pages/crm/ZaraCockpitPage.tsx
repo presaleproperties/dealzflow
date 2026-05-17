@@ -275,6 +275,7 @@ export default function ZaraCockpitPage() {
   const [streaming, setStreaming] = useState(false);
   const [streamText, setStreamText] = useState('');
   const [streamTools, setStreamTools] = useState<ToolUiState[]>([]);
+  const [streamSources, setStreamSources] = useState<any>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const scrollerRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
