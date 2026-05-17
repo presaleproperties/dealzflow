@@ -550,6 +550,22 @@ export function UnifiedComposer() {
             },
           });
           if (error) throw error;
+          const segCount = smsSegmentCount(rendered.text).segments;
+          if (leadId) {
+            void logEngagementEvent({
+              contactId: leadId,
+              eventType: 'sms_sent',
+              source: 'sms',
+              direction: 'outbound',
+              metadata: {
+                staged: true,
+                reason,
+                segment_count: segCount,
+                char_count: rendered.text.length,
+                media_count: mediaUrls.length,
+              },
+            });
+          }
           toast.success('Staged for approval', {
             description: 'Admin must approve before delivery.',
           });
@@ -567,6 +583,22 @@ export function UnifiedComposer() {
           });
           if (error) throw new Error(error.message);
           if ((data as any)?.error) throw new Error((data as any).error);
+          if (leadId) {
+            const segCount = smsSegmentCount(rendered.text).segments;
+            void logEngagementEvent({
+              contactId: leadId,
+              eventType: 'sms_sent',
+              source: 'sms',
+              direction: 'outbound',
+              metadata: {
+                staged: false,
+                segment_count: segCount,
+                char_count: rendered.text.length,
+                media_count: mediaUrls.length,
+                scheduled_for: effectiveSendAt,
+              },
+            });
+          }
           toast.success(
             effectiveSendAt
               ? (autoQueued ? 'Text auto-queued for 8am Vancouver' : 'Text scheduled')
