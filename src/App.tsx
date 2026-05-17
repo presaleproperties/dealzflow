@@ -43,6 +43,11 @@ import DashboardPage from "./pages/DashboardPage";
 import NotFound from "./pages/NotFound";
 import PendingApprovalPage from "./pages/PendingApprovalPage";
 
+function ZaraShortcutMount() {
+  useZaraShortcut();
+  return null;
+}
+
 // Tier 1: preserve the conversationId param when bouncing legacy /crm/chats/:id → /crm/inbox/:id
 function NavigateChatToInbox() {
   const { conversationId } = useParams<{ conversationId?: string }>();
