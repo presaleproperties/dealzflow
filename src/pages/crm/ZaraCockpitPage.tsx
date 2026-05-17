@@ -754,14 +754,20 @@ export default function ZaraCockpitPage() {
 
       {/* CENTER — Chat */}
       <section className="flex-1 min-w-0 flex flex-col">
-        <header className="px-5 py-3 border-b border-border/60 flex items-center justify-between">
+        <header className="px-5 py-3 border-b border-border/60 flex items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <Sparkles className="w-4 h-4 text-primary" />
             <h1 className="text-[15px] font-semibold tracking-tight">Zara</h1>
             <Pill size="sm" tone={modePill.tone}>{modePill.label}</Pill>
           </div>
-          <span className="text-[11px] text-muted-foreground">Cmd/Ctrl+J → focus chat</span>
+          <div className="flex items-center gap-3">
+            <AutonomyControl />
+            <span className="text-[11px] text-muted-foreground hidden lg:inline">Cmd/Ctrl+J · type / for commands</span>
+          </div>
         </header>
+
+        <ZaraKillSwitch />
+        <PinnedLeadChip />
 
         <div ref={scrollerRef} className="flex-1 min-h-0 overflow-y-auto px-5 py-6">
           <div className="max-w-2xl mx-auto space-y-4">
@@ -775,22 +781,13 @@ export default function ZaraCockpitPage() {
                     {activeId ? 'Continue this conversation' : 'Start a conversation with Zara'}
                   </h2>
                   <p className="text-[13px] text-muted-foreground max-w-md mx-auto">
-                    Ask about leads, drafts, projects, or your week. Zara drafts replies — you approve sends.
+                    Ask about leads, drafts, projects, or your week. Pin a lead with <code className="font-mono">/lead</code> · slash <code className="font-mono">/</code> for commands.
                   </p>
                 </div>
-                <div className="flex flex-wrap gap-2 justify-center">
-                  {QUICK_ACTIONS.map((q) => (
-                    <button
-                      key={q}
-                      onClick={() => { setInput(q); setTimeout(() => inputRef.current?.focus(), 0); }}
-                      className="text-[12px] px-3 py-1.5 rounded-full border border-border bg-card hover:bg-muted/60 hover:border-primary/40 transition-colors"
-                    >
-                      {q}
-                    </button>
-                  ))}
-                </div>
+                <DynamicSuggestions onPick={(q) => { setInput(q); setTimeout(() => inputRef.current?.focus(), 0); }} />
               </>
             )}
+
 
             {rendered.map((m) => (
               <div key={m.id} className="group">
