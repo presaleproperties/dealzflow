@@ -13,7 +13,7 @@ import {
   htmlToPlain,
   getZaraEmailPrefs,
 } from "../_shared/zara-email-render.ts";
-import { resolveAssignedToUuid } from "../_shared/zara-guardrails.ts";
+import { coerceUuid, resolveAssignedToUuid } from "../_shared/zara-guardrails.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -182,7 +182,7 @@ ${priceRange ? `<div style="color:#1a1a2e;font-size:16px;margin-bottom:10px;">${
     inbound_at: now,
     intent: "send_project_details",
     status: "pending",
-    assigned_to: assignedTo,
+    assigned_to: coerceUuid(assignedTo),
     consulted_sources: { projects: top.map((p) => ({ id: p.id, name: p.name, slug: p.slug })) },
   }).select("id").single();
   if (insErr) return reply({ ok: false, error: insErr.message }, 500);

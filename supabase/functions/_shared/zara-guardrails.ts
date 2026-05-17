@@ -78,32 +78,61 @@ export function levenshtein(a: string, b: string): number {
   return prev[n];
 }
 
+/** Strict v1–v5 UUID matcher. */
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+/** Returns the input as a normalized UUID string if it's a valid UUID, else null. */
+export function coerceUuid(value: unknown): string | null {
+  if (typeof value !== 'string') return null;
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  return UUID_RE.test(trimmed) ? trimmed.toLowerCase() : null;
+}
+
 /**
- * Resolve a crm_contacts.assigned_to display-name string into a
- * crm_team.user_id UUID. Returns null on no match OR on any error so
- * inserts into UUID-typed columns never fail.
+ * Resolve a crm_contacts.assigned_to value (which may be a display-name OR a
+ * raw UUID OR garbage) into a guaranteed-valid crm_team.user_id UUID.
+ *
+ * Order of attempts:
+ *   1. Already a valid UUID? pass through.
+ *   2. Look up crm_team by display_name.
+ *   3. Look up crm_team by email (some imports stash the email here).
+ *   4. Fail → null.
+ *
+ * Final result is re-validated against UUID_RE before being returned, so the
+ * caller can safely insert into a UUID-typed column without risking a 500.
  */
 export async function resolveAssignedToUuid(
   admin: any,
-  displayName: string | null | undefined,
+  raw: string | null | undefined,
 ): Promise<string | null> {
-  if (!displayName) return null;
+  if (!raw) return null;
+  const value = String(raw).trim();
+  if (!value) return null;
+
+  // 1. Pass-through if already a UUID
+  const direct = coerceUuid(value);
+  if (direct) return direct;
+
+  // 2. & 3. Lookup by display_name or email
   try {
     const { data, error } = await admin
       .from('crm_team')
       .select('user_id')
-      .eq('display_name', displayName)
+      .or(`display_name.eq.${value},email.eq.${value.toLowerCase()}`)
+      .limit(1)
       .maybeSingle();
     if (error) {
-      console.warn('[resolveAssignedToUuid] query error:', error.message, 'for', displayName);
+      console.warn('[resolveAssignedToUuid] query error:', error.message, 'for', value);
       return null;
     }
-    return data?.user_id ?? null;
+    return coerceUuid(data?.user_id);
   } catch (e) {
-    console.warn('[resolveAssignedToUuid] caught:', e, 'for', displayName);
+    console.warn('[resolveAssignedToUuid] caught:', e, 'for', value);
     return null;
   }
 }
+
 
 export const corsHeaders = {
   'Access-Control-Allow-Origin': '*',

@@ -1,7 +1,7 @@
 // zara-suggest-reply — drafts a reply using Claude Haiku 4.5 and queues for human approval.
 // Gates: zara_settings.mode != 'off' AND (contact.zara_enabled OR contact.tags has 'zara_test_contact').
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
-import { corsHeaders, detectLanguage, evaluateGuardrails, resolveAssignedToUuid, ZARA_SYSTEM_PROMPT } from '../_shared/zara-guardrails.ts';
+import { coerceUuid, corsHeaders, detectLanguage, evaluateGuardrails, resolveAssignedToUuid, ZARA_SYSTEM_PROMPT } from '../_shared/zara-guardrails.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -146,7 +146,7 @@ Draft Zara's reply now. Return ONLY the JSON object.`;
         confidence: Number(parsed.confidence ?? 0),
         reasoning: parsed.reasoning ?? null,
         guardrails_hit,
-        assigned_to: assignedUserId,
+        assigned_to: coerceUuid(assignedUserId),
         model: 'claude-haiku-4-5-20251001',
         input_tokens,
         output_tokens,
