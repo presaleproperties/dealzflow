@@ -64,37 +64,44 @@ Deno.serve(async (req) => {
   if (cErr || !contact) return reply({ ok: false, error: "contact not found" }, 404);
 
   // ── Match projects ───────────────────────────────────────────────────
+  // NB: real columns on crm_projects are price_from/price_to/property_type;
+  // there is no hero_image_url — we fall back to a branded placeholder card.
+  const PROJ_COLS = "id,name,slug,city,developer,property_type,price_from,price_to,marketing_url,website_url,brochure_url,completion_date,status";
   const cityHint = (contact as any).city_pref || (contact as any).city || null;
-  let q = sb.from("crm_projects")
-    .select("id,name,slug,city,developer,building_type,price_min,price_max,hero_image_url,marketing_url,brochure_url,completion_date,status")
-    .limit(20);
+  let q = sb.from("crm_projects").select(PROJ_COLS).eq("is_active", true).limit(20);
   if (cityHint) q = q.ilike("city", `%${cityHint}%`);
-  let { data: projects } = await q;
+  let { data: projects, error: pErr } = await q;
+  if (pErr) return reply({ ok: false, error: `project lookup failed: ${pErr.message}` }, 500);
   let projectList = (projects ?? []) as any[];
   if (projectList.length < count) {
     // Backfill from any active project
-    const { data: extras } = await sb.from("crm_projects")
-      .select("id,name,slug,city,developer,building_type,price_min,price_max,hero_image_url,marketing_url,brochure_url,completion_date,status")
-      .limit(20);
+    const { data: extras, error: eErr } = await sb.from("crm_projects")
+      .select(PROJ_COLS).eq("is_active", true).limit(20);
+    if (eErr) return reply({ ok: false, error: `project backfill failed: ${eErr.message}` }, 500);
     const have = new Set(projectList.map((p) => p.id));
     (extras ?? []).forEach((p: any) => { if (!have.has(p.id)) { have.add(p.id); projectList.push(p); } });
   }
 
-  // Score by budget overlap and recency-ish
+  // Score by budget overlap and city match
   const bMax = Number((contact as any).budget_max ?? 0);
   const ranked = projectList.map((p) => {
     let score = 0;
     if (cityHint && p.city && String(p.city).toLowerCase().includes(String(cityHint).toLowerCase())) score += 5;
-    if (bMax > 0 && p.price_min && p.price_max) {
-      if (bMax >= p.price_min && bMax <= p.price_max * 1.15) score += 4;
-      else if (bMax >= p.price_min) score += 2;
+    if (bMax > 0 && p.price_from && p.price_to) {
+      if (bMax >= p.price_from && bMax <= p.price_to * 1.15) score += 4;
+      else if (bMax >= p.price_from) score += 2;
     }
-    if (p.hero_image_url) score += 1;
+    if (p.marketing_url || p.website_url) score += 1;
+    if (p.brochure_url) score += 1;
     return { p, score };
   }).sort((a, b) => b.score - a.score);
 
   const top = ranked.slice(0, count).map((r) => r.p);
-  if (top.length === 0) return reply({ ok: false, error: "no projects available to recommend" }, 404);
+  if (top.length === 0) return reply({
+    ok: false,
+    error: "no projects available to recommend",
+    diagnostics: { city_hint: cityHint, candidates_scanned: projectList.length },
+  }, 404);
 
   // ── Per-contact zara_enabled gate (does NOT block — drafting is opt-in regardless) ──
   // We allow drafting because this is an explicit agent action ("Send Project Details" button click).
@@ -116,23 +123,21 @@ Deno.serve(async (req) => {
   };
 
   const cards_html = top.map((p) => {
-    const meta = [p.city, p.developer, p.building_type].filter(Boolean).map(escapeHtml).join(" · ");
-    const priceRange = (p.price_min || p.price_max)
-      ? `${fmtMoney(p.price_min)}${p.price_min && p.price_max ? "–" : ""}${fmtMoney(p.price_max)}`
+    const meta = [p.city, p.developer, p.property_type].filter(Boolean).map(escapeHtml).join(" · ");
+    const priceRange = (p.price_from || p.price_to)
+      ? `${fmtMoney(p.price_from)}${p.price_from && p.price_to ? "–" : ""}${fmtMoney(p.price_to)}`
       : "";
-    const ctaUrl = p.marketing_url || p.brochure_url || "https://presaleproperties.com";
-    const hero = p.hero_image_url
-      ? `<img src="${escapeHtml(p.hero_image_url)}" alt="${escapeHtml(p.name)}" width="560" style="display:block;width:100%;max-width:560px;height:auto;border-radius:8px;margin-bottom:14px;" />`
-      : `<div style="background:#1a1a2e;color:#fff;padding:36px 16px;text-align:center;border-radius:8px;margin-bottom:14px;font-weight:600;letter-spacing:0.04em;">${escapeHtml(p.name)}</div>`;
+    const ctaUrl = p.marketing_url || p.website_url || p.brochure_url || "https://presaleproperties.com";
+    const hero = `<div style="background:#14181F;color:#D7A542;padding:36px 16px;text-align:center;border-radius:8px;margin-bottom:14px;font-weight:700;letter-spacing:0.04em;font-size:18px;">${escapeHtml(p.name)}</div>`;
     const whyFits = whyForLead(p, contact);
     return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #eee;border-radius:10px;padding:16px;margin:0 0 16px 0;background:#fff;">
 <tr><td>
 ${hero}
-<div style="color:#1a1a2e;font-size:18px;font-weight:700;margin-bottom:4px;">${escapeHtml(p.name)}</div>
+<div style="color:#14181F;font-size:18px;font-weight:700;margin-bottom:4px;">${escapeHtml(p.name)}</div>
 ${meta ? `<div style="color:#888;font-size:13px;margin-bottom:6px;">${meta}</div>` : ""}
-${priceRange ? `<div style="color:#1a1a2e;font-size:16px;margin-bottom:10px;">${escapeHtml(priceRange)}</div>` : ""}
+${priceRange ? `<div style="color:#14181F;font-size:16px;margin-bottom:10px;">${escapeHtml(priceRange)}</div>` : ""}
 <div style="color:#444;font-size:14px;line-height:1.55;margin-bottom:14px;">${escapeHtml(whyFits)}</div>
-<a href="${escapeHtml(ctaUrl)}" style="display:inline-block;background:#3b82f6;color:#ffffff;text-decoration:none;padding:11px 18px;border-radius:8px;font-weight:600;font-size:13px;">View Floor Plans</a>
+<a href="${escapeHtml(ctaUrl)}" style="display:inline-block;background:#D7A542;color:#14181F;text-decoration:none;padding:11px 18px;border-radius:8px;font-weight:600;font-size:13px;">View Floor Plans</a>
 </td></tr></table>`;
   }).join("");
 
@@ -236,7 +241,7 @@ function whyForLead(p: any, c: any): string {
     bits.push(`${p.city} location`);
   }
   const bMax = Number(c.budget_max ?? 0);
-  if (bMax > 0 && p.price_min && bMax >= p.price_min && bMax <= (p.price_max ?? p.price_min) * 1.15) {
+  if (bMax > 0 && p.price_from && bMax >= p.price_from && bMax <= (p.price_to ?? p.price_from) * 1.15) {
     bits.push(`fits your budget`);
   }
   if (p.developer) bits.push(`built by ${p.developer}`);
