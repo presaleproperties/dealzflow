@@ -7781,6 +7781,33 @@ export type Database = {
         }
         Relationships: []
       }
+      zara_metrics_by_intent: {
+        Row: {
+          avg_confidence: number | null
+          avg_edit_distance: number | null
+          drafts: number | null
+          intent: string | null
+          sent: number | null
+          sent_unedited: number | null
+          unedited_pct: number | null
+        }
+        Relationships: []
+      }
+      zara_metrics_daily: {
+        Row: {
+          avg_confidence: number | null
+          avg_edit_distance: number | null
+          avg_latency_ms: number | null
+          day: string | null
+          drafts: number | null
+          escalated: number | null
+          flagged_for_human: number | null
+          intent: string | null
+          sent: number | null
+          sent_unedited: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       _backfill_behavior_notes_internal: { Args: never; Returns: Json }
@@ -8419,6 +8446,21 @@ export type Database = {
           similarity: number
           turning_message: string
           why_it_worked: string
+        }[]
+      }
+      zara_recent_high_edits: {
+        Args: { p_limit?: number }
+        Returns: {
+          channel: string
+          created_at: string
+          draft_text: string
+          edit_distance: number
+          edited_text: string
+          escalation_model: string
+          guardrails_hit: string[]
+          id: string
+          intent: string
+          model: string
         }[]
       }
     }
