@@ -123,23 +123,21 @@ Deno.serve(async (req) => {
   };
 
   const cards_html = top.map((p) => {
-    const meta = [p.city, p.developer, p.building_type].filter(Boolean).map(escapeHtml).join(" · ");
-    const priceRange = (p.price_min || p.price_max)
-      ? `${fmtMoney(p.price_min)}${p.price_min && p.price_max ? "–" : ""}${fmtMoney(p.price_max)}`
+    const meta = [p.city, p.developer, p.property_type].filter(Boolean).map(escapeHtml).join(" · ");
+    const priceRange = (p.price_from || p.price_to)
+      ? `${fmtMoney(p.price_from)}${p.price_from && p.price_to ? "–" : ""}${fmtMoney(p.price_to)}`
       : "";
-    const ctaUrl = p.marketing_url || p.brochure_url || "https://presaleproperties.com";
-    const hero = p.hero_image_url
-      ? `<img src="${escapeHtml(p.hero_image_url)}" alt="${escapeHtml(p.name)}" width="560" style="display:block;width:100%;max-width:560px;height:auto;border-radius:8px;margin-bottom:14px;" />`
-      : `<div style="background:#1a1a2e;color:#fff;padding:36px 16px;text-align:center;border-radius:8px;margin-bottom:14px;font-weight:600;letter-spacing:0.04em;">${escapeHtml(p.name)}</div>`;
+    const ctaUrl = p.marketing_url || p.website_url || p.brochure_url || "https://presaleproperties.com";
+    const hero = `<div style="background:#14181F;color:#D7A542;padding:36px 16px;text-align:center;border-radius:8px;margin-bottom:14px;font-weight:700;letter-spacing:0.04em;font-size:18px;">${escapeHtml(p.name)}</div>`;
     const whyFits = whyForLead(p, contact);
     return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #eee;border-radius:10px;padding:16px;margin:0 0 16px 0;background:#fff;">
 <tr><td>
 ${hero}
-<div style="color:#1a1a2e;font-size:18px;font-weight:700;margin-bottom:4px;">${escapeHtml(p.name)}</div>
+<div style="color:#14181F;font-size:18px;font-weight:700;margin-bottom:4px;">${escapeHtml(p.name)}</div>
 ${meta ? `<div style="color:#888;font-size:13px;margin-bottom:6px;">${meta}</div>` : ""}
-${priceRange ? `<div style="color:#1a1a2e;font-size:16px;margin-bottom:10px;">${escapeHtml(priceRange)}</div>` : ""}
+${priceRange ? `<div style="color:#14181F;font-size:16px;margin-bottom:10px;">${escapeHtml(priceRange)}</div>` : ""}
 <div style="color:#444;font-size:14px;line-height:1.55;margin-bottom:14px;">${escapeHtml(whyFits)}</div>
-<a href="${escapeHtml(ctaUrl)}" style="display:inline-block;background:#3b82f6;color:#ffffff;text-decoration:none;padding:11px 18px;border-radius:8px;font-weight:600;font-size:13px;">View Floor Plans</a>
+<a href="${escapeHtml(ctaUrl)}" style="display:inline-block;background:#D7A542;color:#14181F;text-decoration:none;padding:11px 18px;border-radius:8px;font-weight:600;font-size:13px;">View Floor Plans</a>
 </td></tr></table>`;
   }).join("");
 
