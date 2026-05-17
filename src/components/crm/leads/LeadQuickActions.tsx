@@ -30,6 +30,30 @@ export function LeadQuickActions({ contact }: { contact: CrmContact }) {
   const [showBooking, setShowBooking] = useState(false);
   const [showEnroll, setShowEnroll] = useState(false);
 
+  const [sendingProjects, setSendingProjects] = useState(false);
+
+  const handleSendProjectDetails = async () => {
+    setSendingProjects(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('zara-send-project-details', {
+        body: { contactId: contact.id },
+      });
+      if (error) throw error;
+      const res = data as any;
+      if (res?.queued) {
+        toast.success('Zara drafted project details — review in /crm/zara/queue', { duration: 5000 });
+      } else if (res?.no_matches) {
+        toast.warning('No matching projects found for this lead');
+      } else {
+        toast.success('Project details draft created');
+      }
+    } catch (e: any) {
+      toast.error(e?.message ?? 'Failed to draft project details');
+    } finally {
+      setSendingProjects(false);
+    }
+  };
+
   const handlePipelineChange = (segId: string) => {
     const seg = pipelines.find(p => p.id === segId);
     if (seg) setPipeline.mutate({ contact, segment: seg });
