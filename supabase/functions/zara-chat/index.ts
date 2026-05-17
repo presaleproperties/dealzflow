@@ -235,8 +235,8 @@ Deno.serve(async (req) => {
 
     // Load history + load system prompt addenda
     const history = await loadHistory(conversation_id);
-    const { data: addenda } = await sb.from("zara_system_prompt_addenda").select("content").eq("active", true);
-    const system = [SYSTEM_PROMPT_BASE, ...(addenda?.map((a: any) => a.content) ?? [])].join("\n\n");
+    const { data: addenda } = await sb.from("zara_system_prompt_addenda").select("addendum").eq("active", true);
+    const system = [SYSTEM_PROMPT_BASE, ...(addenda?.map((a: any) => a.addendum) ?? [])].join("\n\n");
 
     // SSE response
     const stream = new ReadableStream({
