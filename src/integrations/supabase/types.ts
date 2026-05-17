@@ -5209,6 +5209,71 @@ export type Database = {
         }
         Relationships: []
       }
+      crm_zara_outbound_audit: {
+        Row: {
+          channel: string | null
+          confidence: number | null
+          contact_id: string | null
+          created_at: string
+          decision: string
+          decision_reason: string | null
+          draft_id: string | null
+          id: string
+          meta: Json
+          model: string | null
+          provider_message_id: string | null
+          rule_evaluation: Json
+          subject: string | null
+          template_key: string | null
+          trigger_kind: string | null
+          updated_at: string
+        }
+        Insert: {
+          channel?: string | null
+          confidence?: number | null
+          contact_id?: string | null
+          created_at?: string
+          decision: string
+          decision_reason?: string | null
+          draft_id?: string | null
+          id?: string
+          meta?: Json
+          model?: string | null
+          provider_message_id?: string | null
+          rule_evaluation?: Json
+          subject?: string | null
+          template_key?: string | null
+          trigger_kind?: string | null
+          updated_at?: string
+        }
+        Update: {
+          channel?: string | null
+          confidence?: number | null
+          contact_id?: string | null
+          created_at?: string
+          decision?: string
+          decision_reason?: string | null
+          draft_id?: string | null
+          id?: string
+          meta?: Json
+          model?: string | null
+          provider_message_id?: string | null
+          rule_evaluation?: Json
+          subject?: string | null
+          template_key?: string | null
+          trigger_kind?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_zara_outbound_audit_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "crm_contacts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       crm_zara_playbooks: {
         Row: {
           behavior_sequence: Json
