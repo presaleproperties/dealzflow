@@ -305,10 +305,39 @@ export function EditLeadDetailsSheet({ contact, open, onOpenChange }: Props) {
           <Group title="Pipeline">
             {fieldRow(
               'Stage',
-              <Select value={form.status} onValueChange={(v) => update('status', v)}>
-                <SelectTrigger className={inputCls('status')}><SelectValue /></SelectTrigger>
+              <Select
+                value={form.pipeline_segment_id || activePipeline?.id || ''}
+                onValueChange={(segId) => {
+                  const seg = pipelines.find((p) => p.id === segId);
+                  if (!seg) return;
+                  const fc = (seg.filter_config ?? {}) as Record<string, unknown>;
+                  const statusFromSeg = Array.isArray(fc.status) && (fc.status as string[])[0]
+                    ? (fc.status as string[])[0]
+                    : form.status;
+                  const leadTypeFromSeg = Array.isArray(fc.lead_type) && (fc.lead_type as string[])[0]
+                    ? (fc.lead_type as string[])[0]
+                    : null;
+                  setForm((prev) => ({
+                    ...prev,
+                    pipeline_segment_id: seg.id,
+                    status: statusFromSeg,
+                    lead_types: leadTypeFromSeg && !prev.lead_types.includes(leadTypeFromSeg)
+                      ? [leadTypeFromSeg, ...prev.lead_types]
+                      : prev.lead_types,
+                  }));
+                }}
+              >
+                <SelectTrigger className={inputCls('status')}><SelectValue placeholder="Select pipeline" /></SelectTrigger>
                 <SelectContent>
-                  {LEAD_STATUSES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                  {pipelines.map((seg) => (
+                    <SelectItem key={seg.id} value={seg.id}>
+                      <span className="inline-flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full" style={{ background: seg.color }} />
+                        {seg.emoji && <span>{seg.emoji}</span>}
+                        {seg.name}
+                      </span>
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>,
               { errorKey: 'status', required: true },
