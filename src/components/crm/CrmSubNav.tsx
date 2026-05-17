@@ -19,6 +19,7 @@ const PRIMARY: Tab[] = [
   { label: 'Chats',    path: '/crm/chats' },
   { label: 'Calendar',  path: '/crm/calendar' },
   { label: 'Templates', path: '/crm/templates' },
+  { label: 'Zara',      path: '/crm/zara' },
 ];
 
 // Overflow — everything else lives behind a single "More" menu.
