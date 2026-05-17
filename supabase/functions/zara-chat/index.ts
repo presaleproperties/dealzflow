@@ -26,6 +26,13 @@ const FUNCTIONS_BASE = `${SUPABASE_URL}/functions/v1`;
 
 const ANTHROPIC_MODEL = "claude-haiku-4-5-20251001";
 const MAX_TOOL_TURNS = 8;
+const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
+const RAG_CHUNK_THRESHOLD = 0.5;
+const RAG_CHUNK_COUNT = 4;
+const RAG_WIN_THRESHOLD = 0.55;
+const RAG_WIN_COUNT = 2;
+const RAG_PROJECT_THRESHOLD = 0.55;
+const RAG_PROJECT_COUNT = 2;
 
 const SYSTEM_PROMPT_BASE = `You are Zara, an AI sales assistant for a real-estate CRM (PresaleProperties.com).
 You help the agent triage leads, draft outreach, and recommend projects.
