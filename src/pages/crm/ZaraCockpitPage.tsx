@@ -271,6 +271,51 @@ export default function ZaraCockpitPage() {
     enabled: !!activeId,
   });
 
+  // Pending tool calls awaiting approval for this conversation
+  const { data: pendingRows = [] } = useQuery({
+    queryKey: ['zara-pending-tool-calls', activeId],
+    queryFn: async () => {
+      if (!activeId) return [] as Array<{ id: string; tool_use_id: string; tool_name: string; tool_input: any; status: string }>;
+      const { data } = await supabase
+        .from('zara_pending_tool_calls')
+        .select('id,tool_use_id,tool_name,tool_input,status,created_at')
+        .eq('conversation_id', activeId)
+        .order('created_at', { ascending: true });
+      return (data as any[]) ?? [];
+    },
+    enabled: !!activeId,
+    refetchInterval: streaming ? 1500 : false,
+  });
+  const pendingByUseId = useMemo(() => {
+    const m = new Map<string, { pending_id: string; status: string; tool_input: any }>();
+    for (const r of pendingRows) m.set(r.tool_use_id, { pending_id: r.id, status: r.status, tool_input: r.tool_input });
+    return m;
+  }, [pendingRows]);
+
+  // Approve / deny pending tool call
+  const [decidingId, setDecidingId] = useState<string | null>(null);
+  const decide = async (pending_id: string, decision: 'approve' | 'deny') => {
+    setDecidingId(pending_id);
+    try {
+      const { data: u } = await supabase.auth.getSession();
+      const resp = await fetch(`${SUPABASE_URL}/functions/v1/zara-tool-approve`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${u.session?.access_token ?? ''}` },
+        body: JSON.stringify({ pending_id, decision }),
+      });
+      const json = await resp.json();
+      if (!resp.ok) throw new Error(json.error || 'Decision failed');
+      toast.success(decision === 'approve' ? 'Action approved and executed' : 'Action denied');
+      qc.invalidateQueries({ queryKey: ['zara-pending-tool-calls', activeId] });
+      qc.invalidateQueries({ queryKey: ['zara-messages', activeId] });
+      qc.invalidateQueries({ queryKey: ['zara-actions-feed'] });
+    } catch (e: any) {
+      toast.error(e.message ?? 'Decision failed');
+    } finally {
+      setDecidingId(null);
+    }
+  };
+
   // Auto-scroll on new content
   useEffect(() => {
     scrollerRef.current?.scrollTo({ top: scrollerRef.current.scrollHeight, behavior: 'smooth' });
