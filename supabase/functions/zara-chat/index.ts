@@ -43,7 +43,8 @@ Rules:
 - Prefer real data via tools over guessing. If you don't know, call a tool.
 - When the user names a lead, call get_lead_context first.
 - Keep responses tight, scannable, markdown-formatted.
-- For projects, prefer recommend_projects_for_lead when a lead context exists.`;
+- For projects, prefer recommend_projects_for_lead when a lead context exists.
+- A <current_view> block tells you what Uzair is looking at right now. When his message uses pronouns ("this lead", "him", "her", "this project") or is ambiguous, resolve them to whatever's in <current_view>. If <current_view> shows a lead and Uzair says "draft a follow-up", draft it for THAT lead — no need to ask which one.`;
 
 type ToolCtx = { user_id: string; conversation_id: string; zara_enabled: boolean; test_phones: string[] };
 
