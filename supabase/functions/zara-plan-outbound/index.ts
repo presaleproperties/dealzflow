@@ -79,6 +79,8 @@ Deno.serve(async (req) => {
   if (!settings?.enabled) {
     return json({ ok: false, reason: 'kill_switch_off' });
   }
+  const { data: modeSettings } = await admin.from('zara_settings').select('mode').eq('id', 1).maybeSingle();
+  const sandboxMode = modeSettings?.mode === 'sandbox';
 
   // Workspace pending cap
   const { data: pendingCount } = await admin.rpc('crm_zara_pending_drafts_count');
@@ -288,7 +290,12 @@ Draft the outbound message per the system rules. Strict JSON only.`;
     });
 
     // Autonomous send: if enabled, send immediately and update draft → 'sent'.
-    if (settings.autonomous_outbound) {
+    // SANDBOX GATE: block autonomous sends to non-test contacts when mode=sandbox.
+    const isTestContact = tags.includes('zara_test_contact');
+    if (settings.autonomous_outbound && sandboxMode && !isTestContact) {
+      await admin.from('crm_zara_drafts').update({ status: 'sandbox_blocked' }).eq('id', inserted.id);
+      generated.push({ id: inserted.id, contact_id: lead.id, trigger, channel, autonomous: true, sent: false, blocked: 'sandbox_real_lead' });
+    } else if (settings.autonomous_outbound) {
       const sent = await autoSendDraft(admin, inserted.id);
       generated.push({ id: inserted.id, contact_id: lead.id, trigger, channel, autonomous: true, sent: sent.ok, error: sent.error });
     } else {
