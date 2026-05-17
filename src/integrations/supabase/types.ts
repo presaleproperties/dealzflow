@@ -6987,6 +6987,41 @@ export type Database = {
           },
         ]
       }
+      zara_chat_messages: {
+        Row: {
+          agent_user_id: string
+          created_at: string
+          id: string
+          parts: Json
+          pinned_contact_id: string | null
+          role: string
+        }
+        Insert: {
+          agent_user_id: string
+          created_at?: string
+          id?: string
+          parts: Json
+          pinned_contact_id?: string | null
+          role: string
+        }
+        Update: {
+          agent_user_id?: string
+          created_at?: string
+          id?: string
+          parts?: Json
+          pinned_contact_id?: string | null
+          role?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "zara_chat_messages_pinned_contact_id_fkey"
+            columns: ["pinned_contact_id"]
+            isOneToOne: false
+            referencedRelation: "crm_contacts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       zara_conversations: {
         Row: {
           archived: boolean
@@ -7417,6 +7452,7 @@ export type Database = {
       }
       zara_settings: {
         Row: {
+          autonomy_level: number
           email_append_signature: boolean
           email_fallback_template_id: string | null
           email_use_template_scaffold: boolean
@@ -7426,8 +7462,10 @@ export type Database = {
           mode: string
           test_phone_numbers: string[]
           updated_at: string
+          voice_enabled: boolean
         }
         Insert: {
+          autonomy_level?: number
           email_append_signature?: boolean
           email_fallback_template_id?: string | null
           email_use_template_scaffold?: boolean
@@ -7437,8 +7475,10 @@ export type Database = {
           mode?: string
           test_phone_numbers?: string[]
           updated_at?: string
+          voice_enabled?: boolean
         }
         Update: {
+          autonomy_level?: number
           email_append_signature?: boolean
           email_fallback_template_id?: string | null
           email_use_template_scaffold?: boolean
@@ -7448,6 +7488,7 @@ export type Database = {
           mode?: string
           test_phone_numbers?: string[]
           updated_at?: string
+          voice_enabled?: boolean
         }
         Relationships: [
           {
