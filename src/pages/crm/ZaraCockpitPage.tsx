@@ -12,7 +12,7 @@ import remarkGfm from 'remark-gfm';
 import {
   Plus, Pin, Search, Send, Mic, MicOff, Sparkles, Inbox, ChevronRight,
   Activity as ActivityIcon, ThumbsUp, ThumbsDown, Wrench, Loader2, ChevronDown,
-  Building2, Brain,
+  Building2, Brain, FileText,
 } from 'lucide-react';
 import { usePushToTalk } from '@/hooks/usePushToTalk';
 import { MicPermissionDialog } from '@/components/crm/zara/MicPermissionDialog';
