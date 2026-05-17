@@ -837,19 +837,19 @@ export default function ZaraCockpitPage() {
                   className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors disabled:opacity-40 ${
                     ptt.state === 'recording'
                       ? (pttCancelArmedRef.current ? 'bg-muted text-muted-foreground' : 'bg-destructive text-destructive-foreground animate-pulse')
-                      : ptt.state === 'transcribing'
                       ? 'bg-muted text-muted-foreground'
-                    : 'text-muted-foreground hover:bg-muted/60'
-                }`}
-              >
-                {ptt.state === 'transcribing' ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : ptt.state === 'recording' ? (
-                  <MicOff className="w-4 h-4" />
-                ) : (
-                  <Mic className="w-4 h-4" />
-                )}
-              </button>
+                      : 'text-muted-foreground hover:bg-muted/60'
+                  }`}
+                >
+                  {ptt.state === 'transcribing' ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : ptt.state === 'recording' ? (
+                    <MicOff className="w-4 h-4" />
+                  ) : (
+                    <Mic className="w-4 h-4" />
+                  )}
+                </button>
+              </div>
               {streaming ? (
                 <Button size="sm" variant="outline" onClick={() => abortRef.current?.abort()}>Stop</Button>
               ) : (
