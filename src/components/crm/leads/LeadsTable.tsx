@@ -374,7 +374,14 @@ function InlineStatusCell({ contact }: { contact: CrmContact }) {
   const onPick = (segId: string) => {
     const seg = pipelineSegments.find(s => s.id === segId);
     if (!seg) return;
+    const prevName = activeSeg?.name ?? contact.status ?? null;
     setPipeline.mutate({ contact, segment: seg });
+    void logEngagementEvent({
+      contactId: contact.id,
+      eventType: 'stage_changed',
+      source: 'crm',
+      metadata: { prev_stage: prevName, new_stage: seg.name, segment_id: seg.id },
+    });
     toast.success(`Pipeline → ${seg.name}`);
   };
 
