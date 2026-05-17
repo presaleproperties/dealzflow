@@ -42,6 +42,9 @@ export default function ZaraQueuePage() {
   const [tplSubject, setTplSubject] = useState('');
   const [tplBody, setTplBody] = useState('');
   const [tplSaving, setTplSaving] = useState(false);
+  const [fChannel, setFChannel] = useState<'all' | 'email' | 'sms' | 'whatsapp'>('all');
+  const [fSource, setFSource] = useState<'all' | 'K' | 'W' | 'P' | 'none'>('all');
+  const [fTag, setFTag] = useState<string>('all');
 
   const { data: settings } = useQuery({
     queryKey: ['zara-settings'],
