@@ -89,42 +89,45 @@ Deno.test({
       assert(draftId, "missing draftId");
 
       // 2. Verify the draft row: draft_text, intent, citations[]
-      const row = await psql(`
+      const draftRows = await sql`
         SELECT
-          coalesce(nullif(draft_text,''), '∅') AS draft_text,
-          coalesce(intent::text,'∅') AS intent,
-          coalesce(confidence::text,'∅') AS confidence,
-          coalesce(jsonb_array_length(citations),0)::text AS n_citations,
-          coalesce(citations::text,'[]') AS citations_json
+          draft_text,
+          intent::text AS intent,
+          confidence,
+          coalesce(jsonb_array_length(citations), 0) AS n_citations,
+          citations
         FROM public.zara_suggested_replies
-        WHERE id = '${draftId}';
-      `);
-      const cols = row.split("|");
-      assert(cols[0] !== "∅", "draft_text is empty");
-      assert(cols[1] !== "∅", "intent is missing");
-      const nCitations = Number(cols[3]);
+        WHERE id = ${draftId}::uuid
+      `;
+      assert(draftRows.length === 1, "draft row not found");
+      const d = draftRows[0] as any;
+      assert(d.draft_text && d.draft_text.length > 0, "draft_text is empty");
+      assert(d.intent, "intent is missing");
+      const nCitations = Number(d.n_citations);
       console.log(
-        `[e2e] draft_text=${cols[0].slice(0, 80)}... intent=${cols[1]} ` +
-        `conf=${cols[2]} citations=${nCitations}`,
+        `[e2e] draft_text=${String(d.draft_text).slice(0, 80)}... ` +
+        `intent=${d.intent} conf=${d.confidence} citations=${nCitations}`,
       );
-      // RAG floor: we expect ≥1 citation because we know 40 presale_projects
-      // have embeddings + a Surrey/price query.
-      assert(nCitations >= 1, `expected ≥1 citation, got ${nCitations}. raw=${cols[4]}`);
+      assert(
+        nCitations >= 1,
+        `expected ≥1 citation, got ${nCitations}. raw=${JSON.stringify(d.citations)}`,
+      );
 
       // 3. Memory roll is fire-and-forget; poll briefly for the row.
-      let memoryFound = false;
+      let memoryTurns = 0;
       for (let i = 0; i < 10; i++) {
-        const mem = await psql(
-          `SELECT coalesce(turn_count::text,'0') FROM public.zara_lead_memory WHERE contact_id = '${contactId}';`,
-        );
-        if (mem && Number(mem) >= 1) {
-          memoryFound = true;
-          console.log(`[e2e] memory rolled, turn_count=${mem}`);
+        const memRows = await sql`
+          SELECT turn_count FROM public.zara_lead_memory
+          WHERE contact_id = ${contactId}::uuid
+        `;
+        if (memRows.length > 0 && Number((memRows[0] as any).turn_count) >= 1) {
+          memoryTurns = Number((memRows[0] as any).turn_count);
+          console.log(`[e2e] memory rolled, turn_count=${memoryTurns}`);
           break;
         }
         await new Promise((r) => setTimeout(r, 1500));
       }
-      assert(memoryFound, "zara_lead_memory was not rolled within 15s");
+      assert(memoryTurns >= 1, "zara_lead_memory was not rolled within 15s");
 
       // 4. Tool dispatch: enrich_lead must return a contact dossier for the
       //    same contact. This proves zara-tool-execute is wired and reachable.
