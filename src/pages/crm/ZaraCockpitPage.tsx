@@ -16,6 +16,12 @@ import {
 } from 'lucide-react';
 import { usePushToTalk } from '@/hooks/usePushToTalk';
 import { MicPermissionDialog } from '@/components/crm/zara/MicPermissionDialog';
+import { useZaraPin } from '@/hooks/useZaraPin';
+import { PinnedLeadChip } from '@/components/crm/zara/PinnedLeadChip';
+import { SlashCommandPalette } from '@/components/crm/zara/SlashCommandPalette';
+import { ZaraKillSwitch } from '@/components/crm/zara/ZaraKillSwitch';
+import { AutonomyControl } from '@/components/crm/zara/AutonomyControl';
+import { DynamicSuggestions } from '@/components/crm/zara/DynamicSuggestions';
 
 type Conv = {
   id: string; title: string; pinned: boolean; archived: boolean;
@@ -269,6 +275,7 @@ function MessageBubble({
 
 export default function ZaraCockpitPage() {
   const qc = useQueryClient();
+  const { pinnedId } = useZaraPin();
   const [activeId, setActiveId] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [input, setInput] = useState('');
@@ -279,6 +286,7 @@ export default function ZaraCockpitPage() {
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const scrollerRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
+  const inputWrapRef = useRef<HTMLDivElement>(null);
 
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -564,7 +572,11 @@ export default function ZaraCockpitPage() {
       const res = await fetch(`${SUPABASE_URL}/functions/v1/zara-chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ conversation_id: convId, message: text }),
+        body: JSON.stringify({
+          conversation_id: convId,
+          message: text,
+          page_context: pinnedId ? { surface: 'zara-cockpit', contact_id: pinnedId } : { surface: 'zara-cockpit' },
+        }),
         signal: abort.signal,
       });
       if (!res.ok || !res.body) {
@@ -746,14 +758,20 @@ export default function ZaraCockpitPage() {
 
       {/* CENTER — Chat */}
       <section className="flex-1 min-w-0 flex flex-col">
-        <header className="px-5 py-3 border-b border-border/60 flex items-center justify-between">
+        <header className="px-5 py-3 border-b border-border/60 flex items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <Sparkles className="w-4 h-4 text-primary" />
             <h1 className="text-[15px] font-semibold tracking-tight">Zara</h1>
             <Pill size="sm" tone={modePill.tone}>{modePill.label}</Pill>
           </div>
-          <span className="text-[11px] text-muted-foreground">Cmd/Ctrl+J → focus chat</span>
+          <div className="flex items-center gap-3">
+            <AutonomyControl />
+            <span className="text-[11px] text-muted-foreground hidden lg:inline">Cmd/Ctrl+J · type / for commands</span>
+          </div>
         </header>
+
+        <ZaraKillSwitch />
+        <PinnedLeadChip />
 
         <div ref={scrollerRef} className="flex-1 min-h-0 overflow-y-auto px-5 py-6">
           <div className="max-w-2xl mx-auto space-y-4">
@@ -767,22 +785,13 @@ export default function ZaraCockpitPage() {
                     {activeId ? 'Continue this conversation' : 'Start a conversation with Zara'}
                   </h2>
                   <p className="text-[13px] text-muted-foreground max-w-md mx-auto">
-                    Ask about leads, drafts, projects, or your week. Zara drafts replies — you approve sends.
+                    Ask about leads, drafts, projects, or your week. Pin a lead with <code className="font-mono">/lead</code> · slash <code className="font-mono">/</code> for commands.
                   </p>
                 </div>
-                <div className="flex flex-wrap gap-2 justify-center">
-                  {QUICK_ACTIONS.map((q) => (
-                    <button
-                      key={q}
-                      onClick={() => { setInput(q); setTimeout(() => inputRef.current?.focus(), 0); }}
-                      className="text-[12px] px-3 py-1.5 rounded-full border border-border bg-card hover:bg-muted/60 hover:border-primary/40 transition-colors"
-                    >
-                      {q}
-                    </button>
-                  ))}
-                </div>
+                <DynamicSuggestions onPick={(q) => { setInput(q); setTimeout(() => inputRef.current?.focus(), 0); }} />
               </>
             )}
+
 
             {rendered.map((m) => (
               <div key={m.id} className="group">
@@ -870,6 +879,13 @@ export default function ZaraCockpitPage() {
                 </div>
               </div>
             )}
+            <div ref={inputWrapRef} className="relative">
+              <SlashCommandPalette
+                input={input}
+                onSelect={(v) => { setInput(v); setTimeout(() => inputRef.current?.focus(), 0); }}
+                onCompose={(text) => { setInput(text); setTimeout(() => { inputRef.current?.focus(); onSend(); }, 0); }}
+                anchorRef={inputWrapRef}
+              />
             <div className="relative flex items-end gap-2 rounded-2xl border border-border bg-card focus-within:border-primary/60 focus-within:ring-2 focus-within:ring-primary/15 transition-all p-2">
               <textarea
                 ref={inputRef}
@@ -966,6 +982,7 @@ export default function ZaraCockpitPage() {
                   Send
                 </Button>
               )}
+            </div>
             </div>
             <div className="mt-2 text-center text-[10.5px] text-muted-foreground">
               <Link to="/crm/zara/about" className="hover:text-foreground transition-colors">
