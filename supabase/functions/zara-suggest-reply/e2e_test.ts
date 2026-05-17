@@ -45,10 +45,20 @@ async function createTestContact(): Promise<string> {
 }
 
 async function cleanupTestContact(id: string) {
-  // FKs on zara_suggested_replies / zara_lead_memory / crm_engagement_events
-  // all cascade on contact delete, so a single DELETE is enough — and the
-  // limited DB role used by the test runner has DELETE on crm_contacts.
-  await sql`DELETE FROM public.crm_contacts WHERE id = ${id}::uuid`;
+  // The sandbox DB role only has INSERT on crm_contacts, not DELETE/UPDATE.
+  // Cascade FKs would clean dependents on delete, but we can't issue the
+  // delete from here. Cleanup is therefore best-effort — failure is logged
+  // and ignored so the test result reflects suggest-reply behaviour, not
+  // sandbox permissions. Stray rows are tagged `zara_test_contact` with a
+  // `zara-e2e-*@example.test` email and can be swept via an admin RPC later.
+  try {
+    await sql`DELETE FROM public.crm_contacts WHERE id = ${id}::uuid`;
+  } catch (e) {
+    console.warn(
+      `[e2e] cleanup skipped (sandbox role lacks DELETE on crm_contacts): ` +
+      `${(e as Error).message}. Stray contact id=${id} tag=zara_test_contact.`,
+    );
+  }
 }
 
 async function callFn(path: string, body: unknown) {
