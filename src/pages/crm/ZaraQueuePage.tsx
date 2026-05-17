@@ -42,6 +42,9 @@ export default function ZaraQueuePage() {
   const [tplSubject, setTplSubject] = useState('');
   const [tplBody, setTplBody] = useState('');
   const [tplSaving, setTplSaving] = useState(false);
+  const [fChannel, setFChannel] = useState<'all' | 'email' | 'sms' | 'whatsapp'>('all');
+  const [fSource, setFSource] = useState<'all' | 'K' | 'W' | 'P' | 'none'>('all');
+  const [fTag, setFTag] = useState<string>('all');
 
   const { data: settings } = useQuery({
     queryKey: ['zara-settings'],
@@ -89,7 +92,35 @@ export default function ZaraQueuePage() {
     return () => { supabase.removeChannel(ch); };
   }, [qc]);
 
-  const pending = drafts.filter((d) => d.status === 'pending');
+  const pendingAll = drafts.filter((d) => d.status === 'pending');
+
+  const tagOptions = useMemo(() => {
+    const set = new Set<string>();
+    pendingAll.forEach((d) => {
+      const c = contactMap.get(d.contact_id);
+      (c?.tags ?? []).forEach((t: string) => t && set.add(t));
+    });
+    return Array.from(set).sort();
+  }, [pendingAll, contactMap]);
+
+  const sourceCount = (s: any) =>
+    (s?.chunks?.length ?? 0) + (s?.wins?.length ?? 0) + (s?.projects?.length ?? 0);
+
+  const pending = useMemo(() => {
+    return pendingAll.filter((d) => {
+      if (fChannel !== 'all' && d.channel !== fChannel) return false;
+      const s = d.consulted_sources ?? {};
+      if (fSource === 'K' && !(s.chunks?.length > 0)) return false;
+      if (fSource === 'W' && !(s.wins?.length > 0)) return false;
+      if (fSource === 'P' && !(s.projects?.length > 0)) return false;
+      if (fSource === 'none' && sourceCount(s) > 0) return false;
+      if (fTag !== 'all') {
+        const c = contactMap.get(d.contact_id);
+        if (!(c?.tags ?? []).includes(fTag)) return false;
+      }
+      return true;
+    });
+  }, [pendingAll, fChannel, fSource, fTag, contactMap]);
 
   const banner = (() => {
     const m = settings?.mode ?? 'sandbox';
@@ -215,11 +246,51 @@ export default function ZaraQueuePage() {
       <div className="flex items-center justify-between px-4 py-3 border-b border-border gap-3 flex-wrap">
         <div>
           <h1 className="text-lg font-bold">Zara queue</h1>
-          <p className="text-xs text-muted-foreground">{pending.length} pending · {drafts.length} total</p>
+          <p className="text-xs text-muted-foreground">
+            {pending.length} shown · {pendingAll.length} pending · {drafts.length} total
+          </p>
         </div>
         <div className="flex gap-2">
           <Button size="sm" variant="outline" onClick={seedTestContacts}>Seed test contacts</Button>
         </div>
+      </div>
+
+      <div className="flex items-center gap-3 flex-wrap px-4 py-2 border-b border-border text-[11px]">
+        <FilterGroup label="Channel">
+          {(['all','email','sms','whatsapp'] as const).map((v) => (
+            <FilterChip key={v} active={fChannel === v} onClick={() => setFChannel(v)}>{v}</FilterChip>
+          ))}
+        </FilterGroup>
+        <FilterGroup label="Source">
+          {(['all','K','W','P','none'] as const).map((v) => (
+            <FilterChip
+              key={v}
+              active={fSource === v}
+              onClick={() => setFSource(v)}
+              title={v === 'K' ? 'Knowledge chunks' : v === 'W' ? 'Winning conversations' : v === 'P' ? 'Projects' : v === 'none' ? 'No RAG sources' : 'All sources'}
+            >
+              {v}
+            </FilterChip>
+          ))}
+        </FilterGroup>
+        <FilterGroup label="Tag">
+          <select
+            value={fTag}
+            onChange={(e) => setFTag(e.target.value)}
+            className="h-6 px-2 rounded-md border border-border bg-background text-[11px]"
+          >
+            <option value="all">all</option>
+            {tagOptions.map((t) => <option key={t} value={t}>{t}</option>)}
+          </select>
+        </FilterGroup>
+        {(fChannel !== 'all' || fSource !== 'all' || fTag !== 'all') && (
+          <button
+            onClick={() => { setFChannel('all'); setFSource('all'); setFTag('all'); }}
+            className="text-[11px] text-muted-foreground hover:text-foreground underline"
+          >
+            Reset
+          </button>
+        )}
       </div>
 
       <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-3">
@@ -404,5 +475,42 @@ function TrainedFromChip({ sources }: { sources: any }) {
         </div>
       )}
     </div>
+  );
+}
+
+function FilterGroup({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="flex items-center gap-1.5">
+      <span className="text-[10.5px] uppercase tracking-wide text-muted-foreground">{label}</span>
+      <div className="flex items-center gap-1">{children}</div>
+    </div>
+  );
+}
+
+function FilterChip({
+  active,
+  onClick,
+  children,
+  title,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+  title?: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      title={title}
+      className={
+        'h-6 px-2 rounded-full text-[10.5px] font-medium border transition-colors ' +
+        (active
+          ? 'border-primary/40 bg-primary/10 text-primary'
+          : 'border-border bg-background text-muted-foreground hover:text-foreground hover:bg-muted')
+      }
+    >
+      {children}
+    </button>
   );
 }
