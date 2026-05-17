@@ -452,10 +452,12 @@ Deno.serve(async (req) => {
       ragSources = r.sources;
     }
 
-    // System assembly: <retrieved_context> goes BEFORE addenda so addenda
-    // (which encode the agent's voice / corrections) still get the final say.
+    // System assembly: <retrieved_context> goes BEFORE addenda; <current_view>
+    // goes after retrieval so the model can use it to resolve pronouns.
+    const currentViewBlock = await buildCurrentViewBlock(page_context);
     const systemParts = [SYSTEM_PROMPT_BASE];
     if (ragBlock) systemParts.push(ragBlock);
+    if (currentViewBlock) systemParts.push(currentViewBlock);
     for (const a of (addenda ?? [])) systemParts.push((a as any).addendum);
     const system = systemParts.join("\n\n");
 
@@ -479,6 +481,7 @@ Deno.serve(async (req) => {
           let messages = toAnthropicMessages([...history, { role: "user", content: message }]);
           let turn = 0;
           let lastAssistantId: string | null = null;
+          const toolResultsById = new Map<string, any>();
 
           while (turn < MAX_TOOL_TURNS) {
             turn++;
@@ -488,20 +491,21 @@ Deno.serve(async (req) => {
             const assistantContent: any[] = [];
             if (text) assistantContent.push({ type: "text", text });
             for (const tu of toolUses) assistantContent.push({ type: "tool_use", id: tu.id, name: tu.name, input: tu.input });
-            // Persist consulted_sources only on the first assistant turn (the
-            // one that actually used the retrieved context).
             const persistSources = turn === 1 ? ragSources : undefined;
-            lastAssistantId = await persistAssistantTurn(conversation_id, text, toolUses, usage, persistSources);
+            const referencedIds = extractReferencedIds(toolUses, toolResultsById);
+            lastAssistantId = await persistAssistantTurn(conversation_id, text, toolUses, usage, persistSources, referencedIds);
             messages.push({ role: "assistant", content: assistantContent });
 
             if (stopReason !== "tool_use" || toolUses.length === 0) {
               send("done", { message_id: lastAssistantId, usage });
+              // Title regen at milestones (non-blocking)
+              const newUserTurnCount = userTurns + 1;
+              regenerateTitleIfDue(conversation_id, newUserTurnCount).then((t) => {
+                if (t) { try { send("title", { title: t }); } catch { /* stream closed */ } }
+              }, () => {});
               break;
             }
 
-            // Execute each tool sequentially, emit start + result.
-            // For tools that require user approval, persist a pending row
-            // and feed a synthetic tool_result back to Anthropic so it stops.
             const toolResults: any[] = [];
             let anyPending = false;
             for (const tu of toolUses) {
@@ -517,6 +521,7 @@ Deno.serve(async (req) => {
                   message: `Awaiting user approval for ${tu.name}. Briefly tell the user what's being proposed and stop — do not call any more tools until they decide.`,
                 };
                 await persistToolResult(conversation_id, tu.id, tu.name, out);
+                toolResultsById.set(tu.id, out);
                 toolResults.push({ type: "tool_result", tool_use_id: tu.id, content: JSON.stringify(out) });
                 anyPending = true;
                 continue;
@@ -524,14 +529,12 @@ Deno.serve(async (req) => {
               send("tool_start", { id: tu.id, name: tu.name, input: tu.input });
               const out = await runTool(tu.name, tu.input, ctx);
               await persistToolResult(conversation_id, tu.id, tu.name, out);
+              toolResultsById.set(tu.id, out);
               send("tool_result", { id: tu.id, name: tu.name, output: out });
               toolResults.push({ type: "tool_result", tool_use_id: tu.id, content: JSON.stringify(out) });
             }
             messages.push({ role: "user", content: toolResults });
-            if (anyPending) {
-              // One more turn so the model can summarize, then it should stop.
-              // The next turn's tool_use (if any) will also gate.
-            }
+            if (anyPending) { /* allow one more summarising turn */ }
           }
 
           if (turn >= MAX_TOOL_TURNS) {
