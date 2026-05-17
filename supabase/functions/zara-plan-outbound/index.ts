@@ -260,6 +260,85 @@ Deno.serve(async (req) => {
       continue;
     }
 
+    // ── Auto multi-project showcase branch ──────────────────────────────
+    // When the matched trigger is configured for auto-showcase AND autonomous
+    // sending is enabled (and not sandbox-blocked), invoke zara-send-project-details
+    // instead of generating a short nudge draft.
+    const showcaseTriggers: string[] = (settings.auto_showcase_triggers as string[] | null) ?? [];
+    const showcaseCount = Math.min(Math.max(Number(settings.auto_showcase_count ?? 3) || 3, 1), 5);
+    const isTestContactForShowcase = tags.includes('zara_test_contact');
+    const showcaseEligible =
+      showcaseTriggers.includes(trigger) &&
+      !!settings.autonomous_outbound &&
+      pickChannel(lead) === 'email' &&
+      !!lead.email &&
+      !(sandboxMode && !isTestContactForShowcase);
+
+    if (showcaseEligible) {
+      // Dedupe: skip if a showcase was queued/sent in the last 14d for this lead.
+      const fourteenDaysAgo = new Date(now - 14 * 86400_000).toISOString();
+      const { count: priorShowcase } = await admin
+        .from('zara_suggested_replies')
+        .select('id', { count: 'exact', head: true })
+        .eq('contact_id', lead.id)
+        .eq('intent', 'send_project_details')
+        .gte('inbound_at', fourteenDaysAgo);
+      ruleEval.prior_showcase_14d = priorShowcase ?? 0;
+      ruleEval.auto_showcase_triggers = showcaseTriggers;
+
+      if ((priorShowcase ?? 0) > 0) {
+        skipped.push({ id: lead.id, reason: 'showcase_recent' });
+        await writeAudit({
+          contact_id: lead.id, trigger_kind: trigger, template_key: 'project-showcase',
+          channel: 'email', decision: 'skipped',
+          decision_reason: 'showcase already sent/queued in last 14 days',
+          rule_evaluation: ruleEval,
+        });
+        continue;
+      }
+
+      try {
+        const url = `${Deno.env.get('SUPABASE_URL')}/functions/v1/zara-send-project-details`;
+        const r = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
+          },
+          body: JSON.stringify({ contact_id: lead.id, count: showcaseCount }),
+        });
+        const out = await r.json().catch(() => ({}));
+        if (!r.ok || !out?.ok) {
+          skipped.push({ id: lead.id, reason: 'showcase_failed', error: out?.error });
+          await writeAudit({
+            contact_id: lead.id, trigger_kind: trigger, template_key: 'project-showcase',
+            channel: 'email', decision: 'failed',
+            decision_reason: `auto-showcase failed: ${out?.error ?? r.status}`,
+            rule_evaluation: ruleEval,
+          });
+          continue;
+        }
+        generated.push({ contact_id: lead.id, trigger, channel: 'email', auto_showcase: true, draft_id: out.draft_id, project_count: out.project_count });
+        await writeAudit({
+          contact_id: lead.id, trigger_kind: trigger, template_key: 'project-showcase',
+          channel: 'email', decision: 'auto_showcase_queued',
+          decision_reason: `auto-showcase queued (${out.project_count} projects) — awaiting send pipeline`,
+          rule_evaluation: ruleEval,
+          meta: { draft_id: out.draft_id, project_count: out.project_count, count_requested: showcaseCount },
+        });
+        continue;
+      } catch (e) {
+        skipped.push({ id: lead.id, reason: 'showcase_error', error: String(e) });
+        await writeAudit({
+          contact_id: lead.id, trigger_kind: trigger, template_key: 'project-showcase',
+          channel: 'email', decision: 'failed',
+          decision_reason: `auto-showcase threw: ${String(e).slice(0, 200)}`,
+          rule_evaluation: ruleEval,
+        });
+        continue;
+      }
+    }
+
     // Dedupe: don't create another pending draft for same lead+trigger
     const { count: existingPending } = await admin
       .from('crm_zara_drafts')

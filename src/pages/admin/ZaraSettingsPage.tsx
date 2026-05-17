@@ -26,7 +26,15 @@ type ZaraSettings = {
   model_classify: string;
   model_draft: string;
   system_prompt_version: string;
+  autonomous_outbound: boolean;
+  auto_showcase_triggers: string[];
+  auto_showcase_count: number;
 };
+
+const SHOWCASE_TRIGGER_OPTIONS: { key: string; label: string; desc: string }[] = [
+  { key: 'presale_burst', label: 'Presale activity burst', desc: 'Floorplan downloads, deck revisits, repeated opens' },
+  { key: 'initial_outreach', label: 'First touch (initial outreach)', desc: 'Zara has never written to this lead before' },
+];
 
 export default function ZaraSettingsPage() {
   const navigate = useNavigate();
@@ -73,6 +81,9 @@ export default function ZaraSettingsPage() {
           workspace_daily_cap: settings.workspace_daily_cap,
           model_classify: settings.model_classify,
           model_draft: settings.model_draft,
+          autonomous_outbound: settings.autonomous_outbound,
+          auto_showcase_triggers: settings.auto_showcase_triggers ?? [],
+          auto_showcase_count: settings.auto_showcase_count ?? 3,
         })
         .eq('id', 1);
       if (e1) throw e1;
@@ -193,6 +204,66 @@ export default function ZaraSettingsPage() {
                   <Label>Workspace daily cap</Label>
                   <Input type="number" min={0} value={settings.workspace_daily_cap}
                     onChange={(e) => update('workspace_daily_cap', Number(e.target.value))} />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Auto Project Showcase</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="pr-4">
+                    <Label className="text-base">Autonomous outbound sending</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Required for auto-showcase. When off, all planner drafts wait for human approval.
+                    </p>
+                  </div>
+                  <Switch
+                    checked={!!settings.autonomous_outbound}
+                    onCheckedChange={(v) => update('autonomous_outbound', v)}
+                  />
+                </div>
+
+                <div className="rounded-lg border border-border p-3 space-y-3">
+                  <div>
+                    <Label className="text-sm">Send full multi-project showcase on these triggers</Label>
+                    <p className="text-xs text-muted-foreground">
+                      When a trigger below fires, Zara queues the branded 2–5 project showcase email instead of a short nudge.
+                      Otherwise the planner falls back to a normal nudge draft. Dedupes for 14 days per lead.
+                    </p>
+                  </div>
+                  {SHOWCASE_TRIGGER_OPTIONS.map((opt) => {
+                    const checked = (settings.auto_showcase_triggers ?? []).includes(opt.key);
+                    return (
+                      <div key={opt.key} className="flex items-start justify-between gap-3">
+                        <div>
+                          <Label className="text-sm">{opt.label}</Label>
+                          <p className="text-xs text-muted-foreground">{opt.desc}</p>
+                        </div>
+                        <Switch
+                          checked={checked}
+                          disabled={!settings.autonomous_outbound}
+                          onCheckedChange={(v) => {
+                            const cur = new Set(settings.auto_showcase_triggers ?? []);
+                            if (v) cur.add(opt.key); else cur.delete(opt.key);
+                            update('auto_showcase_triggers', Array.from(cur));
+                          }}
+                        />
+                      </div>
+                    );
+                  })}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label className="text-sm">Projects per showcase</Label>
+                      <Input
+                        type="number" min={1} max={5}
+                        value={settings.auto_showcase_count ?? 3}
+                        onChange={(e) => update('auto_showcase_count', Math.min(5, Math.max(1, Number(e.target.value) || 3)))}
+                      />
+                    </div>
+                  </div>
                 </div>
               </CardContent>
             </Card>
