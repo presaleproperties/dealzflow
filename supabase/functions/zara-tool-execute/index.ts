@@ -659,6 +659,18 @@ Deno.serve(async (req) => {
     const fn = REGISTRY[tool];
     if (!fn) return new Response(JSON.stringify({ ok: false, error: `Unknown tool: ${tool}` }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     const result = await fn(args ?? {}, ctx);
+    // Read-only tools don't self-log; log them here so the analytics dashboard
+    // and audit trail capture every tool dispatch (write tools log inline).
+    const READ_ONLY = new Set([
+      "get_lead_context", "search_leads", "list_pending_drafts", "list_projects",
+      "project_details", "recommend_projects_for_lead", "web_research",
+      "show_engagement_score", "search_knowledge", "get_winning_pattern",
+      "get_project_deep_dive", "get_market_context", "get_pricing", "enrich_lead",
+      "send_briefing_summary",
+    ]);
+    if (READ_ONLY.has(tool)) {
+      await logAction(ctx, tool, args ?? {}, result, args?.contact_id ?? null);
+    }
     return new Response(JSON.stringify(result), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (e) {
     return new Response(JSON.stringify({ ok: false, error: String((e as Error).message ?? e) }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
