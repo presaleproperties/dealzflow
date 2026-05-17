@@ -607,6 +607,10 @@ export default function ZaraCockpitPage() {
             qc.invalidateQueries({ queryKey: ['zara-pending-tool-calls', convId] });
           } else if (ev === 'title') {
             qc.invalidateQueries({ queryKey: ['zara-conversations'] });
+          } else if (ev === 'sources') {
+            setStreamSources(payload);
+          } else if (ev === 'warning') {
+            toast.warning(payload.message ?? 'Zara warning');
           } else if (ev === 'error') {
             toast.error(payload.message ?? 'Stream error');
           } else if (ev === 'done') {
