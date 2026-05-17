@@ -455,7 +455,7 @@ export async function processPresaleActivity(
         phone: leadPhone,
         presale_user_id: await safePresaleUserId(supabase, visitorId, leadEmail, leadPhone),
         source: "PresaleProperties.com",
-        contact_type: personaType,
+        contact_type: personaType ?? "lead",
         notes: noteAppendix,
         project: projects[0] ?? null,
         projects: Array.from(new Set(projects)),
