@@ -203,6 +203,7 @@ export default function ZaraQueuePage() {
                   {(d.guardrails_hit ?? []).map((g) => (
                     <Pill key={g} size="sm" tone="danger">{g}</Pill>
                   ))}
+                  <TrainedFromChip sources={d.consulted_sources} />
                 </div>
 
                 {editingId === d.id ? (
