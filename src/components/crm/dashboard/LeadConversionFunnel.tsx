@@ -2,39 +2,31 @@ import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { TrendingUp } from 'lucide-react';
 import { useCrmContacts } from '@/hooks/useCrmContacts';
-
-const FUNNEL_STAGES = [
-  { key: 'New Lead', label: 'New Lead', color: 'hsl(210 62% 46%)' },
-  { key: 'Contacted', label: 'Contacted', color: 'hsl(142 71% 45%)' },
-  { key: 'Nurturing', label: 'Nurturing', color: 'hsl(var(--primary))' },
-  { key: 'Hot / Engaged', label: 'Hot / Engaged', color: 'hsl(0 84% 60%)' },
-  { key: 'Showing Booked', label: 'Showing Booked', color: 'hsl(38 92% 50%)' },
-  { key: 'Offer Made', label: 'Offer Made', color: 'hsl(270 60% 55%)' },
-  { key: 'Closed', label: 'Closed', color: 'hsl(142 71% 35%)' },
-];
+import { useContactsByPipeline } from '@/hooks/useContactsByPipeline';
+import { getSegmentColor } from '@/lib/segmentColors';
 
 export function LeadConversionFunnel() {
   const navigate = useNavigate();
   const { data: contacts = [] } = useCrmContacts();
+  const { buckets, total: bucketTotal } = useContactsByPipeline(contacts);
 
   const { stages, total } = useMemo(() => {
-    const counts: Record<string, number> = {};
-    FUNNEL_STAGES.forEach(s => (counts[s.key] = 0));
-    contacts.forEach(c => {
-      if (c.status && counts[c.status] !== undefined) counts[c.status]++;
-    });
-    const total = Object.values(counts).reduce((a, b) => a + b, 0) || 1;
-
+    const total = bucketTotal || 1;
     return {
-      stages: FUNNEL_STAGES.map((s, i) => {
-        const count = counts[s.key];
-        const prev = i === 0 ? total : counts[FUNNEL_STAGES[i - 1].key];
-        const convRate = prev > 0 ? ((count / prev) * 100).toFixed(0) : '0';
-        return { ...s, count, convRate };
+      stages: buckets.map((b, i) => {
+        const prev = i === 0 ? total : buckets[i - 1].count;
+        const convRate = prev > 0 ? ((b.count / prev) * 100).toFixed(0) : '0';
+        return {
+          key: b.segment.id,
+          label: b.segment.name,
+          color: getSegmentColor(b.segment).dot,
+          count: b.count,
+          convRate,
+        };
       }),
       total,
     };
-  }, [contacts]);
+  }, [buckets, bucketTotal]);
 
   return (
     <div className="bg-card rounded-xl border border-border shadow-sm p-3 sm:p-4">

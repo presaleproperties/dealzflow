@@ -7,6 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { useCrmContacts, LEAD_STATUSES } from '@/hooks/useCrmContacts';
+import { useContactsByPipeline } from '@/hooks/useContactsByPipeline';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { format, subDays, parseISO, startOfMonth, differenceInDays } from 'date-fns';
@@ -14,11 +15,7 @@ import { useCrmAccess } from '@/contexts/CrmAccessContext';
 import { EmailReportTab } from '@/components/crm/reports/EmailReportTab';
 import { SmsReportTab } from '@/components/crm/reports/SmsReportTab';
 import { TopLeadsTab } from '@/components/crm/reports/TopLeadsTab';
-
-const FUNNEL_STAGES = [
-  'New Lead', 'Contacted', 'Nurturing', 'Hot / Engaged',
-  'Showing Booked', 'Offer Made', 'Closed',
-] as const;
+import { contactMatchesSegment } from '@/lib/segmentMatching';
 
 export default function CrmReportsPage() {
   const { role, isLoading: accessLoading } = useCrmAccess();
@@ -150,56 +147,81 @@ function AgentPerformanceTab({ contacts, showings, emails }: { contacts: any[]; 
 
 /* ── Funnel ── */
 function FunnelTab({ contacts }: { contacts: any[] }) {
+  const { pipelines, buckets } = useContactsByPipeline(contacts);
+
+  // Cumulative "made it at least this far" counts (legacy behavior).
   const stageCounts = useMemo(() => {
     const map: Record<string, number> = {};
-    FUNNEL_STAGES.forEach(s => (map[s] = 0));
+    pipelines.forEach(p => (map[p.id] = 0));
     contacts.forEach(c => {
-      const idx = FUNNEL_STAGES.indexOf(c.status as any);
+      // Resolve which pipeline this contact is in (canonical id or first match).
+      const segId = (c as { pipeline_segment_id?: string | null }).pipeline_segment_id;
+      let idx = -1;
+      if (segId) idx = pipelines.findIndex(p => p.id === segId);
+      if (idx < 0) {
+        for (let i = 0; i < pipelines.length; i++) {
+          if (contactMatchesSegment(c, pipelines[i].filter_config, pipelines[i].id)) {
+            idx = i;
+            break;
+          }
+        }
+      }
       if (idx >= 0) {
-        for (let i = 0; i <= idx; i++) map[FUNNEL_STAGES[i]]++;
+        for (let i = 0; i <= idx; i++) map[pipelines[i].id]++;
       }
     });
     return map;
-  }, [contacts]);
+  }, [contacts, pipelines]);
 
   const avgDays = useMemo(() => {
     const stageDays: Record<string, number[]> = {};
-    FUNNEL_STAGES.forEach(s => (stageDays[s] = []));
-    contacts.forEach(c => {
-      if (!c.status || !c.created_at) return;
-      const created = new Date(c.created_at);
-      const changed = c.status_changed_at ? new Date(c.status_changed_at) : new Date();
-      const days = Math.max(0, differenceInDays(changed, created));
-      if (c.status in stageDays) stageDays[c.status].push(days);
+    pipelines.forEach(p => (stageDays[p.id] = []));
+    buckets.forEach(b => {
+      contacts
+        .filter(c => {
+          const segId = (c as { pipeline_segment_id?: string | null }).pipeline_segment_id;
+          if (segId) return segId === b.segment.id;
+          return contactMatchesSegment(c, b.segment.filter_config, b.segment.id);
+        })
+        .forEach(c => {
+          if (!c.created_at) return;
+          const created = new Date(c.created_at);
+          const changed = c.stage_changed_at
+            ? new Date(c.stage_changed_at)
+            : c.status_changed_at
+              ? new Date(c.status_changed_at)
+              : new Date();
+          const days = Math.max(0, differenceInDays(changed, created));
+          stageDays[b.segment.id].push(days);
+        });
     });
-    return FUNNEL_STAGES.map(s => {
-      const arr = stageDays[s];
+    return pipelines.map(p => {
+      const arr = stageDays[p.id];
       const avg = arr.length > 0 ? (arr.reduce((a, b) => a + b, 0) / arr.length).toFixed(1) : '—';
-      return { stage: s, avg };
+      return { stage: p.name, avg };
     });
-  }, [contacts]);
+  }, [contacts, pipelines, buckets]);
 
   const maxCount = Math.max(...Object.values(stageCounts), 1);
 
   return (
     <div className="space-y-4 sm:space-y-6">
-      {/* Funnel */}
       <Card className="rounded-[10px] lg:rounded-xl">
         <CardHeader className="px-3 sm:px-6"><CardTitle className="text-base">Lead Funnel</CardTitle></CardHeader>
         <CardContent className="space-y-2 px-3 sm:px-6">
-          {FUNNEL_STAGES.map((stage, i) => {
-            const count = stageCounts[stage];
+          {pipelines.map((stage, i) => {
+            const count = stageCounts[stage.id];
             const pct = maxCount > 0 ? (count / maxCount) * 100 : 0;
-            const prev = i > 0 ? stageCounts[FUNNEL_STAGES[i - 1]] : null;
+            const prev = i > 0 ? stageCounts[pipelines[i - 1].id] : null;
             const convRate = prev && prev > 0 ? ((count / prev) * 100).toFixed(0) : null;
 
             return (
-              <div key={stage}>
+              <div key={stage.id}>
                 {i > 0 && convRate && (
                   <div className="text-xs text-muted-foreground text-center py-0.5">↓ {convRate}%</div>
                 )}
                 <div className="flex items-center gap-2 sm:gap-3">
-                  <span className="text-[11px] sm:text-sm w-24 sm:w-32 shrink-0 text-right text-muted-foreground truncate">{stage}</span>
+                  <span className="text-[11px] sm:text-sm w-24 sm:w-32 shrink-0 text-right text-muted-foreground truncate">{stage.name}</span>
                   <div className="flex-1 h-8 sm:h-9 bg-muted/40 rounded-md overflow-hidden relative">
                     <div
                       className="h-full bg-primary/80 rounded-md transition-all duration-500"
@@ -216,7 +238,6 @@ function FunnelTab({ contacts }: { contacts: any[] }) {
         </CardContent>
       </Card>
 
-      {/* Avg days table */}
       <Card className="rounded-[10px] lg:rounded-xl">
         <CardHeader className="px-3 sm:px-6"><CardTitle className="text-base">Average Days in Stage</CardTitle></CardHeader>
         <CardContent className="px-2 sm:px-6">
