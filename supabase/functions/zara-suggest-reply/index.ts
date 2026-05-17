@@ -51,7 +51,7 @@ Deno.serve(async (req) => {
 
     // 3. Context
     const [{ data: memoryRow }, { data: events }] = await Promise.all([
-      admin.from('zara_lead_memory').select('summary, signals').eq('contact_id', contactId).maybeSingle(),
+      admin.from('zara_lead_memory').select('summary, signals, facts, turn_count, version, last_rolled_at').eq('contact_id', contactId).maybeSingle(),
       admin
         .from('crm_engagement_events')
         .select('event_type, source, direction, occurred_at, metadata')
@@ -150,8 +150,11 @@ Deno.serve(async (req) => {
 - languages: ${(contact.languages ?? []).join(', ') || 'unknown'}
 - detected inbound language: ${detectedLang}
 
-MEMORY SUMMARY:
+MEMORY SUMMARY (rolling, ${memoryRow?.turn_count ?? 0} turns merged):
 ${memoryRow?.summary ?? '(no memory yet)'}
+
+MEMORY FACTS (durable deal context — trust these unless the inbound contradicts them):
+${memoryRow?.facts && Object.keys(memoryRow.facts).length > 0 ? JSON.stringify(memoryRow.facts, null, 2) : '(no facts captured yet)'}
 
 RELEVANT PROJECT KNOWLEDGE (retrieved via vector search — use these facts, do not invent others):
 ${ragContext || '(no project matches above similarity floor — answer from memory only and do not quote specific prices, deposit terms, or completion dates)'}
@@ -322,6 +325,19 @@ Draft Zara's reply now. Return ONLY the JSON object.`;
         metadata: { draft_id: draft.id, intent: parsed.intent, confidence: parsed.confidence, guardrails_hit, latency_ms: totalLatency, rag_projects: ragProjects },
       })
       .then(() => {});
+
+    // 10b. Roll per-lead memory using the inbound + the (not-yet-sent) draft.
+    //      Fire-and-forget; failures must not affect the caller.
+    fetch(`${SUPABASE_URL}/functions/v1/zara-roll-memory`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${SERVICE_KEY}` },
+      body: JSON.stringify({
+        contact_id: contactId,
+        inbound_text: inboundText,
+        draft_text: parsed.draft_text ?? null,
+        kind: 'draft',
+      }),
+    }).catch((e) => console.warn('[zara-suggest-reply] roll-memory kick failed', e));
 
     // 11. Notify agent only in live mode
     if (settings.mode === 'live') {
