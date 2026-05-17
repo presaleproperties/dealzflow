@@ -42,7 +42,7 @@ async function logAction(
       contact_id: contact_id ?? null,
       action: "tool_call",
       tool_name: tool,
-      tool_input: args,
+      payload: args as any,
       result_summary: summarize(result),
     });
   } catch (_) { /* non-fatal */ }
