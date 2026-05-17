@@ -150,19 +150,19 @@ Deno.serve(async (req) => {
       const since = new Date(now - 7 * 86400_000).toISOString();
       const { data: events } = await admin
         .from('crm_activity_events')
-        .select('event_type, project_slug, occurred_at, metadata')
+        .select('type, project_slug, occurred_at, metadata')
         .eq('contact_id', lead.id)
         .gte('occurred_at', since)
         .order('occurred_at', { ascending: false })
         .limit(10);
       const burst = (events ?? []).filter((e: any) =>
-        ['floorplan_download', 'deck_revisit', 'email_open'].includes(e.event_type)
+        ['floorplan_download', 'deck_revisit', 'email_open'].includes(e.type)
       );
-      const hot = burst.length >= 2 || burst.some((e: any) => e.event_type === 'floorplan_download');
+      const hot = burst.length >= 2 || burst.some((e: any) => e.type === 'floorplan_download');
       if (hot) {
         trigger = 'presale_burst';
         const projects = Array.from(new Set(burst.map((e: any) => e.project_slug).filter(Boolean))).slice(0, 2);
-        context = `Presale activity burst (${burst.length} events in 7d): ${burst.map((e: any) => e.event_type).join(', ')}. Projects: ${projects.join(', ') || 'unknown'}.`;
+        context = `Presale activity burst (${burst.length} events in 7d): ${burst.map((e: any) => e.type).join(', ')}. Projects: ${projects.join(', ') || 'unknown'}.`;
       }
     }
 
