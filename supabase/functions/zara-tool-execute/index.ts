@@ -154,22 +154,90 @@ async function draft_email(args: any, _ctx: Ctx) {
   return ok({ draft_id: data.id, preview: String(args.body).slice(0, 200) });
 }
 
-async function draft_sms(args: any, _ctx: Ctx) {
+async function draft_sms(args: any, ctx: Ctx) {
+  return draftMessage(args, ctx, "sms");
+}
+
+async function draft_whatsapp(args: any, ctx: Ctx) {
+  return draftMessage(args, ctx, "whatsapp");
+}
+
+async function draftMessage(args: any, ctx: Ctx, channel: "sms" | "whatsapp") {
   if (!args.contact_id) return fail("contact_id required");
   const sb = svc();
   const { data: c } = await sb.from("crm_contacts").select("zara_enabled").eq("id", args.contact_id).maybeSingle();
   if (c && c.zara_enabled === false) return fail("Zara is disabled for this contact — drafts blocked.");
   const now = new Date().toISOString();
-  const { data, error } = await sb.from("zara_suggested_replies").insert({
+  const payload: Record<string, unknown> = {
     contact_id: args.contact_id,
-    channel: "sms",
+    channel,
     draft_text: args.body,
     inbound_text: "(agent-initiated via Zara cockpit)",
     inbound_at: now,
     status: "pending",
-  }).select("id").single();
+  };
+  if ((ctx as any).consulted_sources) payload.consulted_sources = (ctx as any).consulted_sources;
+  const { data, error } = await sb.from("zara_suggested_replies").insert(payload).select("id").single();
   if (error) return fail(error.message);
-  return ok({ draft_id: data.id, preview: String(args.body).slice(0, 160) });
+  return ok({ draft_id: data.id, preview: String(args.body).slice(0, 160), channel });
+}
+
+async function create_template(args: any, ctx: Ctx) {
+  if (!args?.title || !args?.channel || !args?.body) return fail("title, channel, body required");
+  const sb = svc();
+  const slug = String(args.title).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 60) || `tpl-${Date.now()}`;
+  const tags: string[] = Array.isArray(args.tags) ? args.tags : [];
+  let row: any = null;
+  if (args.channel === "email") {
+    const { data, error } = await sb.from("crm_email_templates").insert({
+      name: args.title,
+      subject: args.subject ?? args.title,
+      body_html: args.body,
+      slug,
+      category: "general",
+      source: "zara",
+      merge_tags: tags,
+    }).select("id, slug").single();
+    if (error) return fail(error.message);
+    row = data;
+  } else if (args.channel === "sms") {
+    const { data, error } = await sb.from("crm_sms_templates").insert({
+      name: args.title, body: args.body, channel: "sms", category: "general", merge_tags: tags,
+    }).select("id").single();
+    if (error) return fail(error.message);
+    row = { ...data, slug };
+  } else if (args.channel === "whatsapp") {
+    const { data, error } = await sb.from("crm_whatsapp_templates").insert({
+      name: args.title, body_text: args.body, category: "utility", status: "approved", language: "en",
+    }).select("id").single();
+    if (error) return fail(error.message);
+    row = { ...data, slug };
+  } else {
+    return fail("channel must be email | sms | whatsapp");
+  }
+  await logAction(ctx, "create_template", args, "created");
+  return ok({ template_id: row.id, slug: row.slug, channel: args.channel });
+}
+
+async function update_template(args: any, ctx: Ctx) {
+  if (!args?.template_id || !args?.fields_to_update) return fail("template_id and fields_to_update required");
+  const sb = svc();
+  const f = args.fields_to_update as Record<string, unknown>;
+  const channel = args.channel ?? "email";
+  const tableName = channel === "sms" ? "crm_sms_templates" : channel === "whatsapp" ? "crm_whatsapp_templates" : "crm_email_templates";
+  const patch: Record<string, unknown> = {};
+  if (typeof f.title === "string") patch[channel === "whatsapp" || channel === "sms" ? "name" : "name"] = f.title;
+  if (typeof f.subject === "string" && channel === "email") patch.subject = f.subject;
+  if (typeof f.body === "string") {
+    if (channel === "email") patch.body_html = f.body;
+    else if (channel === "sms") patch.body = f.body;
+    else patch.body_text = f.body;
+  }
+  if (Array.isArray(f.tags) && channel !== "whatsapp") patch.merge_tags = f.tags;
+  const { error } = await sb.from(tableName as any).update(patch).eq("id", args.template_id);
+  if (error) return fail(error.message);
+  await logAction(ctx, "update_template", args, "updated");
+  return ok({ template_id: args.template_id, updated_fields: Object.keys(patch) });
 }
 
 async function add_lead_note(args: any, ctx: Ctx) {
