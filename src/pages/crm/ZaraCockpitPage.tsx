@@ -795,6 +795,12 @@ export default function ZaraCockpitPage() {
           </div>
         </div>
       </aside>
+
+      <MicPermissionDialog
+        error={ptt.error}
+        onClose={ptt.dismissError}
+        onRetry={ptt.retry}
+      />
     </div>
   );
 }
