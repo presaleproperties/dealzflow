@@ -49,11 +49,11 @@ function extractOutboundId(send_meta: any): string | null {
   );
 }
 
-function statusTone(s: string): 'gold' | 'green' | 'red' | 'muted' | 'blue' {
-  if (s === 'sent') return 'green';
-  if (s === 'pending' || s === 'scheduled') return 'gold';
-  if (s === 'rejected' || s === 'sandbox_blocked' || s === 'failed') return 'red';
-  if (s === 'approved' || s === 'edited_approved') return 'blue';
+function statusTone(s: string): 'primary' | 'success' | 'danger' | 'muted' | 'info' {
+  if (s === 'sent') return 'success';
+  if (s === 'pending' || s === 'scheduled') return 'primary';
+  if (s === 'rejected' || s === 'sandbox_blocked' || s === 'failed') return 'danger';
+  if (s === 'approved' || s === 'edited_approved') return 'info';
   return 'muted';
 }
 
