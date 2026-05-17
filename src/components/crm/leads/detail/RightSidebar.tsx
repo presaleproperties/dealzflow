@@ -73,7 +73,10 @@ export function RightSidebar({
       />
 
       {/* Zara — AI assistant memory & draft toggle */}
-      <ZaraLeadCard contactId={contact.id} />
+      <ZaraLeadCard
+        contactId={contact.id}
+        contactName={[contact.first_name, contact.last_name].filter(Boolean).join(' ').trim() || '(unknown)'}
+      />
 
       {/* ③ Engagement (Emails / Behavior) */}
       <EngagementTabs contact={contact} />
