@@ -150,8 +150,11 @@ Deno.serve(async (req) => {
 - languages: ${(contact.languages ?? []).join(', ') || 'unknown'}
 - detected inbound language: ${detectedLang}
 
-MEMORY SUMMARY:
+MEMORY SUMMARY (rolling, ${memoryRow?.turn_count ?? 0} turns merged):
 ${memoryRow?.summary ?? '(no memory yet)'}
+
+MEMORY FACTS (durable deal context — trust these unless the inbound contradicts them):
+${memoryRow?.facts && Object.keys(memoryRow.facts).length > 0 ? JSON.stringify(memoryRow.facts, null, 2) : '(no facts captured yet)'}
 
 RELEVANT PROJECT KNOWLEDGE (retrieved via vector search — use these facts, do not invent others):
 ${ragContext || '(no project matches above similarity floor — answer from memory only and do not quote specific prices, deposit terms, or completion dates)'}
