@@ -129,6 +129,7 @@ Draft Zara's reply now. Return ONLY the JSON object.`;
     // for the zara_suggested_replies.assigned_to UUID column. Falls back to null
     // on no match or error so the insert never fails.
     const assignedUserId = await resolveAssignedToUuid(admin, contact.assigned_to);
+    const safeAssignedTo = coerceUuid(assignedUserId);
 
     // 9. Insert draft
     const { data: draft, error: insertErr } = await admin
@@ -146,14 +147,36 @@ Draft Zara's reply now. Return ONLY the JSON object.`;
         confidence: Number(parsed.confidence ?? 0),
         reasoning: parsed.reasoning ?? null,
         guardrails_hit,
-        assigned_to: coerceUuid(assignedUserId),
+        assigned_to: safeAssignedTo,
         model: 'claude-haiku-4-5-20251001',
         input_tokens,
         output_tokens,
       })
       .select()
       .single();
-    if (insertErr) return json({ error: 'insert_failed', detail: insertErr.message }, 500);
+    if (insertErr) {
+      console.error('[zara-suggest-reply] insert_failed', {
+        contact_id: contactId,
+        channel,
+        received_assigned_to: contact.assigned_to ?? null,
+        received_assigned_to_type: typeof contact.assigned_to,
+        resolved_user_id: assignedUserId,
+        coerced_assigned_to: safeAssignedTo,
+        pg_error: insertErr.message,
+        pg_details: (insertErr as any).details ?? null,
+        pg_hint: (insertErr as any).hint ?? null,
+        pg_code: (insertErr as any).code ?? null,
+      });
+      return json({
+        error: 'insert_failed',
+        detail: insertErr.message,
+        diagnostics: {
+          received_assigned_to: contact.assigned_to ?? null,
+          resolved_user_id: assignedUserId,
+          coerced_assigned_to: safeAssignedTo,
+        },
+      }, 500);
+    }
 
     // 10. Fire-and-forget engagement event
     admin
