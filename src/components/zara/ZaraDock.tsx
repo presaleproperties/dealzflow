@@ -175,7 +175,7 @@ function MessageBubble({ m }: { m: any }) {
       <div className="max-w-[92%] w-full space-y-1">
         {(m.tools ?? []).map((t: any) => (
           <div key={t.id} className="rounded-md border border-border/60 bg-card text-[11px] px-2 py-1 inline-flex items-center gap-1.5">
-            <Pill size="sm" tone={t.status === 'error' ? 'destructive' : t.status === 'pending' ? 'warning' : 'success'}>{t.status}</Pill>
+            <Pill size="sm" tone={t.status === 'error' ? 'danger' : t.status === 'pending' ? 'warning' : 'success'}>{t.status}</Pill>
             <span className="font-mono">{t.name}</span>
           </div>
         ))}
