@@ -57,7 +57,7 @@ export default function ZaraOutboundAuditPage() {
           .in('id', ids);
         (cs ?? []).forEach((c: any) => contacts.set(c.id, c));
       }
-      return { rows: (rows ?? []) as AuditRow[], contacts };
+      return { rows: ((rows ?? []) as unknown) as AuditRow[], contacts };
     },
     refetchInterval: 30_000,
   });
