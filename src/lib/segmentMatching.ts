@@ -99,6 +99,31 @@ export function contactMatchesSegment(
  * Returns a map of segmentId → contacts[].
  * This is the same logic used by the Pipeline Kanban board.
  */
+/**
+ * Order segments by specificity (tags / lead_type / contact_type beat
+ * status-only). Shared by Kanban, mobile pipeline, dashboard bucketer, and
+ * `useActivePipelineFor` so every surface picks the same pipeline.
+ */
+export function orderSegmentsBySpecificity<T extends { filter_config: Record<string, unknown> }>(
+  segments: T[],
+): T[] {
+  const score = (seg: T): number => {
+    const fc = (seg.filter_config ?? {}) as Record<string, unknown>;
+    let s = 0;
+    if (Array.isArray(fc.lead_type) && (fc.lead_type as unknown[]).length) s += 3;
+    if (Array.isArray((fc as any).lead_type_ci) && ((fc as any).lead_type_ci as unknown[]).length) s += 3;
+    if (Array.isArray(fc.tags) && (fc.tags as unknown[]).length) s += 3;
+    if (Array.isArray((fc as any).tags_any_ci) && ((fc as any).tags_any_ci as unknown[]).length) s += 3;
+    if (typeof fc.contact_type === 'string') s += 2;
+    if (Array.isArray(fc.source) && (fc.source as unknown[]).length) s += 1;
+    return s;
+  };
+  return segments
+    .map((s, i) => ({ s, i }))
+    .sort((a, b) => score(b.s) - score(a.s) || a.i - b.i)
+    .map(x => x.s);
+}
+
 export function assignContactsToSegments(
   contacts: CrmContact[],
   segments: LeadSegment[],
@@ -107,6 +132,11 @@ export function assignContactsToSegments(
   const pipelineSegments = segments.filter(
     s => s.filter_config && Object.keys(s.filter_config).length > 0,
   );
+
+  // Specificity-aware ordering — keep this aligned with `useActivePipelineFor`
+  // so Kanban buckets, row labels, Lead Detail sidebar, and Edit Sheet all
+  // place each contact in the same pipeline.
+  const ordered = orderSegmentsBySpecificity(pipelineSegments);
 
   const map: Record<string, CrmContact[]> = {};
   pipelineSegments.forEach(s => { map[s.id] = []; });
@@ -117,10 +147,10 @@ export function assignContactsToSegments(
       map[canonicalSegmentId].push(c);
       return;
     }
-    for (const seg of pipelineSegments) {
+    for (const seg of ordered) {
       if (contactMatchesSegment(c, seg.filter_config, seg.id)) {
         map[seg.id].push(c);
-        break; // first match wins
+        break; // most-specific match wins
       }
     }
   });

@@ -6,7 +6,7 @@
  */
 import { useMemo } from 'react';
 import { useUnifiedPipelines } from './useUnifiedPipelines';
-import { contactMatchesSegment } from '@/lib/segmentMatching';
+import { contactMatchesSegment, orderSegmentsBySpecificity } from '@/lib/segmentMatching';
 import type { CrmContact } from './useCrmContacts';
 import type { LeadSegment } from './useCrmLeadSegments';
 
@@ -22,6 +22,7 @@ export function useContactsByPipeline(contacts: CrmContact[] | undefined) {
     const counts: Record<string, number> = {};
     pipelines.forEach(p => (counts[p.id] = 0));
 
+    const ordered = orderSegmentsBySpecificity(pipelines);
     (contacts ?? []).forEach(ct => {
       const segId = (ct as unknown as { pipeline_segment_id?: string | null })
         .pipeline_segment_id;
@@ -29,7 +30,7 @@ export function useContactsByPipeline(contacts: CrmContact[] | undefined) {
         counts[segId]++;
         return;
       }
-      for (const p of pipelines) {
+      for (const p of ordered) {
         if (contactMatchesSegment(ct, p.filter_config, p.id)) {
           counts[p.id]++;
           return;

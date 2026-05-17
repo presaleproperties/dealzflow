@@ -48,7 +48,7 @@ function getSegmentColor(segment: { name?: string | null; color?: string | null;
 }
 
 /* ─── Shared segment matching ─── */
-import { contactMatchesSegment } from '@/lib/segmentMatching';
+import { contactMatchesSegment, orderSegmentsBySpecificity } from '@/lib/segmentMatching';
 
 /* ─── Helpers ─── */
 function getInitials(name: string | null) {
@@ -278,10 +278,11 @@ export function PipelineKanban() {
     return list;
   }, [contacts, search, filterProject, effectiveAgent]);
 
-  // Place contacts into segment columns (first match wins)
+  // Place contacts into segment columns (canonical wins; otherwise specificity-aware first-match)
   const columns = useMemo(() => {
     const map: Record<string, CrmContact[]> = {};
     pipelineSegments.forEach(s => { map[s.id] = []; });
+    const ordered = orderSegmentsBySpecificity(pipelineSegments);
 
     filtered.forEach(c => {
       const canonicalSegmentId = (c as unknown as { pipeline_segment_id?: string | null }).pipeline_segment_id;
@@ -289,10 +290,10 @@ export function PipelineKanban() {
         map[canonicalSegmentId].push(c);
         return;
       }
-      for (const seg of pipelineSegments) {
+      for (const seg of ordered) {
         if (contactMatchesSegment(c, seg.filter_config, seg.id)) {
           map[seg.id].push(c);
-          break; // first match wins
+          break;
         }
       }
     });
