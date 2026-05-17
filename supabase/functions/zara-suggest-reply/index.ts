@@ -308,6 +308,7 @@ Draft Zara's reply now. Return ONLY the JSON object.`;
         model: usedModel,
         input_tokens,
         output_tokens,
+        citations,
       })
       .select()
       .single();
