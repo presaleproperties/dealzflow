@@ -505,6 +505,21 @@ export function UnifiedComposer() {
         });
         if (error) throw new Error(error.message);
         if ((data as any)?.error) throw new Error((data as any).error);
+        if (leadId) {
+          void logEngagementEvent({
+            contactId: leadId,
+            eventType: 'email_sent',
+            source: 'email',
+            direction: 'outbound',
+            threadId: (data as any)?.thread_id ?? null,
+            metadata: {
+              subject: rendered.subject || subject,
+              template_id: (data as any)?.template_id ?? null,
+              char_count: (html || '').length,
+              scheduled_for: effectiveSendAt,
+            },
+          });
+        }
         toast.success(
           effectiveSendAt
             ? (autoQueued ? 'Email auto-queued for 8am Vancouver' : 'Email scheduled')
