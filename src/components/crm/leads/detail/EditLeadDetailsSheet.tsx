@@ -39,6 +39,8 @@ export function EditLeadDetailsSheet({ contact, open, onOpenChange }: Props) {
   const { data: projectLib = [] } = useCrmProjects();
   const { data: leadTypeLib = [] } = useCrmLeadTypes();
   const { data: librarySources = [] } = useCrmSources();
+  const { pipelines } = useUnifiedPipelines();
+  const activePipeline = useActivePipelineFor(contact);
   const createTag = useCreateCrmTag();
   const createProject = useCreateCrmProject();
   const createLeadType = useCreateCrmLeadType();
