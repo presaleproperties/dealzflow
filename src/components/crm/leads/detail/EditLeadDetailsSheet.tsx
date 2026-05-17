@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { ChevronLeft, AlertCircle } from 'lucide-react';
 import { useUpdateCrmContact } from '@/hooks/useCrmLeadDetail';
 import { LEAD_STATUSES, LEAD_SOURCES, LEAD_TYPES, LEAD_TYPE_LABELS } from '@/hooks/useCrmContacts';
+import { useUnifiedPipelines, useActivePipelineFor } from '@/hooks/useUnifiedPipelines';
 import { useTeamAgents } from '@/hooks/useTeamAgents';
 import { AgentAvatar } from '@/components/crm/AgentAvatar';
 import { CheckboxDropdown } from '@/components/crm/leads/CheckboxDropdown';
@@ -38,6 +39,8 @@ export function EditLeadDetailsSheet({ contact, open, onOpenChange }: Props) {
   const { data: projectLib = [] } = useCrmProjects();
   const { data: leadTypeLib = [] } = useCrmLeadTypes();
   const { data: librarySources = [] } = useCrmSources();
+  const { pipelines } = useUnifiedPipelines();
+  const activePipeline = useActivePipelineFor(contact);
   const createTag = useCreateCrmTag();
   const createProject = useCreateCrmProject();
   const createLeadType = useCreateCrmLeadType();
@@ -154,6 +157,7 @@ export function EditLeadDetailsSheet({ contact, open, onOpenChange }: Props) {
         budget_min: form.budget_min ? Number(form.budget_min) : null,
         budget_max: form.budget_max ? Number(form.budget_max) : null,
         status: form.status,
+        pipeline_segment_id: form.pipeline_segment_id || null,
         assigned_to: form.assigned_to || null,
         source: form.source || null,
         lead_types: form.lead_types,
@@ -302,10 +306,39 @@ export function EditLeadDetailsSheet({ contact, open, onOpenChange }: Props) {
           <Group title="Pipeline">
             {fieldRow(
               'Stage',
-              <Select value={form.status} onValueChange={(v) => update('status', v)}>
-                <SelectTrigger className={inputCls('status')}><SelectValue /></SelectTrigger>
+              <Select
+                value={form.pipeline_segment_id || activePipeline?.id || ''}
+                onValueChange={(segId) => {
+                  const seg = pipelines.find((p) => p.id === segId);
+                  if (!seg) return;
+                  const fc = (seg.filter_config ?? {}) as Record<string, unknown>;
+                  const statusFromSeg = Array.isArray(fc.status) && (fc.status as string[])[0]
+                    ? (fc.status as string[])[0]
+                    : form.status;
+                  const leadTypeFromSeg = Array.isArray(fc.lead_type) && (fc.lead_type as string[])[0]
+                    ? (fc.lead_type as string[])[0]
+                    : null;
+                  setForm((prev) => ({
+                    ...prev,
+                    pipeline_segment_id: seg.id,
+                    status: statusFromSeg,
+                    lead_types: leadTypeFromSeg && !prev.lead_types.includes(leadTypeFromSeg)
+                      ? [leadTypeFromSeg, ...prev.lead_types]
+                      : prev.lead_types,
+                  }));
+                }}
+              >
+                <SelectTrigger className={inputCls('status')}><SelectValue placeholder="Select pipeline" /></SelectTrigger>
                 <SelectContent>
-                  {LEAD_STATUSES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                  {pipelines.map((seg) => (
+                    <SelectItem key={seg.id} value={seg.id}>
+                      <span className="inline-flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full" style={{ background: seg.color }} />
+                        {seg.emoji && <span>{seg.emoji}</span>}
+                        {seg.name}
+                      </span>
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>,
               { errorKey: 'status', required: true },
@@ -505,6 +538,8 @@ function initialForm(contact: CrmContact) {
     budget_min: contact.budget_min != null ? String(contact.budget_min) : '',
     budget_max: contact.budget_max != null ? String(contact.budget_max) : '',
     status: contact.status ?? 'New Lead',
+    pipeline_segment_id:
+      (contact as unknown as { pipeline_segment_id?: string | null }).pipeline_segment_id ?? '',
     assigned_to: contact.assigned_to ?? '',
     source: contact.source ?? '',
     lead_types: leadTypes,
