@@ -135,23 +135,8 @@ export function assignContactsToSegments(
 
   // Specificity-aware ordering — keep this aligned with `useActivePipelineFor`
   // so Kanban buckets, row labels, Lead Detail sidebar, and Edit Sheet all
-  // place each contact in the same pipeline. Higher score wins; ties fall
-  // back to sort_order (already the input order from the caller).
-  const score = (seg: LeadSegment): number => {
-    const fc = (seg.filter_config ?? {}) as Record<string, unknown>;
-    let s = 0;
-    if (Array.isArray(fc.lead_type) && (fc.lead_type as unknown[]).length) s += 3;
-    if (Array.isArray((fc as any).lead_type_ci) && ((fc as any).lead_type_ci as unknown[]).length) s += 3;
-    if (Array.isArray(fc.tags) && (fc.tags as unknown[]).length) s += 3;
-    if (Array.isArray((fc as any).tags_any_ci) && ((fc as any).tags_any_ci as unknown[]).length) s += 3;
-    if (typeof fc.contact_type === 'string') s += 2;
-    if (Array.isArray(fc.source) && (fc.source as unknown[]).length) s += 1;
-    return s;
-  };
-  const indexed = pipelineSegments.map((s, i) => ({ s, i }));
-  const ordered = [...indexed]
-    .sort((a, b) => score(b.s) - score(a.s) || a.i - b.i)
-    .map(x => x.s);
+  // place each contact in the same pipeline.
+  const ordered = orderSegmentsBySpecificity(pipelineSegments);
 
   const map: Record<string, CrmContact[]> = {};
   pipelineSegments.forEach(s => { map[s.id] = []; });
