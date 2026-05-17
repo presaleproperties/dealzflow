@@ -1,14 +1,17 @@
 // Zara chat — Anthropic Claude streaming with tool-use loop.
 // SSE event types emitted to the client:
-//   event: text         data: { delta: string }
-//   event: tool_start   data: { id, name, input }
-//   event: tool_result  data: { id, name, output }
-//   event: title        data: { title }
-//   event: done         data: { message_id, usage }
-//   event: error        data: { message }
+//   event: text             data: { delta: string }
+//   event: tool_start       data: { id, name, input }
+//   event: tool_result      data: { id, name, output }
+//   event: tool_pending     data: { id, name, input, pending_id }   (needs user approval)
+//   event: title            data: { title }
+//   event: done             data: { message_id, usage }
+//   event: error            data: { message }
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { ZARA_TOOLS } from "../_shared/zara-tool-defs.ts";
+
+const NEEDS_APPROVAL = new Set(ZARA_TOOLS.filter((t) => t.needs_approval).map((t) => t.name));
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
