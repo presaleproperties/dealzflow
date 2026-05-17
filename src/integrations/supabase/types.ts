@@ -7094,6 +7094,7 @@ export type Database = {
           created_at: string
           id: string
           input_tokens: number | null
+          metadata: Json
           model: string | null
           output_tokens: number | null
           role: string
@@ -7108,6 +7109,7 @@ export type Database = {
           created_at?: string
           id?: string
           input_tokens?: number | null
+          metadata?: Json
           model?: string | null
           output_tokens?: number | null
           role: string
@@ -7122,6 +7124,7 @@ export type Database = {
           created_at?: string
           id?: string
           input_tokens?: number | null
+          metadata?: Json
           model?: string | null
           output_tokens?: number | null
           role?: string
@@ -7318,6 +7321,7 @@ export type Database = {
           assigned_to: string | null
           channel: string
           confidence: number | null
+          consulted_sources: Json
           contact_id: string
           created_at: string
           draft_language: string | null
@@ -7344,6 +7348,7 @@ export type Database = {
           assigned_to?: string | null
           channel: string
           confidence?: number | null
+          consulted_sources?: Json
           contact_id: string
           created_at?: string
           draft_language?: string | null
@@ -7370,6 +7375,7 @@ export type Database = {
           assigned_to?: string | null
           channel?: string
           confidence?: number | null
+          consulted_sources?: Json
           contact_id?: string
           created_at?: string
           draft_language?: string | null
