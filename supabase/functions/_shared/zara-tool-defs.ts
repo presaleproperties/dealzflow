@@ -68,14 +68,16 @@ export const ZARA_TOOLS: ZaraTool[] = [
   {
     name: "draft_email",
     description:
-      "Draft an email to a lead. Adds to the approval queue (zara_suggested_replies). Respects the zara_enabled gate. Returns the draft id and preview.",
+      "Draft an email to a lead. The body you pass is the COPY only — the executor wraps it in the branded HTML scaffold (matching a row from crm_email_templates by intent → category, with token interpolation and the actor agent's signature appended). Pass `purpose` as the intent: greeting | first_touch | follow_up | reactivation | neighborhood | project_info | newsletter | market_update | project_match | send_project_details. Always include a clear intent so the right scaffold is picked. SMS/WhatsApp drafts stay plain text; this one becomes HTML.",
     input_schema: {
       type: "object",
       properties: {
         contact_id: { type: "string" },
         subject: { type: "string" },
-        body: { type: "string", description: "Markdown or HTML body" },
-        purpose: { type: "string" },
+        body: { type: "string", description: "Plain copy (paragraphs separated by blank lines). Do NOT pass raw HTML — the executor wraps it." },
+        purpose: { type: "string", description: "Intent key — drives template selection." },
+        cta_text: { type: "string", description: "Optional CTA button label." },
+        cta_url: { type: "string", description: "Optional CTA destination URL." },
       },
       required: ["contact_id", "body"],
     },
