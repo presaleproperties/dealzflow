@@ -985,6 +985,9 @@ export type Database = {
           updated_at: string | null
           visit_count: number
           won_at: string | null
+          zara_enabled: boolean
+          zara_enabled_at: string | null
+          zara_enabled_by: string | null
           zara_state: string | null
         }
         Insert: {
@@ -1060,6 +1063,9 @@ export type Database = {
           updated_at?: string | null
           visit_count?: number
           won_at?: string | null
+          zara_enabled?: boolean
+          zara_enabled_at?: string | null
+          zara_enabled_by?: string | null
           zara_state?: string | null
         }
         Update: {
@@ -1135,6 +1141,9 @@ export type Database = {
           updated_at?: string | null
           visit_count?: number
           won_at?: string | null
+          zara_enabled?: boolean
+          zara_enabled_at?: string | null
+          zara_enabled_by?: string | null
           zara_state?: string | null
         }
         Relationships: [
@@ -1143,6 +1152,13 @@ export type Database = {
             columns: ["pipeline_segment_id"]
             isOneToOne: false
             referencedRelation: "crm_lead_segments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_contacts_zara_enabled_by_fkey"
+            columns: ["zara_enabled_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -6648,6 +6664,102 @@ export type Database = {
           },
         ]
       }
+      zara_approval_decisions: {
+        Row: {
+          contact_id: string
+          decided_at: string
+          decided_by: string | null
+          decided_via: string
+          decision: string
+          draft_id: string
+          edit_distance: number | null
+          final_text: string | null
+          id: string
+          original_text: string
+          reject_reason: string | null
+        }
+        Insert: {
+          contact_id: string
+          decided_at?: string
+          decided_by?: string | null
+          decided_via: string
+          decision: string
+          draft_id: string
+          edit_distance?: number | null
+          final_text?: string | null
+          id?: string
+          original_text: string
+          reject_reason?: string | null
+        }
+        Update: {
+          contact_id?: string
+          decided_at?: string
+          decided_by?: string | null
+          decided_via?: string
+          decision?: string
+          draft_id?: string
+          edit_distance?: number | null
+          final_text?: string | null
+          id?: string
+          original_text?: string
+          reject_reason?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "zara_approval_decisions_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "crm_contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "zara_approval_decisions_decided_by_fkey"
+            columns: ["decided_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "zara_approval_decisions_draft_id_fkey"
+            columns: ["draft_id"]
+            isOneToOne: false
+            referencedRelation: "zara_suggested_replies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      zara_lead_memory: {
+        Row: {
+          contact_id: string
+          refresh_reason: string | null
+          refreshed_at: string
+          signals: Json
+          summary: string
+        }
+        Insert: {
+          contact_id: string
+          refresh_reason?: string | null
+          refreshed_at?: string
+          signals?: Json
+          summary: string
+        }
+        Update: {
+          contact_id?: string
+          refresh_reason?: string | null
+          refreshed_at?: string
+          signals?: Json
+          summary?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "zara_lead_memory_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: true
+            referencedRelation: "crm_contacts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       zara_org_context: {
         Row: {
           custom_instructions: string | null
@@ -6665,6 +6777,151 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      zara_settings: {
+        Row: {
+          enabled_at: string | null
+          enabled_by: string | null
+          id: number
+          mode: string
+          test_phone_numbers: string[]
+          updated_at: string
+        }
+        Insert: {
+          enabled_at?: string | null
+          enabled_by?: string | null
+          id?: number
+          mode?: string
+          test_phone_numbers?: string[]
+          updated_at?: string
+        }
+        Update: {
+          enabled_at?: string | null
+          enabled_by?: string | null
+          id?: number
+          mode?: string
+          test_phone_numbers?: string[]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "zara_settings_enabled_by_fkey"
+            columns: ["enabled_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      zara_suggested_replies: {
+        Row: {
+          approval_method: string | null
+          approved_at: string | null
+          approved_by: string | null
+          assigned_to: string | null
+          channel: string
+          confidence: number | null
+          contact_id: string
+          created_at: string
+          draft_language: string | null
+          draft_subject: string | null
+          draft_text: string
+          expires_at: string
+          guardrails_hit: string[]
+          id: string
+          inbound_at: string
+          inbound_event_id: string | null
+          inbound_text: string
+          input_tokens: number | null
+          intent: string | null
+          model: string
+          output_tokens: number | null
+          reasoning: string | null
+          sent_at: string | null
+          status: string
+        }
+        Insert: {
+          approval_method?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          assigned_to?: string | null
+          channel: string
+          confidence?: number | null
+          contact_id: string
+          created_at?: string
+          draft_language?: string | null
+          draft_subject?: string | null
+          draft_text: string
+          expires_at?: string
+          guardrails_hit?: string[]
+          id?: string
+          inbound_at: string
+          inbound_event_id?: string | null
+          inbound_text: string
+          input_tokens?: number | null
+          intent?: string | null
+          model?: string
+          output_tokens?: number | null
+          reasoning?: string | null
+          sent_at?: string | null
+          status?: string
+        }
+        Update: {
+          approval_method?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          assigned_to?: string | null
+          channel?: string
+          confidence?: number | null
+          contact_id?: string
+          created_at?: string
+          draft_language?: string | null
+          draft_subject?: string | null
+          draft_text?: string
+          expires_at?: string
+          guardrails_hit?: string[]
+          id?: string
+          inbound_at?: string
+          inbound_event_id?: string | null
+          inbound_text?: string
+          input_tokens?: number | null
+          intent?: string | null
+          model?: string
+          output_tokens?: number | null
+          reasoning?: string | null
+          sent_at?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "zara_suggested_replies_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "zara_suggested_replies_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "zara_suggested_replies_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "crm_contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "zara_suggested_replies_inbound_event_id_fkey"
+            columns: ["inbound_event_id"]
+            isOneToOne: false
+            referencedRelation: "crm_engagement_events"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       zara_system_prompts: {
         Row: {
@@ -6701,6 +6958,42 @@ export type Database = {
           version?: string
         }
         Relationships: []
+      }
+      zara_whatsapp_message_map: {
+        Row: {
+          agent_id: string
+          created_at: string
+          draft_id: string
+          whatsapp_message_id: string
+        }
+        Insert: {
+          agent_id: string
+          created_at?: string
+          draft_id: string
+          whatsapp_message_id: string
+        }
+        Update: {
+          agent_id?: string
+          created_at?: string
+          draft_id?: string
+          whatsapp_message_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "zara_whatsapp_message_map_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "zara_whatsapp_message_map_draft_id_fkey"
+            columns: ["draft_id"]
+            isOneToOne: false
+            referencedRelation: "zara_suggested_replies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {

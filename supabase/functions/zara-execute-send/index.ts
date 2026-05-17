@@ -1,0 +1,132 @@
+// zara-execute-send — finalizes an approved draft. Sandbox gate refuses real leads.
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
+import { corsHeaders, levenshtein } from '../_shared/zara-guardrails.ts';
+
+const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
+const SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+const META_TOKEN = Deno.env.get('META_WHATSAPP_TOKEN');
+const META_PHONE_ID = Deno.env.get('META_WHATSAPP_PHONE_NUMBER_ID');
+
+Deno.serve(async (req) => {
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
+  const json = (b: unknown, s = 200) =>
+    new Response(JSON.stringify(b), { status: s, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+
+  try {
+    const admin = createClient(SUPABASE_URL, SERVICE_KEY);
+    const { draftId, finalText, decidedBy, decidedVia } = await req.json();
+    if (!draftId || !finalText || !decidedVia) return json({ error: 'draftId, finalText, decidedVia required' }, 400);
+
+    const { data: draft } = await admin.from('zara_suggested_replies').select('*').eq('id', draftId).maybeSingle();
+    if (!draft) return json({ error: 'draft_not_found' }, 404);
+    if (draft.status !== 'pending') return json({ error: 'draft_not_pending', current_status: draft.status }, 409);
+
+    const { data: contact } = await admin.from('crm_contacts').select('*').eq('id', draft.contact_id).maybeSingle();
+    if (!contact) return json({ error: 'contact_not_found' }, 404);
+
+    // SANDBOX GATE
+    const { data: settings } = await admin.from('zara_settings').select('mode').eq('id', 1).maybeSingle();
+    const tags: string[] = contact.tags ?? [];
+    const isTestContact = tags.includes('zara_test_contact');
+    if (settings?.mode === 'sandbox' && !isTestContact) {
+      await admin.from('zara_suggested_replies').update({ status: 'sandbox_blocked' }).eq('id', draftId);
+      await admin.from('zara_approval_decisions').insert({
+        draft_id: draftId,
+        contact_id: draft.contact_id,
+        decision: 'approve',
+        original_text: draft.draft_text,
+        final_text: finalText,
+        edit_distance: levenshtein(draft.draft_text, finalText),
+        decided_by: decidedBy ?? null,
+        decided_via: decidedVia,
+      });
+      return json({ blocked: true, reason: 'sandbox_real_lead', would_send_to: contact.phone });
+    }
+
+    const edit_distance = levenshtein(draft.draft_text, finalText);
+    const newStatus = edit_distance === 0 ? 'approved' : 'edited_approved';
+
+    // Channel switch
+    let sendOk = true;
+    let sendErr: string | null = null;
+    try {
+      if (draft.channel === 'whatsapp') {
+        if (!META_TOKEN || !META_PHONE_ID) throw new Error('meta_whatsapp_secrets_missing');
+        const res = await fetch(`https://graph.facebook.com/v18.0/${META_PHONE_ID}/messages`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${META_TOKEN}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            messaging_product: 'whatsapp',
+            to: contact.phone,
+            type: 'text',
+            text: { body: finalText },
+          }),
+        });
+        if (!res.ok) throw new Error(`whatsapp_send_failed_${res.status}`);
+      } else if (draft.channel === 'sms') {
+        // SMS uses the existing kill-switched outbound queue
+        await admin.from('sms_outbound_queue').insert({
+          contact_id: draft.contact_id,
+          body: finalText,
+          requested_by: decidedBy ?? null,
+          status: 'queued',
+        });
+      } else if (draft.channel === 'email') {
+        const { error } = await admin.functions.invoke('bridge-send-email', {
+          body: { contactId: draft.contact_id, subject: draft.draft_subject ?? '(no subject)', body: finalText },
+        });
+        if (error) throw error;
+      }
+    } catch (e) {
+      sendOk = false;
+      sendErr = String((e as Error).message);
+    }
+
+    // Approval decision log
+    await admin.from('zara_approval_decisions').insert({
+      draft_id: draftId,
+      contact_id: draft.contact_id,
+      decision: edit_distance === 0 ? 'approve' : 'edit_approve',
+      original_text: draft.draft_text,
+      final_text: finalText,
+      edit_distance,
+      decided_by: decidedBy ?? null,
+      decided_via: decidedVia,
+    });
+
+    if (!sendOk) {
+      await admin.from('zara_suggested_replies').update({ status: 'pending' }).eq('id', draftId);
+      return json({ error: 'send_failed', detail: sendErr }, 502);
+    }
+
+    // Update draft + log engagement event
+    const sent_at = new Date().toISOString();
+    await admin
+      .from('zara_suggested_replies')
+      .update({
+        status: 'sent',
+        sent_at,
+        approved_by: decidedBy ?? null,
+        approved_at: sent_at,
+        approval_method: decidedVia,
+      })
+      .eq('id', draftId);
+
+    admin
+      .from('crm_engagement_events')
+      .insert({
+        contact_id: draft.contact_id,
+        event_type: `${draft.channel}_sent`,
+        source: 'zara',
+        actor_id: decidedBy ?? null,
+        direction: 'outbound',
+        metadata: { draft_id: draftId, intent: draft.intent, edit_distance, zara_assisted: true },
+      })
+      .then(() => {});
+
+    return json({ ok: true, status: newStatus, edit_distance, sent_at });
+  } catch (e) {
+    console.error('[zara-execute-send]', e);
+    return json({ error: String((e as Error).message) }, 500);
+  }
+});
