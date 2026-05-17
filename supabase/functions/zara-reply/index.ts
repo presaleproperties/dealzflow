@@ -303,6 +303,26 @@ Return strict JSON per the system spec.`;
       },
     });
 
+    admin.from('crm_engagement_events').insert({
+      contact_id,
+      event_type: 'zara_escalation',
+      source: 'zara',
+      metadata: { intent, confidence, channel, message_id, notified_email: uzair?.email ?? null },
+    }).then(() => {});
+
+    const SUPABASE_URL_ESC = Deno.env.get('SUPABASE_URL')!;
+    const SERVICE_KEY_ESC = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    fetch(`${SUPABASE_URL_ESC}/functions/v1/zara-roll-memory`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${SERVICE_KEY_ESC}` },
+      body: JSON.stringify({
+        contact_id,
+        inbound_text: message_text,
+        draft_text: null,
+        kind: 'escalated',
+      }),
+    }).catch((e) => console.warn('[zara-reply] roll-memory kick (escalation) failed', e));
+
     return json({ sent: false, escalated: true, intent, confidence, suggested_reply: reply, notified: uzair?.email ?? null });
   }
 
@@ -428,6 +448,41 @@ Return strict JSON per the system spec.`;
     actor_label: 'zara',
     meta: { intent, confidence, channel, message_id, reply, error: sendErr, ...sendMeta },
   });
+
+  // Log engagement event so the lead timeline + scoring pick up the inbound
+  // reply + outbound auto-response.
+  admin.from('crm_engagement_events').insert({
+    contact_id,
+    event_type: sendOk ? 'zara_auto_reply' : 'zara_inbound',
+    source: 'zara',
+    metadata: { intent, confidence, channel, message_id, sent: sendOk, error: sendErr, ...sendMeta },
+  }).then(() => {});
+
+  // Roll per-lead memory with the inbound + the reply we just sent.
+  // Fire-and-forget; failures must not block the response.
+  const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
+  const SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+  fetch(`${SUPABASE_URL}/functions/v1/zara-roll-memory`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${SERVICE_KEY}` },
+    body: JSON.stringify({
+      contact_id,
+      inbound_text: message_text,
+      draft_text: sendOk ? reply : null,
+      kind: sendOk ? 'sent' : 'inbound',
+    }),
+  }).catch((e) => console.warn('[zara-reply] roll-memory kick failed', e));
+
+  // Trigger the next appropriate outbound step for this lead. The planner
+  // checks per-lead weekly caps, sandbox mode, and triggers internally, so
+  // it's safe to fire on every inbound.
+  if (sendOk) {
+    fetch(`${SUPABASE_URL}/functions/v1/zara-plan-outbound`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${SERVICE_KEY}` },
+      body: JSON.stringify({ contact_id, limit: 1 }),
+    }).catch((e) => console.warn('[zara-reply] plan-outbound kick failed', e));
+  }
 
   return json({ sent: sendOk, intent, confidence, reply, error: sendErr, ...sendMeta });
 });
