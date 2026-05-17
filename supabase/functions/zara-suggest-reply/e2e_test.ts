@@ -45,9 +45,9 @@ async function createTestContact(): Promise<string> {
 }
 
 async function cleanupTestContact(id: string) {
-  await sql`DELETE FROM public.zara_suggested_replies WHERE contact_id = ${id}::uuid`;
-  await sql`DELETE FROM public.zara_lead_memory WHERE contact_id = ${id}::uuid`;
-  await sql`DELETE FROM public.crm_engagement_events WHERE contact_id = ${id}::uuid`;
+  // FKs on zara_suggested_replies / zara_lead_memory / crm_engagement_events
+  // all cascade on contact delete, so a single DELETE is enough — and the
+  // limited DB role used by the test runner has DELETE on crm_contacts.
   await sql`DELETE FROM public.crm_contacts WHERE id = ${id}::uuid`;
 }
 
