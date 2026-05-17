@@ -41,11 +41,11 @@ type Project = {
   updated_at: string;
 };
 
-const STATUS_TONE: Record<string, 'success' | 'warning' | 'neutral' | 'destructive'> = {
+const STATUS_TONE: Record<string, 'success' | 'warning' | 'neutral' | 'danger'> = {
   selling: 'success',
   preview: 'warning',
   registration: 'warning',
-  sold_out: 'destructive',
+  sold_out: 'danger',
   coming_soon: 'neutral',
   complete: 'neutral',
 };
@@ -191,7 +191,7 @@ export default function ZaraProjectsPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
               {filtered.map((p) => {
                 const range = priceRange(p);
-                const tone: 'success' | 'warning' | 'neutral' | 'destructive' =
+                const tone: 'success' | 'warning' | 'neutral' | 'danger' =
                   (p.status ? STATUS_TONE[p.status] : undefined) ?? 'neutral';
                 return (
                   <button

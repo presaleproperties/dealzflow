@@ -274,7 +274,7 @@ export default function ZaraTrainingPage() {
             <div className="space-y-2">
               {evolution.map((e: any) => {
                 const pending = e.status === 'pending_review';
-                const tone = pending ? 'warning' : e.status === 'applied' ? 'success' : 'destructive';
+                const tone = pending ? 'warning' : e.status === 'applied' ? 'success' : 'danger';
                 const busy = applySuggestion.isPending || rejectSuggestion.isPending;
                 return (
                   <div key={e.id} className="rounded-lg border border-border/60 bg-card p-3">
@@ -398,7 +398,7 @@ export default function ZaraTrainingPage() {
             <div className="rounded-lg border border-border/60 bg-card divide-y divide-border/60">
               {decisions.map((d: any) => {
                 const tone = d.decision === 'approved' ? 'success'
-                  : d.decision === 'edited' ? 'warning' : 'destructive';
+                  : d.decision === 'edited' ? 'warning' : 'danger';
                 return (
                   <div key={d.id} className="px-3 py-2 flex items-center gap-2 text-[12px]">
                     <Pill size="sm" tone={tone as any}>{d.decision}</Pill>
