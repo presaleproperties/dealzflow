@@ -94,7 +94,7 @@ type TabId =
   | 'setup'
   | 'profile' | 'email' | 'notifications' | 'timeline'
   | 'team' | 'integrations' | 'projects' | 'import' | 'data'
-  | 'leadflow' | 'sources' | 'plan';
+  | 'leadflow' | 'sources' | 'plan' | 'zara';
 
 interface TabDef {
   id: TabId;
