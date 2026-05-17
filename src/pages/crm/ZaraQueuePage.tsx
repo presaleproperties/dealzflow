@@ -24,6 +24,7 @@ type Draft = {
   status: string;
   created_at: string;
   assigned_to: string | null;
+  consulted_sources: any;
 };
 
 type Settings = { mode: 'off' | 'sandbox' | 'live'; test_phone_numbers: string[] };
