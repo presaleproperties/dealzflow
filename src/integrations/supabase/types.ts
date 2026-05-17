@@ -7378,6 +7378,7 @@ export type Database = {
           consulted_sources: Json
           contact_id: string
           created_at: string
+          draft_html: string | null
           draft_language: string | null
           draft_subject: string | null
           draft_text: string
@@ -7394,6 +7395,7 @@ export type Database = {
           reasoning: string | null
           sent_at: string | null
           status: string
+          template_id_used: string | null
         }
         Insert: {
           approval_method?: string | null
@@ -7405,6 +7407,7 @@ export type Database = {
           consulted_sources?: Json
           contact_id: string
           created_at?: string
+          draft_html?: string | null
           draft_language?: string | null
           draft_subject?: string | null
           draft_text: string
@@ -7421,6 +7424,7 @@ export type Database = {
           reasoning?: string | null
           sent_at?: string | null
           status?: string
+          template_id_used?: string | null
         }
         Update: {
           approval_method?: string | null
@@ -7432,6 +7436,7 @@ export type Database = {
           consulted_sources?: Json
           contact_id?: string
           created_at?: string
+          draft_html?: string | null
           draft_language?: string | null
           draft_subject?: string | null
           draft_text?: string
@@ -7448,6 +7453,7 @@ export type Database = {
           reasoning?: string | null
           sent_at?: string | null
           status?: string
+          template_id_used?: string | null
         }
         Relationships: [
           {
@@ -7476,6 +7482,13 @@ export type Database = {
             columns: ["inbound_event_id"]
             isOneToOne: false
             referencedRelation: "crm_engagement_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "zara_suggested_replies_template_id_used_fkey"
+            columns: ["template_id_used"]
+            isOneToOne: false
+            referencedRelation: "crm_email_templates"
             referencedColumns: ["id"]
           },
         ]
