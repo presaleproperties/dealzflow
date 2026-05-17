@@ -110,13 +110,18 @@ Deno.serve(async (req) => {
   }
 
   // Pull Zara-assigned, non-muted, non-deleted candidates.
-  const { data: leads, error: leadsErr } = await admin
+  // When `contact_id` is provided (e.g. kicked from zara-reply), scope to that one lead.
+  let leadsQuery = admin
     .from('crm_contacts')
     .select('id, first_name, last_name, email, phone, language, tags, status, last_touch_at, created_at, assigned_to')
     .in('assigned_to', zaraAssignedKeys)
-    .is('deleted_at', null)
-    .order('last_touch_at', { ascending: true, nullsFirst: true })
-    .limit(200);
+    .is('deleted_at', null);
+  if (opts.contact_id) {
+    leadsQuery = leadsQuery.eq('id', opts.contact_id);
+  } else {
+    leadsQuery = leadsQuery.order('last_touch_at', { ascending: true, nullsFirst: true }).limit(200);
+  }
+  const { data: leads, error: leadsErr } = await leadsQuery;
 
   if (leadsErr) return json({ ok: false, error: leadsErr.message }, 500);
 
