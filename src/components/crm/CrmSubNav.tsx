@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useCrmAccess } from '@/contexts/CrmAccessContext';
 import { ChevronDown } from 'lucide-react';
+import { ZaraQueueBadge } from './zara/ZaraQueueBadge';
 
 interface Tab {
   label: string;
