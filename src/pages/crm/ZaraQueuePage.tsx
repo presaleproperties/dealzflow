@@ -27,7 +27,7 @@ type Draft = {
   created_at: string;
   assigned_to: string | null;
   consulted_sources: any;
-  citations: Array<{ n: number; name: string; source?: string; slug?: string | null; city?: string | null; neighborhood?: string | null; similarity?: number }> | null;
+  citations: any;
 };
 
 type Settings = { mode: 'off' | 'sandbox' | 'live'; test_phone_numbers: string[] };
