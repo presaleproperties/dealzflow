@@ -1,68 +1,59 @@
-# Zara Experience — One-shot ship plan
+## Reconciliations vs your spec
 
-Eight tiers, layered on Tier 2 + Cockpit + Brain. Kill switch + engagement log preserved. No new secrets.
+Three real conflicts with what already exists. I'll resolve them as follows unless you say otherwise:
 
-## Step 1 — DB migration (one call)
+1. **Templates table is `crm_email_templates`** (not `email_templates`). Will use this everywhere.
+2. **Signatures already live in `crm_email_signatures` + `crm_email_settings.signature_html`** (per-user, edited via Signatures Manager in /crm/settings). I will NOT add `profiles.signature_html` — that would create a second source of truth and break every existing composer. Zara will read the sender's signature from the same source every composer uses, which is the [Sender Signature Rule](mem://features/email/sender-signature-rule) we already follow.
+3. **`match_lead_to_projects` RPC does not exist.** I'll add a server-side selector inside the new edge fn that queries `crm_projects` by lead budget/city/persona and orders by best fit — same logic the existing `SendProjectDialog` uses.
 
-```sql
-ALTER TABLE zara_messages ADD COLUMN IF NOT EXISTS page_context jsonb;
-ALTER TABLE zara_conversations
-  ADD COLUMN IF NOT EXISTS last_message_snippet text,
-  ADD COLUMN IF NOT EXISTS title_regenerated_at_turn int NOT NULL DEFAULT 0,
-  ADD COLUMN IF NOT EXISTS archived boolean NOT NULL DEFAULT false,
-  ADD COLUMN IF NOT EXISTS pinned boolean NOT NULL DEFAULT false;
-CREATE INDEX IF NOT EXISTS idx_zara_conv_recent ON zara_conversations(last_message_at DESC);
-```
+Also: a `SendProjectDialog` already exists as a manual multi-step compose flow. The new path here is the **one-click Zara-drafted** version that lands in the queue — different surface, no conflict.
 
-(`zara_conversations` likely already has owner-scoped RLS — we don't touch policies.)
+## What I'll ship (14 acceptance criteria)
 
-## Step 2 — Edge fn `zara-chat`
+### Tier 1 — Schema
+- `zara_suggested_replies` → add `draft_html text`, `template_id_used uuid REFERENCES crm_email_templates(id) ON DELETE SET NULL`.
+- New row in `crm_email_templates`: `Project Showcase — Zara Generated` (category=`custom`, source=`zara`, body_html = the navy/gold scaffold below).
+- New CRM settings keys (existing key-value `crm_settings` store): `zara.email.use_template_scaffold` (default true), `zara.email.append_signature` (default true), `zara.email.fallback_template_id`.
 
-- Accept `page_context` in request body.
-- Store on the user-message insert (`zara_messages.page_context`).
-- Inject `<current_view>` block into system prompt (surface, url, optional lead+project lookup via service client).
-- Append the pronoun-resolution paragraph after the existing rules.
-- Update `last_message_snippet` (strip markdown, 100 chars) when persisting assistant text.
-- Regenerate title at turn 2 (existing), 6, 12 via Haiku (max 6 words). Track via `title_regenerated_at_turn`.
-- Populate `metadata.referenced_contact_ids` / `referenced_project_ids` from tool results that surface those IDs (best-effort scan of `get_lead_context` / `recommend_projects_for_lead` outputs).
+### Tier 2 — `draft_email` refactor (zara-tool-execute)
+Replace the plain-text path with:
+1. Match template by intent → category map (greeting/follow_up/reactivation/neighborhood/newsletter/project_match).
+2. Ask the model for JSON `{subject, intro, body_paragraphs[], ps?, cta_text?, cta_url?}` — never raw HTML.
+3. Server-render: inject parts into the chosen template's `body_html` + token interpolation (`{{first_name}}`, `{{project_name}}`, etc).
+4. Append signature: `crm_email_signatures` default row for the actor (fallback `crm_email_settings.signature_html`).
+5. Persist `draft_html`, `template_id_used`, and a plain-text fallback in `draft_text`.
 
-## Step 3 — Frontend hooks + state (`src/hooks/`)
+If no template matches → use the inline navy/gold scaffold (header band, 600px white card, `#3b82f6` CTA, signature, dark footer).
 
-- `useZaraPageContext.ts` — derives `{surface, contact_id?, project_id?, campaign_id?, url, label}` from `useLocation` + params. Surface inferred by route prefix.
-- `useZaraDock.ts` (Zustand) — `{open, conversationId, setOpen, setConversationId, toggle}`. Persist to `localStorage` (`zara_dock_open`, `zara_dock_conversation_id`).
-- `useZaraKeyboard.ts` — Cmd/Ctrl+J toggle, Cmd/Ctrl+K new conv, Cmd/Ctrl+/ focus input, Esc close, `/` focus search. Extend (replace usage of) `useZaraShortcut`.
-- `useZaraConversations.ts` — list/CRUD (pin, rename, archive, delete) via supabase. Realtime subscription on `zara_messages` for active conv.
+### Tier 3 — One-click "Send projects"
+- New edge fn **`zara-send-project-details`**: takes `{contact_id, count=3}`, picks top-N matching projects, calls the new `draft_email` path with intent `project_match` + the Project Showcase scaffold, queues into `zara_suggested_replies`.
+- Leads row: add a `Sparkles` lucide icon button (project uses lucide, not Tabler — `ti-sparkles` doesn't exist here) in the actions column with tooltip "Send project details".
+- Lead detail right rail (Zara section): gold "Send Project Details" button.
+- Bulk: when 2+ leads selected, show "Send projects to N leads" in the bulk action bar; fans out the edge fn in parallel (cap 25).
 
-## Step 4 — Components (`src/components/zara/`)
+### Tier 4 — Project Showcase scaffold
+Stored in `crm_email_templates.body_html` exactly as specified — navy `#1a1a2e` header, 600px white card, 3 stacked project cards (hero/name/city·developer/price/why-it-fits/blue CTA "View Floor Plans"), signature, dark footer with unsubscribe.
 
-- `ZaraDock.tsx` — root mount: launcher (closed) + slide-in panel (open). 400px desktop, full-screen mobile. Hidden on `/crm/zara`, `/crm/zara/about`, `/crm/zara/train`, `/crm/zara/projects/:id`.
-- `ZaraDockHeader.tsx` — avatar + name + mode pill + maximize/history/help/close buttons.
-- `ZaraChatStream.tsx` — shared message renderer (markdown, code-blocks with copy, lead/project link rewriting, sources pill expand, per-bubble copy, time tooltip with tokens). Used by dock AND cockpit.
-- `ZaraComposer.tsx` — auto-resize textarea + mic + language + send + Cmd/Ctrl+Enter. Below: `ZaraQuickActionChips`.
-- `ZaraQuickActionChips.tsx` — surface→chips map; clicking sends prefilled message with implicit `contact_id` injected via dock store.
-- `ZaraConversationListOverlay.tsx` — search, filter tabs, sort, grouped sticky headers (Pinned/Today/Yesterday/Week/Earlier), row actions menu (pin/rename/archive/export/delete), keyboard nav. Used in dock history button and cockpit left rail.
-- `useZaraExportMarkdown.ts` — client-side export to `.md`.
+### Tier 5 — Queue HTML preview
+For email drafts in `/crm/zara/queue`: sandboxed `<iframe srcDoc>` rendering of `draft_html`, toggle Preview / Plain-text fallback / View source, "Edit before send" opens `ComposeEmailDialog` pre-filled with the HTML. Approve & send fires the rendered HTML via `bridge-send-email` (unchanged).
 
-## Step 5 — Mount
+### Tier 6 — Settings
+- "Zara email behavior" section in /crm/settings with the three toggles/dropdown above.
+- I will **not** add a separate "Email signature" section because [the existing Signatures Manager already does this](mem://features/email/sender-signature-rule). If you want a new card pointing users there, I'll add a one-liner link.
 
-Add `<ZaraDock />` + `useZaraKeyboard()` inside `CrmLayout.tsx` (outside `PageTransition`, sibling to `BottomNav`). Replace old `useZaraShortcut` global usage in `App.tsx` to forward to dock toggle when on `/crm/*`.
+## Files (high level)
 
-## Step 6 — Refactor cockpit
+- DB migration: 2 columns + 1 template seed
+- `supabase/functions/zara-tool-execute/index.ts` — `draft_email` rewrite
+- `supabase/functions/zara-send-project-details/index.ts` — new
+- `src/pages/crm/ZaraQueuePage.tsx` — iframe preview + toggles + edit
+- `src/components/crm/leads/LeadsTable*` — Sparkles action button
+- `src/components/crm/leads/LeadsBulkActions*` — bulk button
+- `src/components/crm/leads/detail/RightSidebar.tsx` (or ZaraLeadCard) — "Send Project Details" gold button
+- `src/components/crm/settings/ZaraEmailBehaviorSection.tsx` — new
 
-Swap `ZaraCockpitPage` message rendering + composer + chips to use the shared `ZaraChatStream` + `ZaraComposer` + `ZaraQuickActionChips` + `ZaraConversationListOverlay` so behaviour matches dock 1:1. Keep cockpit's max-width layout and project/queue panels.
+## One question before I start
 
-## Step 7 — Deploy + verify
+**Should the actor's signature come from `crm_email_signatures` (the per-user table all other composers use) — yes/no?** If yes, I proceed exactly as planned. If you specifically want a new `profiles.signature_html` column AND want every existing composer kept in sync, that's a much larger change and I'll quote separately.
 
-- Deploy `zara-chat`.
-- Run `bun run build`.
-- Smoke-test: open dock from `/crm/leads`, navigate, confirm persistence; send from `/crm/leads/:id` and check `page_context` saved + chips render; test pin/rename/archive/export/delete; Cmd/Ctrl+J/K/Esc.
-
-## Technical details
-
-- Surface inference: `/crm/leads/:id` → `lead_detail` + `contact_id`; `/crm/leads` → `leads_list`; `/crm/pipeline` → `pipeline`; `/crm/chats*` → `chats`; `/crm/email*` → `email`; `/crm/scheduler` → `calendar`; `/crm/templates` → `templates`; `/crm/zara/queue` → `queue`; `/crm/zara/projects` → `projects_list`; `/crm/reports*|/crm/email/analytics` → `reports`; `/crm/behavior*|/dashboard` → `dashboard`; else `other`.
-- Hidden routes computed once via regex array.
-- Realtime: single channel per `conversation_id`; subscribe both dock+cockpit, de-dupe by message id.
-- Title regen: scheduled inline at end of stream (non-blocking `await`), gated by `title_regenerated_at_turn`.
-- Markdown link rewriting: post-render walk on text nodes with built-from-metadata Map. Avoid wrapping inside code blocks.
-- Touch targets: `min-h-11 min-w-11` on mobile controls.
-- Theme: gold launcher uses `bg-primary text-primary-foreground`; surface uses `bg-background border-border`. No raw hex.
+(SMS/WhatsApp drafts stay plain-text as you specified. Kill switch, queue, mode, engagement log, 7 indexed playbooks all preserved.)
