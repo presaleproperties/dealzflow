@@ -11,6 +11,7 @@ import { useUpdateCrmContact } from '@/hooks/useCrmLeadDetail';
 import { startInAppCall } from '@/hooks/useDialer';
 import { useCrmTags } from '@/hooks/useCrmTags';
 import { useActivePipelineFor, useSetContactPipeline, useUnifiedPipelines } from '@/hooks/useUnifiedPipelines';
+import { logEngagementEvent } from '@/lib/engagementLog';
 import { useColumnWidths, useColumnResizer } from '@/hooks/useColumnWidths';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Checkbox } from '@/components/ui/checkbox';
