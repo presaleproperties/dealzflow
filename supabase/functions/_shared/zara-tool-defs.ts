@@ -79,6 +79,7 @@ export const ZARA_TOOLS: ZaraTool[] = [
       },
       required: ["contact_id", "body"],
     },
+    needs_approval: true,
   },
   {
     name: "draft_sms",
@@ -92,6 +93,7 @@ export const ZARA_TOOLS: ZaraTool[] = [
       },
       required: ["contact_id", "body"],
     },
+    needs_approval: true,
   },
   {
     name: "add_lead_note",
