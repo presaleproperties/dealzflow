@@ -133,31 +133,40 @@ async function confirm_update_lead(args: any, ctx: Ctx) {
   return ok({ contact_id: p.contact_id, applied: p.patch });
 }
 
-async function draft_email(args: any, ctx: Ctx) {
-  if (!ctx.zara_enabled) return fail("Zara is disabled for this contact — drafts blocked.");
+async function draft_email(args: any, _ctx: Ctx) {
+  if (!args.contact_id) return fail("contact_id required");
   const sb = svc();
+  // Per-contact zara_enabled gate
+  const { data: c } = await sb.from("crm_contacts").select("zara_enabled").eq("id", args.contact_id).maybeSingle();
+  if (c && c.zara_enabled === false) return fail("Zara is disabled for this contact — drafts blocked.");
+  const now = new Date().toISOString();
   const { data, error } = await sb.from("zara_suggested_replies").insert({
-    contact_id: args.contact_id ?? null,
+    contact_id: args.contact_id,
     channel: "email",
-    subject: args.subject ?? null,
-    body: args.body,
-    purpose: args.purpose ?? null,
+    draft_subject: args.subject ?? null,
+    draft_text: args.body,
+    inbound_text: args.purpose ?? "(agent-initiated via Zara cockpit)",
+    inbound_at: now,
+    intent: args.purpose ?? null,
     status: "pending",
-    created_by: "zara",
   }).select("id").single();
   if (error) return fail(error.message);
   return ok({ draft_id: data.id, preview: String(args.body).slice(0, 200) });
 }
 
-async function draft_sms(args: any, ctx: Ctx) {
-  if (!ctx.zara_enabled) return fail("Zara is disabled — drafts blocked.");
+async function draft_sms(args: any, _ctx: Ctx) {
+  if (!args.contact_id) return fail("contact_id required");
   const sb = svc();
+  const { data: c } = await sb.from("crm_contacts").select("zara_enabled").eq("id", args.contact_id).maybeSingle();
+  if (c && c.zara_enabled === false) return fail("Zara is disabled for this contact — drafts blocked.");
+  const now = new Date().toISOString();
   const { data, error } = await sb.from("zara_suggested_replies").insert({
-    contact_id: args.contact_id ?? null,
+    contact_id: args.contact_id,
     channel: "sms",
-    body: args.body,
+    draft_text: args.body,
+    inbound_text: "(agent-initiated via Zara cockpit)",
+    inbound_at: now,
     status: "pending",
-    created_by: "zara",
   }).select("id").single();
   if (error) return fail(error.message);
   return ok({ draft_id: data.id, preview: String(args.body).slice(0, 160) });
@@ -192,14 +201,15 @@ async function set_lead_status(args: any, ctx: Ctx) {
   return ok({ contact_id: args.contact_id, status: args.status });
 }
 
-async function schedule_follow_up(args: any, ctx: Ctx) {
+async function schedule_follow_up(args: any, _ctx: Ctx) {
   const sb = svc();
   const { data, error } = await sb.from("crm_tasks").insert({
     contact_id: args.contact_id,
-    due_at: args.due_at,
-    note: args.note ?? "Zara follow-up",
-    assigned_to: ctx.user_id,
-    created_by: ctx.user_id,
+    due_date: args.due_at,
+    title: (args.note ?? "Zara follow-up").slice(0, 120),
+    description: args.note ?? null,
+    task_type: "follow_up",
+    status: "pending",
   }).select("id").single();
   if (error) return fail(error.message);
   return ok({ task_id: data.id });
@@ -208,7 +218,7 @@ async function schedule_follow_up(args: any, ctx: Ctx) {
 async function list_pending_drafts(args: any) {
   const sb = svc();
   const { data, error } = await sb.from("zara_suggested_replies")
-    .select("id,contact_id,channel,subject,body,purpose,created_at")
+    .select("id,contact_id,channel,draft_subject,draft_text,intent,created_at")
     .eq("status", "pending").order("created_at", { ascending: false })
     .limit(Math.min(args.limit ?? 10, 50));
   if (error) return fail(error.message);
@@ -218,7 +228,7 @@ async function list_pending_drafts(args: any) {
 async function approve_draft(args: any, ctx: Ctx) {
   const sb = svc();
   const { error } = await sb.from("zara_suggested_replies")
-    .update({ status: "approved", approved_at: new Date().toISOString(), approved_by: ctx.user_id })
+    .update({ status: "approved", approved_at: new Date().toISOString(), approved_by: ctx.user_id, approval_method: "zara_cockpit" })
     .eq("id", args.draft_id);
   if (error) return fail(error.message);
   return ok({ draft_id: args.draft_id, status: "approved" });
