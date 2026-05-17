@@ -157,6 +157,7 @@ export function EditLeadDetailsSheet({ contact, open, onOpenChange }: Props) {
         budget_min: form.budget_min ? Number(form.budget_min) : null,
         budget_max: form.budget_max ? Number(form.budget_max) : null,
         status: form.status,
+        pipeline_segment_id: form.pipeline_segment_id || null,
         assigned_to: form.assigned_to || null,
         source: form.source || null,
         lead_types: form.lead_types,
