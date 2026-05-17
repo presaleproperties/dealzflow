@@ -127,9 +127,10 @@ export async function logEngagementEvent(input: EngagementEventInput): Promise<v
   try {
     if (!input?.contactId) return;
     const actorId = await resolveActorId();
+    const row = toRow(input, actorId);
     const { error } = await supabase
       .from('crm_engagement_events')
-      .insert(toRow(input, actorId));
+      .insert([row] as never);
     if (error) console.warn('[engagementLog] insert failed', error.message);
   } catch (err) {
     console.warn('[engagementLog] threw', err);
