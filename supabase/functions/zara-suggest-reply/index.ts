@@ -110,6 +110,16 @@ Deno.serve(async (req) => {
             name: m.name,
             similarity: Number(m.similarity ?? 0),
           }));
+          citations = matches.map((m: any, i: number) => ({
+            n: i + 1,
+            name: String(m.name ?? `Project ${i + 1}`),
+            source: String(m.source ?? "presale"),
+            id: m.id ?? null,
+            slug: m.slug ?? null,
+            city: m.city ?? null,
+            neighborhood: m.neighborhood ?? null,
+            similarity: Number(m.similarity ?? 0),
+          }));
           ragContext = matches
             .map((m: any, i: number) => {
               const price = [m.price_range_low, m.price_range_high]
@@ -117,7 +127,7 @@ Deno.serve(async (req) => {
                 .map((v: number) => `$${Number(v).toLocaleString()}`)
                 .join(" - ");
               return [
-                `[Project ${i + 1}] ${m.name}${m.developer ? " (" + m.developer + ")" : ""}` +
+                `[${i + 1}] ${m.name}${m.developer ? " (" + m.developer + ")" : ""}` +
                   ` — ${m.city ?? "?"}${m.neighborhood ? " / " + m.neighborhood : ""}` +
                   ` — status: ${m.status ?? "?"} — completion: ${m.completion_year ?? "?"}`,
                 price ? `  price: ${price}` : null,
