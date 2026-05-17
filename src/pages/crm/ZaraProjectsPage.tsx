@@ -191,7 +191,8 @@ export default function ZaraProjectsPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
               {filtered.map((p) => {
                 const range = priceRange(p);
-                const tone = (p.status && STATUS_TONE[p.status]) ?? 'neutral';
+                const tone: 'success' | 'warning' | 'neutral' | 'destructive' =
+                  (p.status ? STATUS_TONE[p.status] : undefined) ?? 'neutral';
                 return (
                   <button
                     key={p.id}
