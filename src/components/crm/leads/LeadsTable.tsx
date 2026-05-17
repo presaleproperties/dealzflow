@@ -421,7 +421,14 @@ function InlineAgentCell({ contact, updateContact }: { contact: CrmContact; upda
       <Select
         value={contact.assigned_to ?? ''}
         onValueChange={v => {
-          updateContact.mutate({ id: contact.id, updates: { assigned_to: v }, oldValues: { assigned_to: contact.assigned_to } });
+          const prev = contact.assigned_to ?? null;
+          updateContact.mutate({ id: contact.id, updates: { assigned_to: v }, oldValues: { assigned_to: prev } });
+          void logEngagementEvent({
+            contactId: contact.id,
+            eventType: prev ? 'lead_reassigned' : 'lead_assigned',
+            source: 'crm',
+            metadata: { prev_owner: prev, new_owner: v },
+          });
           toast.success(`Assigned → ${v}`);
         }}
       >
