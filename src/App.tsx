@@ -17,6 +17,12 @@ import { DealDraftProvider } from "@/contexts/DealDraftContext";
 import { CrmAccessProvider } from "@/contexts/CrmAccessContext";
 import { CrmLayout } from "@/components/crm/CrmLayout";
 import { useNativeShell } from "@/hooks/useNativeShell";
+import { useZaraShortcut } from "@/hooks/useZaraShortcut";
+
+function ZaraShortcutMount() {
+  useZaraShortcut();
+  return null;
+}
 import { useStandaloneMode } from "@/hooks/useStandaloneMode";
 import { useGlobalTapHaptics } from "@/hooks/useGlobalTapHaptics";
 import { ScrollToTop } from "@/components/ScrollToTop";
@@ -105,6 +111,7 @@ const CrmCalendarPage = lazy(() => import("./pages/crm/CrmCalendarPage"));
 const CrmReportsPage = lazy(() => import("./pages/crm/CrmReportsPage"));
 const CrmEngagementReportsPage = lazy(() => import("./pages/crm/CrmEngagementReportsPage"));
 const ZaraQueuePage = lazy(() => import("./pages/crm/ZaraQueuePage"));
+const ZaraCockpitPage = lazy(() => import("./pages/crm/ZaraCockpitPage"));
 const CrmSettingsPage = lazy(() => import("./pages/crm/CrmSettingsPage"));
 const CrmIntegrationsPage = lazy(() => import("./pages/crm/CrmIntegrationsPage"));
 const CrmBehaviorLeadsPage = lazy(() => import("./pages/crm/CrmBehaviorLeadsPage"));
@@ -262,6 +269,7 @@ const App = () => (
                 <QuietHoursConfirmHost />
                 <BrowserRouter>
                   <ScrollToTop />
+                  <ZaraShortcutMount />
                   <Suspense fallback={<RouteFallback />}>
                   <RouteHydrationGate>
                   <Routes>
@@ -335,7 +343,8 @@ const App = () => (
                     <Route path="/crm/calendar" element={<ProtectedRoute><CrmLayout><CrmCalendarPage /></CrmLayout></ProtectedRoute>} />
                     <Route path="/crm/reports" element={<ProtectedRoute><CrmLayout><CrmReportsPage /></CrmLayout></ProtectedRoute>} />
                     <Route path="/crm/reports/engagement" element={<ProtectedRoute><CrmLayout><CrmEngagementReportsPage /></CrmLayout></ProtectedRoute>} />
-                    <Route path="/crm/zara" element={<ProtectedRoute><CrmLayout><ZaraQueuePage /></CrmLayout></ProtectedRoute>} />
+                    <Route path="/crm/zara" element={<ProtectedRoute><CrmLayout><ZaraCockpitPage /></CrmLayout></ProtectedRoute>} />
+                    <Route path="/crm/zara/queue" element={<ProtectedRoute><CrmLayout><ZaraQueuePage /></CrmLayout></ProtectedRoute>} />
                     <Route path="/crm/settings" element={<ProtectedRoute><CrmLayout><CrmSettingsPage /></CrmLayout></ProtectedRoute>} />
                     <Route path="/crm/integrations" element={<ProtectedRoute><CrmLayout requireRole={['owner', 'admin']}><CrmIntegrationsPage /></CrmLayout></ProtectedRoute>} />
                     <Route path="/crm/behavior-leads" element={<ProtectedRoute><CrmLayout requireRole={['owner', 'admin']}><CrmBehaviorLeadsPage /></CrmLayout></ProtectedRoute>} />

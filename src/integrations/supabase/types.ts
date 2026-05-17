@@ -6021,6 +6021,90 @@ export type Database = {
         }
         Relationships: []
       }
+      presale_projects: {
+        Row: {
+          brochure_url: string | null
+          building_type: string | null
+          city: string | null
+          completion_quarter: string | null
+          completion_year: number | null
+          created_at: string
+          deposit_structure: string | null
+          description: string | null
+          developer: string | null
+          hero_image_url: string | null
+          id: string
+          key_features: Json
+          last_synced_at: string | null
+          last_synced_source: string | null
+          marketing_url: string | null
+          name: string
+          neighborhood: string | null
+          price_range_high: number | null
+          price_range_low: number | null
+          slug: string
+          starting_psf: number | null
+          status: string
+          unit_count: number | null
+          unit_types: string[] | null
+          vip_access: boolean
+        }
+        Insert: {
+          brochure_url?: string | null
+          building_type?: string | null
+          city?: string | null
+          completion_quarter?: string | null
+          completion_year?: number | null
+          created_at?: string
+          deposit_structure?: string | null
+          description?: string | null
+          developer?: string | null
+          hero_image_url?: string | null
+          id?: string
+          key_features?: Json
+          last_synced_at?: string | null
+          last_synced_source?: string | null
+          marketing_url?: string | null
+          name: string
+          neighborhood?: string | null
+          price_range_high?: number | null
+          price_range_low?: number | null
+          slug: string
+          starting_psf?: number | null
+          status?: string
+          unit_count?: number | null
+          unit_types?: string[] | null
+          vip_access?: boolean
+        }
+        Update: {
+          brochure_url?: string | null
+          building_type?: string | null
+          city?: string | null
+          completion_quarter?: string | null
+          completion_year?: number | null
+          created_at?: string
+          deposit_structure?: string | null
+          description?: string | null
+          developer?: string | null
+          hero_image_url?: string | null
+          id?: string
+          key_features?: Json
+          last_synced_at?: string | null
+          last_synced_source?: string | null
+          marketing_url?: string | null
+          name?: string
+          neighborhood?: string | null
+          price_range_high?: number | null
+          price_range_low?: number | null
+          slug?: string
+          starting_psf?: number | null
+          status?: string
+          unit_count?: number | null
+          unit_types?: string[] | null
+          vip_access?: boolean
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           approved_at: string | null
@@ -6629,6 +6713,50 @@ export type Database = {
         }
         Relationships: []
       }
+      zara_actions_log: {
+        Row: {
+          action: string
+          contact_id: string | null
+          conversation_id: string | null
+          id: string
+          occurred_at: string
+          payload: Json | null
+          result_summary: string | null
+          tool_name: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          contact_id?: string | null
+          conversation_id?: string | null
+          id?: string
+          occurred_at?: string
+          payload?: Json | null
+          result_summary?: string | null
+          tool_name?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          contact_id?: string | null
+          conversation_id?: string | null
+          id?: string
+          occurred_at?: string
+          payload?: Json | null
+          result_summary?: string | null
+          tool_name?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "zara_actions_log_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "zara_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       zara_activity: {
         Row: {
           action_type: string
@@ -6728,6 +6856,36 @@ export type Database = {
           },
         ]
       }
+      zara_conversations: {
+        Row: {
+          archived: boolean
+          created_at: string
+          id: string
+          last_message_at: string | null
+          pinned: boolean
+          title: string
+          user_id: string
+        }
+        Insert: {
+          archived?: boolean
+          created_at?: string
+          id?: string
+          last_message_at?: string | null
+          pinned?: boolean
+          title?: string
+          user_id: string
+        }
+        Update: {
+          archived?: boolean
+          created_at?: string
+          id?: string
+          last_message_at?: string | null
+          pinned?: boolean
+          title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       zara_lead_memory: {
         Row: {
           contact_id: string
@@ -6760,6 +6918,59 @@ export type Database = {
           },
         ]
       }
+      zara_messages: {
+        Row: {
+          content: string | null
+          conversation_id: string
+          created_at: string
+          id: string
+          input_tokens: number | null
+          model: string | null
+          output_tokens: number | null
+          role: string
+          tool_call_id: string | null
+          tool_calls: Json | null
+          tool_name: string | null
+          tool_result: Json | null
+        }
+        Insert: {
+          content?: string | null
+          conversation_id: string
+          created_at?: string
+          id?: string
+          input_tokens?: number | null
+          model?: string | null
+          output_tokens?: number | null
+          role: string
+          tool_call_id?: string | null
+          tool_calls?: Json | null
+          tool_name?: string | null
+          tool_result?: Json | null
+        }
+        Update: {
+          content?: string | null
+          conversation_id?: string
+          created_at?: string
+          id?: string
+          input_tokens?: number | null
+          model?: string | null
+          output_tokens?: number | null
+          role?: string
+          tool_call_id?: string | null
+          tool_calls?: Json | null
+          tool_name?: string | null
+          tool_result?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "zara_messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "zara_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       zara_org_context: {
         Row: {
           custom_instructions: string | null
@@ -6775,6 +6986,60 @@ export type Database = {
           custom_instructions?: string | null
           id?: number
           updated_at?: string
+        }
+        Relationships: []
+      }
+      zara_prompt_evolution: {
+        Row: {
+          applied_at: string | null
+          applied_by: string | null
+          created_at: string
+          example_feedback_ids: string[] | null
+          id: string
+          pattern: string
+          status: string
+          suggestion: string
+        }
+        Insert: {
+          applied_at?: string | null
+          applied_by?: string | null
+          created_at?: string
+          example_feedback_ids?: string[] | null
+          id?: string
+          pattern: string
+          status?: string
+          suggestion: string
+        }
+        Update: {
+          applied_at?: string | null
+          applied_by?: string | null
+          created_at?: string
+          example_feedback_ids?: string[] | null
+          id?: string
+          pattern?: string
+          status?: string
+          suggestion?: string
+        }
+        Relationships: []
+      }
+      zara_research_cache: {
+        Row: {
+          created_at: string
+          query_hash: string
+          query_text: string
+          result: Json
+        }
+        Insert: {
+          created_at?: string
+          query_hash: string
+          query_text: string
+          result: Json
+        }
+        Update: {
+          created_at?: string
+          query_hash?: string
+          query_text?: string
+          result?: Json
         }
         Relationships: []
       }
@@ -6923,6 +7188,38 @@ export type Database = {
           },
         ]
       }
+      zara_system_prompt_addenda: {
+        Row: {
+          active: boolean
+          addendum: string
+          created_at: string
+          id: string
+          source_evolution_id: string | null
+        }
+        Insert: {
+          active?: boolean
+          addendum: string
+          created_at?: string
+          id?: string
+          source_evolution_id?: string | null
+        }
+        Update: {
+          active?: boolean
+          addendum?: string
+          created_at?: string
+          id?: string
+          source_evolution_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "zara_system_prompt_addenda_source_evolution_id_fkey"
+            columns: ["source_evolution_id"]
+            isOneToOne: false
+            referencedRelation: "zara_prompt_evolution"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       zara_system_prompts: {
         Row: {
           change_summary: string | null
@@ -6956,6 +7253,42 @@ export type Database = {
           name?: string
           prompt_text?: string
           version?: string
+        }
+        Relationships: []
+      }
+      zara_training_feedback: {
+        Row: {
+          applied_to_prompt: boolean
+          contact_id: string | null
+          created_at: string
+          created_by: string | null
+          decision: string
+          draft_id: string | null
+          id: string
+          message_id: string | null
+          notes: string | null
+        }
+        Insert: {
+          applied_to_prompt?: boolean
+          contact_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          decision: string
+          draft_id?: string | null
+          id?: string
+          message_id?: string | null
+          notes?: string | null
+        }
+        Update: {
+          applied_to_prompt?: boolean
+          contact_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          decision?: string
+          draft_id?: string | null
+          id?: string
+          message_id?: string | null
+          notes?: string | null
         }
         Relationships: []
       }
