@@ -31,7 +31,12 @@ type StoredMsg = {
   created_at: string;
 };
 
-type ToolUiState = { id: string; name: string; status: 'running' | 'done' | 'error'; input?: any; output?: any };
+type ToolUiState = {
+  id: string; name: string;
+  status: 'running' | 'done' | 'error' | 'pending' | 'denied';
+  input?: any; output?: any;
+  pending_id?: string;
+};
 
 type ActionRow = {
   id: string; action: string; tool_name: string | null;
@@ -48,24 +53,80 @@ const QUICK_ACTIONS = [
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
 
-function ToolPill({ tool }: { tool: ToolUiState }) {
-  const [open, setOpen] = useState(false);
+const TOOL_LABELS: Record<string, string> = {
+  update_lead: 'Update lead',
+  confirm_update_lead: 'Confirm lead update',
+  draft_email: 'Draft email',
+  draft_sms: 'Draft SMS',
+  add_lead_note: 'Add note',
+  add_lead_tag: 'Add tag',
+  set_lead_status: 'Change status',
+  schedule_follow_up: 'Schedule follow-up',
+  approve_draft: 'Approve & send draft',
+};
+
+function ToolPill({ tool, onDecide, deciding }: {
+  tool: ToolUiState;
+  onDecide?: (pending_id: string, decision: 'approve' | 'deny') => void;
+  deciding?: boolean;
+}) {
+  const [open, setOpen] = useState(tool.status === 'pending');
   const Icon = tool.status === 'running' ? Loader2 : Wrench;
-  const tone = tool.status === 'error' ? 'destructive' : tool.status === 'done' ? 'success' : 'warning';
+  const tone =
+    tool.status === 'error' || tool.status === 'denied' ? 'destructive'
+      : tool.status === 'done' ? 'success'
+      : tool.status === 'pending' ? 'warning'
+      : 'warning';
+  const isPending = tool.status === 'pending' && !!tool.pending_id;
+  const borderCls = isPending
+    ? 'border-amber-500/50 ring-1 ring-amber-500/20'
+    : 'border-border/60';
   return (
-    <div className="my-2 rounded-lg border border-border/60 bg-card text-[12px] overflow-hidden">
+    <div className={`my-2 rounded-lg border bg-card text-[12px] overflow-hidden ${borderCls}`}>
       <button
         onClick={() => setOpen((o) => !o)}
         className="w-full flex items-center gap-2 px-3 py-2 hover:bg-muted/50 transition-colors text-left"
       >
         <Icon className={`w-3.5 h-3.5 ${tool.status === 'running' ? 'animate-spin text-primary' : 'text-muted-foreground'}`} />
         <span className="font-medium font-mono text-[11px]">{tool.name}</span>
-        <Pill size="sm" tone={tone as any}>{tool.status}</Pill>
+        <Pill size="sm" tone={tone as any}>{tool.status === 'pending' ? 'needs approval' : tool.status}</Pill>
         <ChevronDown className={`w-3 h-3 ml-auto text-muted-foreground transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
       {open && (
         <div className="border-t border-border/60 bg-muted/20 p-2 space-y-2">
-          {tool.input && (
+          {isPending && (
+            <div className="rounded-md border border-amber-500/40 bg-amber-500/5 p-2.5">
+              <div className="text-[12px] font-semibold mb-1.5">
+                {TOOL_LABELS[tool.name] ?? 'Action'} — approval required
+              </div>
+              <div className="text-[11.5px] text-muted-foreground mb-2">
+                Zara wants to run <span className="font-mono">{tool.name}</span>. Review the input below and confirm.
+              </div>
+              {tool.input && (
+                <pre className="text-[10.5px] font-mono whitespace-pre-wrap break-words bg-background rounded p-2 border border-border/40 max-h-48 overflow-auto mb-2">
+                  {JSON.stringify(tool.input, null, 2)}
+                </pre>
+              )}
+              <div className="flex items-center gap-2 justify-end">
+                <button
+                  disabled={deciding}
+                  onClick={() => onDecide?.(tool.pending_id!, 'deny')}
+                  className="px-3 py-1.5 text-[11.5px] rounded-md border border-border hover:bg-muted/60 disabled:opacity-50"
+                >
+                  Deny
+                </button>
+                <button
+                  disabled={deciding}
+                  onClick={() => onDecide?.(tool.pending_id!, 'approve')}
+                  className="px-3 py-1.5 text-[11.5px] rounded-md bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 inline-flex items-center gap-1"
+                >
+                  {deciding ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
+                  Approve & run
+                </button>
+              </div>
+            </div>
+          )}
+          {!isPending && tool.input && (
             <div>
               <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Input</div>
               <pre className="text-[10.5px] font-mono whitespace-pre-wrap break-words bg-background rounded p-2 border border-border/40">
@@ -88,13 +149,15 @@ function ToolPill({ tool }: { tool: ToolUiState }) {
 }
 
 function MessageBubble({
-  role, text, tools, onFeedback, messageId,
+  role, text, tools, onFeedback, messageId, onDecide, decidingId,
 }: {
   role: 'user' | 'assistant';
   text: string;
   tools?: ToolUiState[];
   onFeedback?: (rating: 'up' | 'down') => void;
   messageId?: string | null;
+  onDecide?: (pending_id: string, decision: 'approve' | 'deny') => void;
+  decidingId?: string | null;
 }) {
   if (role === 'user') {
     return (
@@ -108,7 +171,14 @@ function MessageBubble({
   return (
     <div className="flex justify-start">
       <div className="max-w-[92%] space-y-1">
-        {tools?.map((t) => <ToolPill key={t.id} tool={t} />)}
+        {tools?.map((t) => (
+          <ToolPill
+            key={t.id}
+            tool={t}
+            onDecide={onDecide}
+            deciding={!!t.pending_id && decidingId === t.pending_id}
+          />
+        ))}
         {text && (
           <div className="rounded-2xl bg-muted/40 border border-border/40 px-4 py-2.5 text-[14px] prose prose-sm prose-neutral dark:prose-invert max-w-none prose-p:my-1.5 prose-ul:my-1.5 prose-ol:my-1.5 prose-headings:mt-3 prose-headings:mb-1">
             <ReactMarkdown remarkPlugins={[remarkGfm]}>{text}</ReactMarkdown>
@@ -200,6 +270,51 @@ export default function ZaraCockpitPage() {
     },
     enabled: !!activeId,
   });
+
+  // Pending tool calls awaiting approval for this conversation
+  const { data: pendingRows = [] } = useQuery({
+    queryKey: ['zara-pending-tool-calls', activeId],
+    queryFn: async () => {
+      if (!activeId) return [] as Array<{ id: string; tool_use_id: string; tool_name: string; tool_input: any; status: string }>;
+      const { data } = await supabase
+        .from('zara_pending_tool_calls')
+        .select('id,tool_use_id,tool_name,tool_input,status,created_at')
+        .eq('conversation_id', activeId)
+        .order('created_at', { ascending: true });
+      return (data as any[]) ?? [];
+    },
+    enabled: !!activeId,
+    refetchInterval: streaming ? 1500 : false,
+  });
+  const pendingByUseId = useMemo(() => {
+    const m = new Map<string, { pending_id: string; status: string; tool_input: any }>();
+    for (const r of pendingRows) m.set(r.tool_use_id, { pending_id: r.id, status: r.status, tool_input: r.tool_input });
+    return m;
+  }, [pendingRows]);
+
+  // Approve / deny pending tool call
+  const [decidingId, setDecidingId] = useState<string | null>(null);
+  const decide = async (pending_id: string, decision: 'approve' | 'deny') => {
+    setDecidingId(pending_id);
+    try {
+      const { data: u } = await supabase.auth.getSession();
+      const resp = await fetch(`${SUPABASE_URL}/functions/v1/zara-tool-approve`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${u.session?.access_token ?? ''}` },
+        body: JSON.stringify({ pending_id, decision }),
+      });
+      const json = await resp.json();
+      if (!resp.ok) throw new Error(json.error || 'Decision failed');
+      toast.success(decision === 'approve' ? 'Action approved and executed' : 'Action denied');
+      qc.invalidateQueries({ queryKey: ['zara-pending-tool-calls', activeId] });
+      qc.invalidateQueries({ queryKey: ['zara-messages', activeId] });
+      qc.invalidateQueries({ queryKey: ['zara-actions-feed'] });
+    } catch (e: any) {
+      toast.error(e.message ?? 'Decision failed');
+    } finally {
+      setDecidingId(null);
+    }
+  };
 
   // Auto-scroll on new content
   useEffect(() => {
@@ -358,6 +473,12 @@ export default function ZaraCockpitPage() {
             setStreamTools((arr) => arr.map((t) => t.id === payload.id
               ? { ...t, status: payload.output?.ok === false ? 'error' : 'done', output: payload.output }
               : t));
+          } else if (ev === 'tool_pending') {
+            setStreamTools((arr) => [...arr, {
+              id: payload.id, name: payload.name, status: 'pending',
+              input: payload.input, pending_id: payload.pending_id,
+            }]);
+            qc.invalidateQueries({ queryKey: ['zara-pending-tool-calls', convId] });
           } else if (ev === 'title') {
             qc.invalidateQueries({ queryKey: ['zara-conversations'] });
           } else if (ev === 'error') {
@@ -393,17 +514,23 @@ export default function ZaraCockpitPage() {
         const toolUses = (m.tool_calls ?? []) as Array<{ id: string; name: string; input: any }>;
         const tools: ToolUiState[] = toolUses.map((tu) => {
           const result = messages.find((x) => x.role === 'tool' && x.tool_call_id === tu.id);
+          const pend = pendingByUseId.get(tu.id);
+          const isPending = pend?.status === 'pending';
+          const isDenied = pend?.status === 'denied';
           return {
             id: tu.id, name: tu.name,
-            status: result ? (result.tool_result?.ok === false ? 'error' : 'done') : 'done',
+            status: isPending ? 'pending'
+              : isDenied ? 'denied'
+              : result ? (result.tool_result?.ok === false ? 'error' : 'done') : 'done',
             input: tu.input, output: result?.tool_result,
+            pending_id: isPending ? pend?.pending_id : undefined,
           };
         });
         out.push({ kind: 'assistant', id: m.id, text: m.content ?? '', tools });
       }
     }
     return out;
-  }, [messages]);
+  }, [messages, pendingByUseId]);
 
   return (
     <div className="flex flex-1 min-h-0 h-full -mx-4 -my-4 bg-background">
@@ -514,13 +641,15 @@ export default function ZaraCockpitPage() {
                   tools={m.tools}
                   messageId={m.kind === 'assistant' ? m.id : null}
                   onFeedback={m.kind === 'assistant' ? (r) => sendFeedback(m.id, r) : undefined}
+                  onDecide={decide}
+                  decidingId={decidingId}
                 />
               </div>
             ))}
 
             {streaming && (
               <div className="group">
-                <MessageBubble role="assistant" text={streamText} tools={streamTools} />
+                <MessageBubble role="assistant" text={streamText} tools={streamTools} onDecide={decide} decidingId={decidingId} />
                 {!streamText && streamTools.length === 0 && (
                   <div className="flex items-center gap-2 text-[12px] text-muted-foreground px-2 pt-1">
                     <Loader2 className="w-3 h-3 animate-spin" /> Thinking…

@@ -6989,6 +6989,69 @@ export type Database = {
         }
         Relationships: []
       }
+      zara_pending_tool_calls: {
+        Row: {
+          conversation_id: string
+          created_at: string
+          decided_at: string | null
+          decided_by: string | null
+          expires_at: string
+          id: string
+          message_id: string | null
+          requested_by: string
+          result: Json | null
+          status: string
+          tool_input: Json
+          tool_name: string
+          tool_use_id: string
+        }
+        Insert: {
+          conversation_id: string
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          expires_at?: string
+          id?: string
+          message_id?: string | null
+          requested_by: string
+          result?: Json | null
+          status?: string
+          tool_input?: Json
+          tool_name: string
+          tool_use_id: string
+        }
+        Update: {
+          conversation_id?: string
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          expires_at?: string
+          id?: string
+          message_id?: string | null
+          requested_by?: string
+          result?: Json | null
+          status?: string
+          tool_input?: Json
+          tool_name?: string
+          tool_use_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "zara_pending_tool_calls_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "zara_conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "zara_pending_tool_calls_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "zara_messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       zara_prompt_evolution: {
         Row: {
           applied_at: string | null
