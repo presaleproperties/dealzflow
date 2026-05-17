@@ -92,8 +92,46 @@ async function runTool(name: string, input: unknown, ctx: ToolCtx) {
   return await res.json();
 }
 
-async function persistAssistantTurn(convId: string, text: string, toolCalls: any[], usage: any, consultedSources?: any) {
+function stripMarkdown(s: string) {
+  return s.replace(/```[\s\S]*?```/g, "")
+    .replace(/`[^`]*`/g, "")
+    .replace(/!\[[^\]]*\]\([^)]+\)/g, "")
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
+    .replace(/[*_#>~]+/g, "")
+    .replace(/\s+/g, " ").trim();
+}
+
+function extractReferencedIds(toolUses: any[], toolResults: Map<string, any>) {
+  const contactIds = new Set<string>();
+  const projectIds = new Set<string>();
+  const scan = (val: any) => {
+    if (!val || typeof val !== "object") return;
+    if (Array.isArray(val)) { for (const v of val) scan(v); return; }
+    for (const [k, v] of Object.entries(val)) {
+      if (typeof v === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v)) {
+        const key = k.toLowerCase();
+        if (key === "contact_id" || key === "id" && /contact|lead/.test(JSON.stringify(val).toLowerCase().slice(0, 200))) contactIds.add(v);
+        if (key === "contact_id") contactIds.add(v);
+        if (key === "project_id" || (key === "id" && val && (val as any).slug && (val as any).name)) projectIds.add(v);
+      } else if (v && typeof v === "object") scan(v);
+    }
+  };
+  for (const tu of toolUses) {
+    const out = toolResults.get(tu.id);
+    if (out) scan(out);
+    if (tu.input) scan(tu.input);
+  }
+  return { contact_ids: Array.from(contactIds), project_ids: Array.from(projectIds) };
+}
+
+async function persistAssistantTurn(convId: string, text: string, toolCalls: any[], usage: any, consultedSources?: any, referencedIds?: { contact_ids: string[]; project_ids: string[] }) {
   const sb = svc();
+  const metadata: any = {};
+  if (consultedSources) metadata.consulted_sources = consultedSources;
+  if (referencedIds && (referencedIds.contact_ids.length || referencedIds.project_ids.length)) {
+    metadata.referenced_contact_ids = referencedIds.contact_ids;
+    metadata.referenced_project_ids = referencedIds.project_ids;
+  }
   const payload: any = {
     conversation_id: convId, role: "assistant",
     content: text || null,
@@ -102,9 +140,17 @@ async function persistAssistantTurn(convId: string, text: string, toolCalls: any
     output_tokens: usage?.output_tokens ?? null,
     model: ANTHROPIC_MODEL,
   };
-  if (consultedSources) payload.metadata = { consulted_sources: consultedSources };
+  if (Object.keys(metadata).length) payload.metadata = metadata;
   const { data, error } = await sb.from("zara_messages").insert(payload).select("id").single();
   if (error) console.error("persist assistant", error);
+  // Update conversation snippet (first 100 chars of stripped markdown)
+  if (text) {
+    const snippet = stripMarkdown(text).slice(0, 100);
+    sb.from("zara_conversations")
+      .update({ last_message_snippet: snippet, last_message_at: new Date().toISOString() })
+      .eq("id", convId)
+      .then(() => {}, () => {});
+  }
   return data?.id ?? null;
 }
 
