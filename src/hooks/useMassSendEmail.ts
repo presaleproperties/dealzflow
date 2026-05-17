@@ -5,6 +5,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { logEngagementEvents } from '@/lib/engagementLog';
 
 export interface MassSendArgs {
   recipient_ids: string[];
@@ -36,6 +37,24 @@ export function useMassSendEmail() {
       if (!data?.job_id) {
         throw new Error(data?.error ?? 'Mass send returned no job id');
       }
+      // Fire-and-forget: one engagement row per recipient sharing the job id
+      // as the campaign reference. Never blocks the send path.
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(data.job_id);
+      void logEngagementEvents(
+        (args.recipient_ids ?? []).map((contactId) => ({
+          contactId,
+          eventType: 'email_sent' as const,
+          source: 'email' as const,
+          direction: 'outbound' as const,
+          campaignId: isUuid ? data.job_id : null,
+          metadata: {
+            job_id: data.job_id,
+            subject: args.subject,
+            char_count: (args.body_html || '').length,
+            bulk: true,
+          },
+        })),
+      );
       return data as MassSendResult;
     },
     onSuccess: (res) => {

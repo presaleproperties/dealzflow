@@ -1,0 +1,1 @@
+ALTER VIEW public.crm_contact_last_touch SET (security_invoker = true);

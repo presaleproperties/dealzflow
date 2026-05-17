@@ -19,6 +19,7 @@ import { useCrmProjects, useCreateCrmProject } from '@/hooks/useCrmProjects';
 import { useCrmLeadTypes, useCreateCrmLeadType } from '@/hooks/useCrmLeadTypes';
 import { useCrmSources } from '@/hooks/useCrmSources';
 import { InlineLibraryPicker } from '@/components/crm/leads/InlineLibraryPicker';
+import { logEngagementEvent, logEngagementEvents } from '@/lib/engagementLog';
 import type { CrmContact } from '@/hooks/useCrmContacts';
 
 interface Props {
@@ -175,6 +176,41 @@ export function EditLeadDetailsSheet({ contact, open, onOpenChange }: Props) {
         updates.status_changed_at = new Date().toISOString();
       }
       await updateContact.mutateAsync({ id: contact.id, updates });
+      // Fire-and-forget engagement diffs.
+      try {
+        const events: Parameters<typeof logEngagementEvents>[0] = [];
+        const prevStage = contact.status ?? null;
+        if (form.status && form.status !== prevStage) {
+          events.push({
+            contactId: contact.id, eventType: 'stage_changed', source: 'crm',
+            metadata: { prev_stage: prevStage, new_stage: form.status, segment_id: form.pipeline_segment_id || null },
+          });
+        }
+        const prevOwner = contact.assigned_to ?? null;
+        const newOwner = form.assigned_to || null;
+        if (newOwner !== prevOwner) {
+          events.push({
+            contactId: contact.id,
+            eventType: prevOwner ? 'lead_reassigned' : 'lead_assigned',
+            source: 'crm',
+            metadata: { prev_owner: prevOwner, new_owner: newOwner },
+          });
+        }
+        const prevTags = new Set((contact.tags ?? []).map((t: string) => t.toLowerCase()));
+        const nextTags = new Set((form.tags ?? []).map((t: string) => t.toLowerCase()));
+        for (const t of form.tags ?? []) {
+          if (!prevTags.has(t.toLowerCase())) {
+            events.push({ contactId: contact.id, eventType: 'tag_added', source: 'crm', metadata: { tag: t } });
+          }
+        }
+        for (const t of contact.tags ?? []) {
+          if (!nextTags.has(t.toLowerCase())) {
+            events.push({ contactId: contact.id, eventType: 'tag_removed', source: 'crm', metadata: { tag: t } });
+          }
+        }
+        if (events.length === 1) void logEngagementEvent(events[0]);
+        else if (events.length > 1) void logEngagementEvents(events);
+      } catch { /* never block save */ }
       toast.success('Lead updated');
       onOpenChange(false);
     } catch (err) {

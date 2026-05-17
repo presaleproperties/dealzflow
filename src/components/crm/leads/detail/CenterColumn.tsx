@@ -9,6 +9,7 @@ import { useCrmEmailLog } from '@/hooks/useCrmEmailLog';
 import { useCrmContactSmsLog, type CrmSmsLogRow } from '@/hooks/useCrmContactSmsLog';
 import { useCrmContactActivityEvents } from '@/hooks/useCrmLeadCommunications';
 import { QuickActionBar } from '@/components/crm/leads/QuickActionBar';
+import { EngagementTimeline } from '@/components/crm/leads/EngagementTimeline';
 import { EmailNoteCard } from '@/components/crm/leads/EmailNoteCard';
 import { EmailPreviewDialog, type EmailLogRow } from '@/components/crm/leads/EmailPreviewDialog';
 import { LeadEmailThreadDialog } from '@/components/crm/leads/LeadEmailThreadDialog';
@@ -345,6 +346,10 @@ export function CenterColumn({ contact, onCall, onText, onEmail, onTask, onShowi
       <TabsContent value="overview" className="flex-1 overflow-y-auto mt-0 px-0 py-2.5 md:p-6 space-y-2.5 md:space-y-5">
         <div className="px-3 md:px-0">
           <QuickActionBar contact={contact} />
+        </div>
+
+        <div className="px-3 md:px-0">
+          <EngagementTimeline contactId={contact.id} />
         </div>
 
         <div className="px-3 md:px-0 space-y-3">

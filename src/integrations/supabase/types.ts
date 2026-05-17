@@ -1950,6 +1950,63 @@ export type Database = {
         }
         Relationships: []
       }
+      crm_engagement_events: {
+        Row: {
+          actor_id: string | null
+          campaign_id: string | null
+          contact_id: string
+          created_at: string
+          direction: string | null
+          event_type: string
+          id: string
+          metadata: Json
+          occurred_at: string
+          source: string
+          thread_id: string | null
+        }
+        Insert: {
+          actor_id?: string | null
+          campaign_id?: string | null
+          contact_id: string
+          created_at?: string
+          direction?: string | null
+          event_type: string
+          id?: string
+          metadata?: Json
+          occurred_at?: string
+          source: string
+          thread_id?: string | null
+        }
+        Update: {
+          actor_id?: string | null
+          campaign_id?: string | null
+          contact_id?: string
+          created_at?: string
+          direction?: string | null
+          event_type?: string
+          id?: string
+          metadata?: Json
+          occurred_at?: string
+          source?: string
+          thread_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_engagement_events_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_engagement_events_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "crm_contacts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       crm_gmail_messages: {
         Row: {
           attachment_meta: Json | null
@@ -6647,6 +6704,24 @@ export type Database = {
       }
     }
     Views: {
+      crm_contact_last_touch: {
+        Row: {
+          contact_id: string | null
+          engagement_signal_count: number | null
+          last_event_at: string | null
+          last_inbound_at: string | null
+          last_outbound_at: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_engagement_events_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "crm_contacts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       crm_potential_duplicates: {
         Row: {
           contact_ids: string[] | null

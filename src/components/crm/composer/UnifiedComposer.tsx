@@ -43,6 +43,7 @@ import type { PickerTemplate } from '@/lib/templatePicker';
 import { uploadSmsMedia } from '@/lib/smsMediaUpload';
 import { useCrmLeadSegments } from '@/hooks/useCrmLeadSegments';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { logEngagementEvent } from '@/lib/engagementLog';
 
 type RecipientTab = 'single' | 'segment' | 'custom';
 
@@ -504,6 +505,21 @@ export function UnifiedComposer() {
         });
         if (error) throw new Error(error.message);
         if ((data as any)?.error) throw new Error((data as any).error);
+        if (leadId) {
+          void logEngagementEvent({
+            contactId: leadId,
+            eventType: 'email_sent',
+            source: 'email',
+            direction: 'outbound',
+            threadId: (data as any)?.thread_id ?? null,
+            metadata: {
+              subject: rendered.subject || subject,
+              template_id: (data as any)?.template_id ?? null,
+              char_count: (html || '').length,
+              scheduled_for: effectiveSendAt,
+            },
+          });
+        }
         toast.success(
           effectiveSendAt
             ? (autoQueued ? 'Email auto-queued for 8am Vancouver' : 'Email scheduled')
@@ -534,6 +550,22 @@ export function UnifiedComposer() {
             },
           });
           if (error) throw error;
+          const segCount = smsSegmentCount(rendered.text).segments;
+          if (leadId) {
+            void logEngagementEvent({
+              contactId: leadId,
+              eventType: 'sms_sent',
+              source: 'sms',
+              direction: 'outbound',
+              metadata: {
+                staged: true,
+                reason,
+                segment_count: segCount,
+                char_count: rendered.text.length,
+                media_count: mediaUrls.length,
+              },
+            });
+          }
           toast.success('Staged for approval', {
             description: 'Admin must approve before delivery.',
           });
@@ -551,6 +583,22 @@ export function UnifiedComposer() {
           });
           if (error) throw new Error(error.message);
           if ((data as any)?.error) throw new Error((data as any).error);
+          if (leadId) {
+            const segCount = smsSegmentCount(rendered.text).segments;
+            void logEngagementEvent({
+              contactId: leadId,
+              eventType: 'sms_sent',
+              source: 'sms',
+              direction: 'outbound',
+              metadata: {
+                staged: false,
+                segment_count: segCount,
+                char_count: rendered.text.length,
+                media_count: mediaUrls.length,
+                scheduled_for: effectiveSendAt,
+              },
+            });
+          }
           toast.success(
             effectiveSendAt
               ? (autoQueued ? 'Text auto-queued for 8am Vancouver' : 'Text scheduled')

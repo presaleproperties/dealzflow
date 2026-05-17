@@ -1,75 +1,104 @@
-# Zara Operations Center v2
+# Engagement Event Log — Single Task Build
 
-This is a large build. Before I start, here's the plan so you can confirm scope and call out any cuts. **Estimated work: 1 migration, 1 data-seed, ~10 new files, edits to 4 edge functions, 1 new edge function, 1 new cron.** I'll deliver in one pass.
+Append-only event log for every meaningful contact touchpoint, plus a timeline widget, a reports surface, and a Zara context endpoint. Send paths must never be blocked by a logging failure.
 
----
+## Tier 1 — Database migration
 
-## 1. Database (single migration)
+Create `public.crm_engagement_events` (append-only):
+- Columns per spec: `id`, `contact_id` → `crm_contacts(id) ON DELETE CASCADE`, `actor_id` → `profiles(id) ON DELETE SET NULL`, `event_type text`, `source text`, `direction text`, `campaign_id` → `crm_campaigns(id) ON DELETE SET NULL`, `thread_id text`, `metadata jsonb`, `occurred_at timestamptz`, `created_at timestamptz`.
+- Indexes:
+  - `(contact_id, occurred_at DESC)`
+  - `(event_type, occurred_at DESC)`
+  - `(campaign_id) WHERE campaign_id IS NOT NULL`
+  - `(actor_id, occurred_at DESC) WHERE actor_id IS NOT NULL`
+- RLS enabled:
+  - SELECT: `authenticated` → `true`
+  - INSERT: `actor_id IS NULL OR actor_id = auth.uid()`
+  - No UPDATE / DELETE policies (append-only).
 
-New tables (all RLS-enabled, admin SELECT + service_role ALL):
-- `crm_zara_insights` — daily AI-generated behavior insights
-- `crm_zara_knowledge_gaps` — auto-captured `{LOOKUP:...}` / FAQ misses
-- `crm_zara_model_calls` — per-call AI usage + cost ledger (indexed `created_at desc`)
-- `zara_system_prompts` — versioned system prompt with `is_active`
-- `crm_zara_playbooks` — trigger_conditions + behavior_sequence
+Create view `public.crm_contact_last_touch`:
+- `contact_id`
+- `last_outbound_at` (max where event_type ∈ email_sent, sms_sent, whatsapp_sent, call_made)
+- `last_inbound_at` (max where event_type ∈ email_replied, sms_replied, whatsapp_replied, call_received, email_opened, email_clicked, whatsapp_read)
+- `last_event_at` (max overall)
+- `engagement_signal_count` (count where event_type ∈ email_opened, email_clicked, whatsapp_read)
+- `GRANT SELECT … TO authenticated`
 
-Schema changes:
-- `crm_zara_drafts.is_training_example bool default false`
-- `zara_org_context.custom_instructions text` (add if column missing)
-- `crm_zara_settings`: `daily_cost_cap_usd numeric default 20`, `auto_pause_on_cost bool default true`
+Pre-check: confirm `public.profiles(id)` and `public.crm_campaigns(id)` exist; if `profiles.id` keys to `user_id`, switch FK target accordingly. Allowed `event_type` values are **not** enforced via DB enum — only via the client helper union type.
 
-Seeds:
-- 5 playbooks (Default New Lead, Hot Lead Fast-Track, VIP Approval, Investor Long-Game, Dormant Re-Engage)
-- 1 active row in `zara_system_prompts` (v1, copied from current planner SYSTEM_PROMPT)
+## Tier 2 — Client helper `src/lib/engagementLog.ts`
 
-## 2. Edge functions
+- Export strongly-typed unions `EngagementEventType` and `EngagementSource`.
+- Export `logEngagementEvent(params)` and `logEngagementEvents(events[])`.
+- `actor_id` pulled from `supabase.auth.getUser()` (null if unauthenticated / edge).
+- Fire-and-forget: full body wrapped in try/catch, never throws, errors → `console.warn('[engagementLog]', …)`.
 
-New: `zara-insight-generator` — daily 7am UTC cron, summarizes 7d audit log via Sonnet 4.6, writes 1–3 rows to `crm_zara_insights`, logs cost.
+## Tier 3 — Wire 5 call sites
 
-Edits (add `crm_zara_model_calls` insert + gap detection):
-- `zara-reply` — log every Anthropic call; insert gap row when FAQ lookup returns null
-- `zara-plan-outbound` — log every AI call; **playbook resolver**: for `zara_state='new'`, pick first matching playbook by priority asc, store `active_playbook_id` + `step_index` in `crm_contacts.metadata`, drive sequence on subsequent ticks; insert gap row on `{LOOKUP:...}` placeholders or null project lookup; inject top-5 most recent `is_training_example=true` drafts as few-shot; append `zara_org_context.custom_instructions` and active `zara_system_prompts.prompt_text`
-- `zara-draft-action` — log model calls if any
+1. **UnifiedComposer** (`src/components/crm/composer/UnifiedComposer.tsx`)
+   - After successful email bridge response → `email_sent` with `{subject, template_id, char_count}`. Single recipient → one event; bulk → `logEngagementEvents` (one row per recipient, shared `campaign_id`).
+   - After insert into `sms_outbound_queue` → `sms_sent` with `{staged:true, segment_count, char_count}`.
 
-New cron: `zara-insight-generator` daily `0 7 * * *` (via `supabase--insert` since URL+anon key are user-specific).
+2. **InboxView** (`src/components/crm/email/InboxView.tsx`)
+   - On first render of an unread inbound message in a thread → `email_replied` with `{from, subject, snippet}`. Debounce per session via `useRef<Set<string>>`.
 
-## 3. Frontend — Sidebar shell + 7 pages
+3. **LeadsTable** (`src/components/crm/leads/LeadsTable.tsx`) + `EditLeadDetailsSheet.tsx` for the save path
+   - Pipeline stage change (drag-drop OR edit save) → `stage_changed` `{prev_stage, new_stage}`.
+   - Tag add/remove → `tag_added` / `tag_removed` `{tag}`.
+   - Assignment change → `lead_assigned` (first assignment) / `lead_reassigned` `{prev_owner, new_owner}`.
+   - Do **not** log on row-action icon clicks (composer covers those).
 
-New shell: `src/pages/admin/ZaraLayout.tsx` with left sidebar (Overview, Drafts, Jobs, Behavior, Gaps, Models & Cost, Training, Lead Assignment Designer, Settings). Mounts at `/admin/zara/*`. Mobile: collapses to icon rail.
+4. **Scheduler edge functions** — `supabase/functions/scheduler-send-emails` and `supabase/functions/scheduler-reminders`
+   - Service-role client. After each successful send, insert one row per recipient: `actor_id` null, `source: 'scheduler'`, `event_type: 'email_sent'`, `campaign_id` when known. Try/catch swallow.
 
-Routes (existing routes for `/admin/zara`, `/admin/zara/drafts`, `/admin/zara/settings` rewired through the layout, content untouched):
+5. **Notes / Tasks / Bookings**
+   - Note create → `note_added` source `'crm'` `{note_id, snippet}` in `useCrmNotes` mutation success.
+   - Task create / complete → `task_added` / `task_completed` `{task_id, title}` in task mutation hooks.
+   - Booking create → `booking_created` `{event_name, scheduled_at}` (manual path + Calendly/scheduler webhook insertion point).
 
-- **Overview** `/admin/zara` (replaces current landing)
-  - Stat cards: Edge Functions deployed (hardcoded list count), Tables (count of `crm_zara_*`), Last Cron Tick, 7-day uptime %, Kill Switch toggle, Behavior Score (computed client-side from RPC)
-  - `zara_state` distribution donut (recharts)
-  - "What I built recently" feed from `crm_audit_log`
-  - "Run planner now" button (top right)
-  - "Quick Test Lead" modal button (creates lead with tag `zara:test`, immediately triggers planner)
-- **Jobs** `/admin/zara/jobs` — 6 job cards (Inbound Classifier, FAQ Instant Reply, Outbound Planner, Cold Drafter, Hot Drafter, Escalator) with counts 1d/7d/30d, last-5 examples table, Run-now button
-- **Behavior** `/admin/zara/behavior` — 4 recharts (state donut, decision-to-send funnel, approval breakdown bars, response latency lines) + insights list from `crm_zara_insights`
-- **Gaps** `/admin/zara/gaps` — Biggest Gap card (auto-detect), Knowledge Gaps table + Behavior Gaps table (categorized approval rates)
-- **Models & Cost** `/admin/zara/cost` — 4 stat cards, stacked bar (Sonnet/Haiku/Voyage/other), per-function table (calls, total, avg, p95), budget alarm input + auto-pause toggle bound to `crm_zara_settings`
-- **Training** `/admin/zara/training` — 4 sections: System Prompt Editor (markdown + version save/activate + line diff), Training Examples table, Custom Instructions textarea, Prompt Version History table
-- **Lead Assignment Designer** `/admin/zara/playbooks` — list view with priority/active/triggered/edit/dupe/delete, click → two-pane editor (Trigger Conditions form + sortable Behavior Sequence with edit-step modal)
+## Tier 4 — Engagement timeline widget
 
-All pages use existing Card / Table / Badge primitives + Plus Jakarta Sans.
+- New component `src/components/crm/leads/EngagementTimeline.tsx`.
+- Query: `select * from crm_engagement_events where contact_id = $id order by occurred_at desc limit 50` (react-query, key `['engagement-events', contactId]`).
+- Row UI: Tabler outline icon by event type (mail / message / brand-whatsapp / phone / tag / arrow-right / calendar-event / user), sentence-case label, relative time, source pill, optional snippet line.
+- Mounted in `CenterColumn` (lead detail) beside existing activity timeline. Invalidated after composer send success.
 
-## 4. Wiring confirmations (will verify before completion)
+## Tier 5 — Reports surface
 
-- `crm_zara_model_calls` written by zara-reply, zara-plan-outbound, zara-draft-action, zara-insight-generator
-- Knowledge gaps inserted on `{LOOKUP:...}` placeholders + null FAQ/project lookups
-- 5 default playbooks seeded
-- Playbook resolver active in `zara-plan-outbound`
-- `zara-insight-generator` cron registered
+- Add route `/crm/reports/engagement` (sub-route or tab inside `CrmReportsPage`).
+- Three cards, each clickable → leads list filtered by the matching id set:
+  1. **Cold leads** — `last_inbound_at IS NULL AND last_outbound_at < now() - interval '7 days'`.
+  2. **High-engagement** — `engagement_signal_count >= 3` in last 14 days (compute via direct query on events table since the view is all-time).
+  3. **Reply latency (median)** — median minutes between matched `email_sent` → next `email_replied` per contact, last 30 days. Compute client-side from a single ordered fetch (≤ a few thousand rows).
 
-## 5. Scope notes / likely deviations
+## Tier 6 — Zara handoff
 
-- **Edge Functions count** will be a hardcoded list (no Supabase mgmt API in edge runtime); easy to extend.
-- **Cost numbers** are computed from logged token counts × hardcoded model rate cards (Sonnet 4.6, Haiku 4.5, Voyage). Rate-card constants live in one file.
-- **Behavior Score** computed in a Postgres function `crm_zara_behavior_score()` returning a single int — Overview just reads it.
-- **Diff view** in Training is line-based (not token-level); good enough for prompt review.
-- **Sample screenshots** at the end will be Lovable preview links rather than uploaded PNGs (faster, you can click through).
-- **`zara-bridge-healthcheck`** — you mentioned "if not already there"; I'll skip creating it unless you confirm you want it (the uptime % already comes from cron-tick audit rows). If you want it, say so and I'll add it as a 5-minute cron that pings the bridge and writes a `zara.tick.healthcheck` audit row.
-- I will **not** touch the existing kill switch, 24h stats, activity feed, escalation rail, training stats panel, assigned-leads queue, drafts inbox, or settings page — they get re-mounted inside the new sidebar shell unchanged.
+- `src/lib/zaraContext.ts` → `getZaraContext(contactId)` returns `{contact, lastTouch, recentEvents}` (recentEvents = last 20).
+- New edge function `supabase/functions/get-zara-context/index.ts` — same payload via service-role; CORS + JWT verification per project rules; deployed automatically.
 
-Reply **go** to ship, or call out cuts/changes.
+## Acceptance (12/12)
+
+1. Migration applied — table + view exist.
+2. `bun run build` succeeds.
+3. Single email send → 1 `email_sent` row with correct `actor_id`.
+4. 5-recipient campaign → 5 rows, same `campaign_id`.
+5. Staged SMS (kill switch ON) → 1 `sms_sent` row with `metadata.staged = true`.
+6. Pipeline drag-drop → 1 `stage_changed` row with prev/new.
+7. Tag add → 1 `tag_added` row with `{tag}`.
+8. Lead detail renders Engagement timeline section.
+9. `/crm/reports/engagement` shows 3 cards with non-null counts.
+10. `get-zara-context` returns JSON with contact + last touch + 20 events.
+11. No send path broken by failed insert (verified by swapping in a deny-all policy locally).
+12. No console errors in prod build.
+
+## Preserved / out-of-scope
+
+Templates, segments, pipelines, kill switch, composer UI, inbox layout, existing activity timeline are untouched. SMS still routes through `sms_outbound_queue` (staged). OpenPhone webhook for `sms_delivered` is deferred. Logging is strictly fire-and-forget.
+
+## Execution order
+
+1. Run migration (single SQL via `supabase--migration`).
+2. Write helper + edge function in parallel with file edits.
+3. Wire call sites (composer, inbox, leads table, edit sheet, notes/tasks/bookings, scheduler fns).
+4. Add timeline widget + reports tab.
+5. Build, then run acceptance checks.

@@ -11,6 +11,7 @@ import { useUpdateCrmContact } from '@/hooks/useCrmLeadDetail';
 import { startInAppCall } from '@/hooks/useDialer';
 import { useCrmTags } from '@/hooks/useCrmTags';
 import { useActivePipelineFor, useSetContactPipeline, useUnifiedPipelines } from '@/hooks/useUnifiedPipelines';
+import { logEngagementEvent } from '@/lib/engagementLog';
 import { useColumnWidths, useColumnResizer } from '@/hooks/useColumnWidths';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -151,10 +152,16 @@ function InlineTagsCell({
     // canonical crm_tags library, making it instantly reusable everywhere.
     if (exists) {
       updateContact.mutate({ id: contact.id, updates: { tags: next }, oldValues: { tags } });
+      void logEngagementEvent({
+        contactId: contact.id, eventType: 'tag_removed', source: 'crm', metadata: { tag: value },
+      });
       return;
     }
 
     addTags.mutate({ ids: [contact.id], tags: [value], silent: true });
+    void logEngagementEvent({
+      contactId: contact.id, eventType: 'tag_added', source: 'crm', metadata: { tag: value },
+    });
   };
 
   const trimmed = search.trim();
@@ -367,7 +374,14 @@ function InlineStatusCell({ contact }: { contact: CrmContact }) {
   const onPick = (segId: string) => {
     const seg = pipelineSegments.find(s => s.id === segId);
     if (!seg) return;
+    const prevName = activeSeg?.name ?? contact.status ?? null;
     setPipeline.mutate({ contact, segment: seg });
+    void logEngagementEvent({
+      contactId: contact.id,
+      eventType: 'stage_changed',
+      source: 'crm',
+      metadata: { prev_stage: prevName, new_stage: seg.name, segment_id: seg.id },
+    });
     toast.success(`Pipeline → ${seg.name}`);
   };
 
@@ -407,7 +421,14 @@ function InlineAgentCell({ contact, updateContact }: { contact: CrmContact; upda
       <Select
         value={contact.assigned_to ?? ''}
         onValueChange={v => {
-          updateContact.mutate({ id: contact.id, updates: { assigned_to: v }, oldValues: { assigned_to: contact.assigned_to } });
+          const prev = contact.assigned_to ?? null;
+          updateContact.mutate({ id: contact.id, updates: { assigned_to: v }, oldValues: { assigned_to: prev } });
+          void logEngagementEvent({
+            contactId: contact.id,
+            eventType: prev ? 'lead_reassigned' : 'lead_assigned',
+            source: 'crm',
+            metadata: { prev_owner: prev, new_owner: v },
+          });
           toast.success(`Assigned → ${v}`);
         }}
       >
