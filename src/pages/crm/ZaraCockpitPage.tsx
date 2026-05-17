@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -12,6 +12,7 @@ import remarkGfm from 'remark-gfm';
 import {
   Plus, Pin, Search, Send, Mic, MicOff, Sparkles, Inbox, ChevronRight,
   Activity as ActivityIcon, ThumbsUp, ThumbsDown, Wrench, Loader2, ChevronDown,
+  Building2, Brain,
 } from 'lucide-react';
 import { usePushToTalk } from '@/hooks/usePushToTalk';
 
@@ -207,12 +208,24 @@ export default function ZaraCockpitPage() {
   const scrollerRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
 
+  const [searchParams, setSearchParams] = useSearchParams();
+
   useEffect(() => {
     inputRef.current?.focus();
     const handler = () => inputRef.current?.focus();
     window.addEventListener('zara:focus-input', handler);
     return () => window.removeEventListener('zara:focus-input', handler);
   }, []);
+
+  // Accept ?prompt= handoffs from the project catalog / self-awareness pages.
+  useEffect(() => {
+    const p = searchParams.get('prompt');
+    if (p) {
+      setInput(p);
+      setSearchParams({}, { replace: true });
+      setTimeout(() => inputRef.current?.focus(), 0);
+    }
+  }, [searchParams, setSearchParams]);
 
   const { data: settings } = useQuery({
     queryKey: ['zara-settings'],
@@ -585,6 +598,14 @@ export default function ZaraCockpitPage() {
               {pendingCount > 0 && <Pill size="sm" tone="warning">{pendingCount}</Pill>}
               <ChevronRight className="w-3 h-3 text-muted-foreground" />
             </span>
+          </Link>
+          <Link to="/crm/zara/projects" className="flex items-center justify-between text-[12px] px-2 py-1.5 rounded-md hover:bg-muted/60 transition-colors">
+            <span className="flex items-center gap-1.5"><Building2 className="w-3.5 h-3.5" />Project catalog</span>
+            <ChevronRight className="w-3 h-3 text-muted-foreground" />
+          </Link>
+          <Link to="/crm/zara/training" className="flex items-center justify-between text-[12px] px-2 py-1.5 rounded-md hover:bg-muted/60 transition-colors">
+            <span className="flex items-center gap-1.5"><Brain className="w-3.5 h-3.5" />Self-awareness</span>
+            <ChevronRight className="w-3 h-3 text-muted-foreground" />
           </Link>
           <Link to="/crm/settings#zara" className="flex items-center justify-between text-[12px] px-2 py-1.5 rounded-md hover:bg-muted/60 transition-colors">
             <span>Mode</span>
