@@ -784,20 +784,61 @@ export default function ZaraCockpitPage() {
                 disabled={streaming}
                 className="flex-1 resize-none bg-transparent outline-none text-[14px] px-2 py-1.5 min-h-[28px] max-h-[200px] disabled:opacity-60"
               />
-              <button
-                type="button"
-                title={ptt.state === 'recording' ? 'Release to send' : 'Hold to talk'}
-                onMouseDown={(e) => { e.preventDefault(); ptt.start(); }}
-                onMouseUp={(e) => { e.preventDefault(); ptt.stop(); }}
-                onMouseLeave={() => { if (ptt.state === 'recording') ptt.stop(); }}
-                onTouchStart={(e) => { e.preventDefault(); ptt.start(); }}
-                onTouchEnd={(e) => { e.preventDefault(); ptt.stop(); }}
-                disabled={streaming || ptt.state === 'transcribing'}
-                className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors disabled:opacity-40 ${
-                  ptt.state === 'recording'
-                    ? 'bg-destructive text-destructive-foreground animate-pulse'
-                    : ptt.state === 'transcribing'
-                    ? 'bg-muted text-muted-foreground'
+              <div className="relative">
+                {ptt.state === 'recording' && (
+                  <div className="absolute -top-9 left-1/2 -translate-x-1/2 px-2 py-1 rounded-md bg-foreground text-background text-[10.5px] whitespace-nowrap shadow-sm pointer-events-none">
+                    Swipe up / Esc to cancel
+                  </div>
+                )}
+                <button
+                  type="button"
+                  title={ptt.state === 'recording' ? 'Release to send · swipe up to cancel' : 'Hold to talk'}
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    pttStartYRef.current = e.clientY;
+                    pttCancelArmedRef.current = false;
+                    ptt.start();
+                  }}
+                  onMouseMove={(e) => {
+                    if (ptt.state !== 'recording' || pttStartYRef.current == null) return;
+                    pttCancelArmedRef.current = pttStartYRef.current - e.clientY > 60;
+                  }}
+                  onMouseUp={(e) => {
+                    e.preventDefault();
+                    if (pttCancelArmedRef.current) ptt.cancel(); else ptt.stop();
+                    pttStartYRef.current = null;
+                    pttCancelArmedRef.current = false;
+                  }}
+                  onMouseLeave={() => {
+                    if (ptt.state === 'recording') {
+                      if (pttCancelArmedRef.current) ptt.cancel(); else ptt.stop();
+                    }
+                    pttStartYRef.current = null;
+                    pttCancelArmedRef.current = false;
+                  }}
+                  onTouchStart={(e) => {
+                    e.preventDefault();
+                    pttStartYRef.current = e.touches[0]?.clientY ?? null;
+                    pttCancelArmedRef.current = false;
+                    ptt.start();
+                  }}
+                  onTouchMove={(e) => {
+                    if (ptt.state !== 'recording' || pttStartYRef.current == null) return;
+                    const y = e.touches[0]?.clientY ?? pttStartYRef.current;
+                    pttCancelArmedRef.current = pttStartYRef.current - y > 60;
+                  }}
+                  onTouchEnd={(e) => {
+                    e.preventDefault();
+                    if (pttCancelArmedRef.current) ptt.cancel(); else ptt.stop();
+                    pttStartYRef.current = null;
+                    pttCancelArmedRef.current = false;
+                  }}
+                  disabled={streaming || ptt.state === 'transcribing'}
+                  className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors disabled:opacity-40 ${
+                    ptt.state === 'recording'
+                      ? (pttCancelArmedRef.current ? 'bg-muted text-muted-foreground' : 'bg-destructive text-destructive-foreground animate-pulse')
+                      : ptt.state === 'transcribing'
+                      ? 'bg-muted text-muted-foreground'
                     : 'text-muted-foreground hover:bg-muted/60'
                 }`}
               >
