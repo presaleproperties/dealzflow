@@ -31,6 +31,7 @@ type StoredMsg = {
   tool_name: string | null;
   tool_result: any | null;
   created_at: string;
+  metadata?: any;
 };
 
 type ToolUiState = {
