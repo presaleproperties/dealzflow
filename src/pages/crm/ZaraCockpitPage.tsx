@@ -10,9 +10,10 @@ import { formatDistanceToNow } from 'date-fns';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import {
-  Plus, Pin, Search, Send, Mic, Sparkles, Inbox, ChevronRight,
+  Plus, Pin, Search, Send, Mic, MicOff, Sparkles, Inbox, ChevronRight,
   Activity as ActivityIcon, ThumbsUp, ThumbsDown, Wrench, Loader2, ChevronDown,
 } from 'lucide-react';
+import { usePushToTalk } from '@/hooks/usePushToTalk';
 
 type Conv = {
   id: string; title: string; pinned: boolean; archived: boolean;
