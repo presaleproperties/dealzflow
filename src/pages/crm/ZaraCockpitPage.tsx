@@ -635,13 +635,12 @@ export default function ZaraCockpitPage() {
 
   // Build the rendered message list grouping assistant text + adjacent tool rows
   const rendered = useMemo(() => {
-    const out: Array<{ kind: 'user' | 'assistant'; id: string; text: string; tools: ToolUiState[] }> = [];
+    const out: Array<{ kind: 'user' | 'assistant'; id: string; text: string; tools: ToolUiState[]; sources?: any }> = [];
     for (let i = 0; i < messages.length; i++) {
       const m = messages[i];
       if (m.role === 'user') {
         out.push({ kind: 'user', id: m.id, text: m.content ?? '', tools: [] });
       } else if (m.role === 'assistant') {
-        // Collect tool results that immediately follow assistant's tool_calls
         const toolUses = (m.tool_calls ?? []) as Array<{ id: string; name: string; input: any }>;
         const tools: ToolUiState[] = toolUses.map((tu) => {
           const result = messages.find((x) => x.role === 'tool' && x.tool_call_id === tu.id);
@@ -657,7 +656,8 @@ export default function ZaraCockpitPage() {
             pending_id: isPending ? pend?.pending_id : undefined,
           };
         });
-        out.push({ kind: 'assistant', id: m.id, text: m.content ?? '', tools });
+        const sources = (m as any).metadata?.consulted_sources ?? null;
+        out.push({ kind: 'assistant', id: m.id, text: m.content ?? '', tools, sources });
       }
     }
     return out;
