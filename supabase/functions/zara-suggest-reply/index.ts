@@ -319,7 +319,7 @@ Draft Zara's reply now. Return ONLY the JSON object.`;
         contact_id: contactId,
         event_type: 'zara_handoff',
         source: 'zara',
-        metadata: { draft_id: draft.id, intent: parsed.intent, confidence: parsed.confidence, guardrails_hit, latency_ms },
+        metadata: { draft_id: draft.id, intent: parsed.intent, confidence: parsed.confidence, guardrails_hit, latency_ms: totalLatency, rag_projects: ragProjects },
       })
       .then(() => {});
 
