@@ -275,6 +275,7 @@ function MessageBubble({
 
 export default function ZaraCockpitPage() {
   const qc = useQueryClient();
+  const { pinnedId } = useZaraPin();
   const [activeId, setActiveId] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [input, setInput] = useState('');
@@ -285,6 +286,7 @@ export default function ZaraCockpitPage() {
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const scrollerRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
+  const inputWrapRef = useRef<HTMLDivElement>(null);
 
   const [searchParams, setSearchParams] = useSearchParams();
 
