@@ -79,6 +79,8 @@ Deno.serve(async (req) => {
   if (!settings?.enabled) {
     return json({ ok: false, reason: 'kill_switch_off' });
   }
+  const { data: modeSettings } = await admin.from('zara_settings').select('mode').eq('id', 1).maybeSingle();
+  const sandboxMode = modeSettings?.mode === 'sandbox';
 
   // Workspace pending cap
   const { data: pendingCount } = await admin.rpc('crm_zara_pending_drafts_count');
