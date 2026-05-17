@@ -1002,6 +1002,28 @@ export default function CrmLeadsPage() {
           {/* Conversion funnel + untouched alert — temporarily hidden, may bring back later */}
           {/* <ConversionFunnelBanner /> */}
 
+          {/* Engagement-report drill-in chip */}
+          {engagementFilterKey && (
+            <div className="flex items-center gap-2 px-1">
+              <span className="inline-flex items-center gap-1.5 text-[12px] font-medium rounded-full bg-primary/15 text-primary px-2.5 py-1">
+                {ENGAGEMENT_FILTER_LABELS[engagementFilterKey]}
+                {engagementLoading && <span className="opacity-60">…</span>}
+                <button
+                  type="button"
+                  onClick={() => {
+                    const next = new URLSearchParams(searchParams);
+                    next.delete('filter');
+                    setSearchParams(next, { replace: true });
+                  }}
+                  className="opacity-70 hover:opacity-100"
+                  aria-label="Clear engagement filter"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </span>
+            </div>
+          )}
+
           {/* Filter pills */}
           <ActiveFilterPills filters={filterPills} onClear={clearFilter} onClearAll={clearAllFilters} />
 
