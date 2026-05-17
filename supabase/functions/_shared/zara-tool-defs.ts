@@ -103,6 +103,7 @@ export const ZARA_TOOLS: ZaraTool[] = [
       properties: { contact_id: { type: "string" }, note: { type: "string" } },
       required: ["contact_id", "note"],
     },
+    needs_approval: true,
   },
   {
     name: "add_lead_tag",
@@ -112,6 +113,7 @@ export const ZARA_TOOLS: ZaraTool[] = [
       properties: { contact_id: { type: "string" }, tag: { type: "string" } },
       required: ["contact_id", "tag"],
     },
+    needs_approval: true,
   },
   {
     name: "set_lead_status",
@@ -122,6 +124,7 @@ export const ZARA_TOOLS: ZaraTool[] = [
       properties: { contact_id: { type: "string" }, status: { type: "string" } },
       required: ["contact_id", "status"],
     },
+    needs_approval: true,
   },
   {
     name: "schedule_follow_up",
@@ -136,6 +139,7 @@ export const ZARA_TOOLS: ZaraTool[] = [
       },
       required: ["contact_id", "due_at"],
     },
+    needs_approval: true,
   },
   {
     name: "list_pending_drafts",
