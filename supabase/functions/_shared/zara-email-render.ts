@@ -127,15 +127,14 @@ export async function getZaraEmailPrefs(sb: SB): Promise<{
   fallback_template_id: string | null;
 }> {
   try {
-    const { data } = await sb.from("crm_settings")
-      .select("key, value")
-      .in("key", ["zara.email.use_template_scaffold", "zara.email.append_signature", "zara.email.fallback_template_id"]);
-    const map = new Map<string, any>();
-    (data ?? []).forEach((r: any) => map.set(r.key, r.value));
+    const { data } = await sb.from("zara_settings")
+      .select("email_use_template_scaffold, email_append_signature, email_fallback_template_id")
+      .eq("id", 1).maybeSingle();
+    const c = (data as any) ?? {};
     return {
-      use_scaffold: map.get("zara.email.use_template_scaffold") !== false,
-      append_signature: map.get("zara.email.append_signature") !== false,
-      fallback_template_id: (map.get("zara.email.fallback_template_id") as string) ?? null,
+      use_scaffold: c.email_use_template_scaffold !== false,
+      append_signature: c.email_append_signature !== false,
+      fallback_template_id: c.email_fallback_template_id ?? null,
     };
   } catch (_) {
     return { use_scaffold: true, append_signature: true, fallback_template_id: null };
