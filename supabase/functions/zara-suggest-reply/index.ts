@@ -69,6 +69,16 @@ Deno.serve(async (req) => {
     // hallucinating. Failures are non-fatal — drafts still work without RAG.
     let ragContext = "";
     let ragProjects: Array<{ name: string; similarity: number }> = [];
+    let citations: Array<{
+      n: number;
+      name: string;
+      source: string;
+      id: string | null;
+      slug: string | null;
+      city: string | null;
+      neighborhood: string | null;
+      similarity: number;
+    }> = [];
     try {
       const ragQuery = [
         contact.project_interest ?? "",
