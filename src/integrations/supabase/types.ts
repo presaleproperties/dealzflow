@@ -7408,6 +7408,7 @@ export type Database = {
           approved_by: string | null
           assigned_to: string | null
           channel: string
+          citations: Json
           confidence: number | null
           consulted_sources: Json
           contact_id: string
@@ -7443,6 +7444,7 @@ export type Database = {
           approved_by?: string | null
           assigned_to?: string | null
           channel: string
+          citations?: Json
           confidence?: number | null
           consulted_sources?: Json
           contact_id: string
@@ -7478,6 +7480,7 @@ export type Database = {
           approved_by?: string | null
           assigned_to?: string | null
           channel?: string
+          citations?: Json
           confidence?: number | null
           consulted_sources?: Json
           contact_id?: string
