@@ -91,18 +91,98 @@ async function runTool(name: string, input: unknown, ctx: ToolCtx) {
   return await res.json();
 }
 
-async function persistAssistantTurn(convId: string, text: string, toolCalls: any[], usage: any) {
+async function persistAssistantTurn(convId: string, text: string, toolCalls: any[], usage: any, consultedSources?: any) {
   const sb = svc();
-  const { data, error } = await sb.from("zara_messages").insert({
+  const payload: any = {
     conversation_id: convId, role: "assistant",
     content: text || null,
     tool_calls: toolCalls.length ? toolCalls : null,
     input_tokens: usage?.input_tokens ?? null,
     output_tokens: usage?.output_tokens ?? null,
     model: ANTHROPIC_MODEL,
-  }).select("id").single();
+  };
+  if (consultedSources) payload.metadata = { consulted_sources: consultedSources };
+  const { data, error } = await sb.from("zara_messages").insert(payload).select("id").single();
   if (error) console.error("persist assistant", error);
   return data?.id ?? null;
+}
+
+// ── RAG retrieval ─────────────────────────────────────────────────────
+async function embedQuery(text: string): Promise<number[] | null> {
+  if (!OPENAI_API_KEY) return null;
+  try {
+    const r = await fetch("https://api.openai.com/v1/embeddings", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${OPENAI_API_KEY}` },
+      body: JSON.stringify({ model: "text-embedding-3-small", input: text.slice(0, 8000) }),
+    });
+    if (!r.ok) { console.warn("embed query failed", r.status, await r.text()); return null; }
+    const j = await r.json();
+    return j?.data?.[0]?.embedding ?? null;
+  } catch (e) { console.warn("embed query error", e); return null; }
+}
+
+async function retrieveContext(userText: string) {
+  const empty = { block: "", sources: { chunks: [], wins: [], projects: [], market: [] } };
+  const emb = await embedQuery(userText);
+  if (!emb) return empty;
+  const sb = svc();
+  const [chunkRes, winRes, projRes, marketRes] = await Promise.all([
+    sb.rpc("zara_match_knowledge_chunks", { query_embedding: emb as any, match_threshold: RAG_CHUNK_THRESHOLD, match_count: RAG_CHUNK_COUNT }),
+    sb.rpc("zara_match_winning_conversations", { query_embedding: emb as any, match_threshold: RAG_WIN_THRESHOLD, match_count: RAG_WIN_COUNT }),
+    sb.rpc("zara_match_project_deep_dives", { query_embedding: emb as any, match_threshold: RAG_PROJECT_THRESHOLD, match_count: RAG_PROJECT_COUNT }),
+    sb.from("market_intel").select("id,week_of,headline,summary").order("week_of", { ascending: false }).limit(2),
+  ]);
+  const chunks = (chunkRes.data ?? []) as any[];
+  const wins = (winRes.data ?? []) as any[];
+  const projects = (projRes.data ?? []) as any[];
+  const market = (marketRes.data ?? []) as any[];
+
+  if (!chunks.length && !wins.length && !projects.length && !market.length) return empty;
+
+  // Bump retrieval counts (best-effort)
+  const docIds = Array.from(new Set(chunks.map((c) => c.document_id).filter(Boolean)));
+  if (docIds.length) sb.rpc("zara_bump_retrieval_counts", { doc_ids: docIds }).then(() => {}, () => {});
+
+  const parts: string[] = [];
+  parts.push("<retrieved_context>");
+  parts.push("The following passages were retrieved from Uzair's playbooks, past wins, and project notes. Ground your draft in them. Cite naturally when they directly inform the answer — do not invent facts.");
+  if (chunks.length) {
+    parts.push("\n## Playbook & knowledge\n");
+    chunks.forEach((c, i) => {
+      const t = c.metadata?.title ? ` — ${c.metadata.title}` : "";
+      parts.push(`[K${i + 1}${t}] ${String(c.content).slice(0, 900)}`);
+    });
+  }
+  if (wins.length) {
+    parts.push("\n## Past winning conversations\n");
+    wins.forEach((w, i) => {
+      parts.push(`[W${i + 1}] Profile: ${w.lead_profile ?? "?"}\nSituation: ${w.initial_situation ?? "?"}\nTurning message: ${w.turning_message ?? "?"}\nWhy it worked: ${w.why_it_worked ?? "?"}\nOutcome: ${w.outcome ?? "?"}`);
+    });
+  }
+  if (projects.length) {
+    parts.push("\n## Project deep-dives\n");
+    projects.forEach((p, i) => {
+      parts.push(`[P${i + 1}] ${p.name}${p.city ? ` (${p.city})` : ""}\nPitch: ${p.uzair_pitch ?? "?"}\nObjections: ${(p.common_objections ?? []).join("; ") || "—"}\nCaveats: ${p.honest_caveats ?? "—"}`);
+    });
+  }
+  if (market.length) {
+    parts.push("\n## Recent market intel\n");
+    market.forEach((m, i) => {
+      parts.push(`[M${i + 1}] ${m.week_of}: ${m.headline ?? ""}\n${m.summary ?? ""}`);
+    });
+  }
+  parts.push("</retrieved_context>");
+
+  return {
+    block: parts.join("\n"),
+    sources: {
+      chunks: chunks.map((c) => ({ id: c.id, document_id: c.document_id, title: c.metadata?.title ?? null, similarity: c.similarity })),
+      wins: wins.map((w) => ({ id: w.id, profile: w.lead_profile, similarity: w.similarity })),
+      projects: projects.map((p) => ({ id: p.id, name: p.name, city: p.city, similarity: p.similarity })),
+      market: market.map((m) => ({ id: m.id, week_of: m.week_of, headline: m.headline })),
+    },
+  };
 }
 
 async function persistToolResult(convId: string, tool_call_id: string, name: string, result: unknown) {
