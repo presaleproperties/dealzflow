@@ -348,6 +348,10 @@ export function CenterColumn({ contact, onCall, onText, onEmail, onTask, onShowi
           <QuickActionBar contact={contact} />
         </div>
 
+        <div className="px-3 md:px-0">
+          <EngagementTimeline contactId={contact.id} />
+        </div>
+
         <div className="px-3 md:px-0 space-y-3">
           {/* Toolbar: filter pills */}
           <div className="flex items-center gap-1.5 flex-wrap">
