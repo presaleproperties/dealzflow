@@ -8396,11 +8396,19 @@ export type Database = {
         }
         Returns: undefined
       }
+      zara_build_project_deep_dive_text: {
+        Args: { _project_id: string }
+        Returns: string
+      }
       zara_bump_retrieval_counts: {
         Args: { doc_ids: string[] }
         Returns: undefined
       }
       zara_can_send_to: { Args: { _contact_id: string }; Returns: Json }
+      zara_enqueue_project_embeddings: {
+        Args: { _force?: boolean }
+        Returns: number
+      }
       zara_match_knowledge_chunks: {
         Args: {
           match_count?: number
@@ -8430,6 +8438,30 @@ export type Database = {
           name: string
           similarity: number
           uzair_pitch: string
+        }[]
+      }
+      zara_match_projects: {
+        Args: {
+          city_filter?: string
+          match_count?: number
+          query_embedding: string
+        }
+        Returns: {
+          city: string
+          common_objections: string[]
+          completion_year: number
+          developer: string
+          honest_caveats: string
+          id: string
+          name: string
+          neighborhood: string
+          price_range_high: number
+          price_range_low: number
+          similarity: number
+          slug: string
+          status: string
+          uzair_pitch: string
+          who_this_fits: string
         }[]
       }
       zara_match_winning_conversations: {
