@@ -2953,6 +2953,8 @@ export type Database = {
           color: string | null
           completion_date: string | null
           created_at: string
+          deep_dive_embedding: string | null
+          deep_dive_updated_at: string | null
           developer: string | null
           floor_plans_filename: string | null
           floor_plans_url: string | null
@@ -2988,6 +2990,8 @@ export type Database = {
           color?: string | null
           completion_date?: string | null
           created_at?: string
+          deep_dive_embedding?: string | null
+          deep_dive_updated_at?: string | null
           developer?: string | null
           floor_plans_filename?: string | null
           floor_plans_url?: string | null
@@ -3023,6 +3027,8 @@ export type Database = {
           color?: string | null
           completion_date?: string | null
           created_at?: string
+          deep_dive_embedding?: string | null
+          deep_dive_updated_at?: string | null
           developer?: string | null
           floor_plans_filename?: string | null
           floor_plans_url?: string | null
@@ -8396,6 +8402,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      zara_build_crm_project_deep_dive_text: {
+        Args: { _project_id: string }
+        Returns: string
+      }
       zara_build_project_deep_dive_text: {
         Args: { _project_id: string }
         Returns: string
@@ -8459,6 +8469,7 @@ export type Database = {
           price_range_low: number
           similarity: number
           slug: string
+          source: string
           status: string
           uzair_pitch: string
           who_this_fits: string
