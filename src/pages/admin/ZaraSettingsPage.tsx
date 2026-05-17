@@ -81,6 +81,9 @@ export default function ZaraSettingsPage() {
           workspace_daily_cap: settings.workspace_daily_cap,
           model_classify: settings.model_classify,
           model_draft: settings.model_draft,
+          autonomous_outbound: settings.autonomous_outbound,
+          auto_showcase_triggers: settings.auto_showcase_triggers ?? [],
+          auto_showcase_count: settings.auto_showcase_count ?? 3,
         })
         .eq('id', 1);
       if (e1) throw e1;
