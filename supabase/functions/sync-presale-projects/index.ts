@@ -7,6 +7,7 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { presaleBridge } from "../_shared/presale-bridge.ts";
+import { coalesce, firstString, pickFloorPlansUrl, pickHero } from "./helpers.ts";
 
 const cors = {
   "Access-Control-Allow-Origin": "*",
@@ -133,31 +134,8 @@ Deno.serve(async (req) => {
   // ---------- UPSERT ----------
   let inserted = 0, updated = 0, skipped = 0;
 
-  // Helpers
-  const firstString = (...vals: unknown[]): string | null => {
-    for (const v of vals) {
-      if (typeof v === "string" && v.trim()) return v.trim();
-    }
-    return null;
-  };
-  const pickFloorPlansUrl = (full: any): string | null => {
-    const fp = full?.floor_plans ?? full?.floorPlans;
-    if (!fp) return null;
-    if (typeof fp === "string" && fp.trim()) return fp.trim();
-    if (Array.isArray(fp)) {
-      for (const item of fp) {
-        const u = firstString(item?.url, item?.pdf_url, item?.file_url, item?.href, item?.src);
-        if (u) return u;
-      }
-    }
-    return null;
-  };
-  const pickHero = (full: any, summary: BridgeProject): string | null =>
-    firstString(
-      full?.hero_image_url, full?.heroImageUrl, full?.featured_image,
-      full?.thumbnail_url, full?.image_url, full?.cover_url,
-      summary.featured_image, (summary as any).hero_image_url, (summary as any).image_url,
-    );
+  // Helpers imported from ./helpers.ts (coalesce, firstString, pickFloorPlansUrl, pickHero).
+
 
   for (const p of bySlug.values()) {
     const slug = (p.slug ?? p.project_slug ?? "").trim();
@@ -201,9 +179,7 @@ Deno.serve(async (req) => {
     const incomingDescription = firstString(full?.description, (full as any)?.overview, (full as any)?.summary);
     const incomingBedrooms = firstString((full as any)?.bedrooms_offered, (full as any)?.bedrooms);
 
-    // COALESCE: never overwrite an existing non-null value with NULL or with a freshly-null incoming value.
-    const coalesce = <T,>(existingVal: T | null | undefined, incoming: T | null | undefined): T | null =>
-      (existingVal ?? incoming ?? null) as T | null;
+    // COALESCE imported from ./helpers.ts — preserves existing non-null values.
 
     const payload: Record<string, unknown> = {
       name,
