@@ -133,14 +133,14 @@ async function confirm_update_lead(args: any, ctx: Ctx) {
   return ok({ contact_id: p.contact_id, applied: p.patch });
 }
 
-async function draft_email(args: any, _ctx: Ctx) {
+async function draft_email(args: any, ctx: Ctx) {
   if (!args.contact_id) return fail("contact_id required");
   const sb = svc();
   // Per-contact zara_enabled gate
-  const { data: c } = await sb.from("crm_contacts").select("zara_enabled").eq("id", args.contact_id).maybeSingle();
-  if (c && c.zara_enabled === false) return fail("Zara is disabled for this contact — drafts blocked.");
+  const { data: c } = await sb.from("crm_contacts").select("zara_enabled,status,language,first_name,last_name").eq("id", args.contact_id).maybeSingle();
+  if (c && (c as any).zara_enabled === false) return fail("Zara is disabled for this contact — drafts blocked.");
   const now = new Date().toISOString();
-  const { data, error } = await sb.from("zara_suggested_replies").insert({
+  const payload: Record<string, unknown> = {
     contact_id: args.contact_id,
     channel: "email",
     draft_subject: args.subject ?? null,
@@ -149,9 +149,37 @@ async function draft_email(args: any, _ctx: Ctx) {
     inbound_at: now,
     intent: args.purpose ?? null,
     status: "pending",
-  }).select("id").single();
+  };
+  if ((ctx as any).consulted_sources) payload.consulted_sources = (ctx as any).consulted_sources;
+  const { data, error } = await sb.from("zara_suggested_replies").insert(payload).select("id").single();
   if (error) return fail(error.message);
-  return ok({ draft_id: data.id, preview: String(args.body).slice(0, 200) });
+
+  // Tier 6 — auto-suggest a relevant template (best-effort, never blocks).
+  let suggestion: { id: string; name: string; subject?: string } | null = null;
+  try {
+    const { data: tpls } = await sb.from("crm_email_templates")
+      .select("id, name, subject, category, is_active")
+      .eq("is_active", true).limit(50);
+    const pool = (tpls ?? []) as any[];
+    const status = String((c as any)?.status ?? "").toLowerCase();
+    const lang = String((c as any)?.language ?? "en").toLowerCase();
+    const ranked = pool.map((t) => {
+      let score = 0;
+      const hay = `${t.name ?? ""} ${t.category ?? ""}`.toLowerCase();
+      if (status && hay.includes(status)) score += 2;
+      if (lang && lang !== "en" && hay.includes(lang)) score += 3;
+      if (args.purpose && hay.includes(String(args.purpose).toLowerCase().slice(0, 12))) score += 2;
+      return { t, score };
+    }).filter((r) => r.score > 0).sort((a, b) => b.score - a.score);
+    if (ranked[0]) suggestion = { id: ranked[0].t.id, name: ranked[0].t.name, subject: ranked[0].t.subject };
+  } catch (_) { /* ignore */ }
+
+  return ok({
+    draft_id: data.id,
+    preview: String(args.body).slice(0, 200),
+    template_suggestion: suggestion,
+    note: suggestion ? `Consider using template: ${suggestion.name}` : undefined,
+  });
 }
 
 async function draft_sms(args: any, ctx: Ctx) {
