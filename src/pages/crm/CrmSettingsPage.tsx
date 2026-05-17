@@ -280,7 +280,7 @@ export default function CrmSettingsPage() {
           {activeTab === 'leadflow'      && <SectionErrorBoundary name="Lead Flow"><LeadFlowSection /></SectionErrorBoundary>}
           {activeTab === 'sources'       && <SectionErrorBoundary name="Source Library"><SourceManagerSection /></SectionErrorBoundary>}
           {activeTab === 'plan'          && <SectionErrorBoundary name="Plan & Billing"><PlanBillingSection /></SectionErrorBoundary>}
-          {activeTab === 'zara'          && <SectionErrorBoundary name="Zara AI"><ZaraModeSection /></SectionErrorBoundary>}
+          {activeTab === 'zara'          && <SectionErrorBoundary name="Zara AI"><div className="space-y-6"><ZaraModeSection /><ZaraEmailBehaviorSection /></div></SectionErrorBoundary>}
         </div>
       </div>
     </div>
