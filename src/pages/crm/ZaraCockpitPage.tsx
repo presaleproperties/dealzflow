@@ -473,6 +473,12 @@ export default function ZaraCockpitPage() {
             setStreamTools((arr) => arr.map((t) => t.id === payload.id
               ? { ...t, status: payload.output?.ok === false ? 'error' : 'done', output: payload.output }
               : t));
+          } else if (ev === 'tool_pending') {
+            setStreamTools((arr) => [...arr, {
+              id: payload.id, name: payload.name, status: 'pending',
+              input: payload.input, pending_id: payload.pending_id,
+            }]);
+            qc.invalidateQueries({ queryKey: ['zara-pending-tool-calls', convId] });
           } else if (ev === 'title') {
             qc.invalidateQueries({ queryKey: ['zara-conversations'] });
           } else if (ev === 'error') {
