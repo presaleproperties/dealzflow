@@ -228,4 +228,55 @@ export const ZARA_TOOLS: ZaraTool[] = [
       required: ["contact_id"],
     },
   },
+
+  // ── RAG tools (Zara Brain) ────────────────────────────────────────────
+  {
+    name: "search_knowledge",
+    description:
+      "Explicit semantic search across Uzair's knowledge base (playbooks, scripts, FAQs, brand voice). Use when the user asks 'what do my playbooks say about…' or to ground a draft in stored material.",
+    input_schema: {
+      type: "object",
+      properties: {
+        query: { type: "string" },
+        top_k: { type: "number", description: "Default 5, max 10" },
+        type: { type: "string", description: "Optional filter: playbook | script | faq | brand_voice | project_brief | market_intel | training_note" },
+      },
+      required: ["query"],
+    },
+  },
+  {
+    name: "get_winning_pattern",
+    description:
+      "Find the top winning conversations that match a scenario (lead profile, situation, objection). Returns initial situation, turning message, and why it worked. Use when the user asks 'show me how I closed cold investor leads' or before drafting a reply that needs a proven pattern.",
+    input_schema: {
+      type: "object",
+      properties: { scenario: { type: "string" } },
+      required: ["scenario"],
+    },
+  },
+  {
+    name: "get_project_deep_dive",
+    description:
+      "Pull Uzair's deep-dive notes for a project (uzair_pitch, common_objections, honest_caveats, who_this_fits, mortgage_broker_note). Use BEFORE pitching a project — always cite caveats first.",
+    input_schema: {
+      type: "object",
+      properties: {
+        project_slug: { type: "string" },
+        project_id: { type: "string" },
+      },
+    },
+  },
+  {
+    name: "get_market_context",
+    description:
+      "Return the most recent market_intel rows (REBGV-style stats) for an area or building type, ordered by week. Use for grounding any market claim in actual data.",
+    input_schema: {
+      type: "object",
+      properties: {
+        area: { type: "string" },
+        building_type: { type: "string" },
+        weeks_back: { type: "number", description: "Default 4" },
+      },
+    },
+  },
 ];

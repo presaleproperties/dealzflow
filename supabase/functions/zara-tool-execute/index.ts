@@ -319,6 +319,80 @@ async function show_engagement_score(args: any) {
   return ok({ score, tier, recent_events: events ?? [] });
 }
 
+// ── RAG tools (Zara Brain) ─────────────────────────────────────────────
+
+async function embedQuery(text: string): Promise<number[] | null> {
+  try {
+    const r = await fetch(`${FUNCTIONS_BASE}/zara-embed`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${SERVICE_ROLE}` },
+      body: JSON.stringify({ texts: [text] }),
+    });
+    const j = await r.json();
+    if (!r.ok) return null;
+    return (j.embeddings?.[0] as number[]) ?? null;
+  } catch { return null; }
+}
+
+async function search_knowledge(args: any) {
+  if (!args?.query) return fail("query required");
+  const emb = await embedQuery(String(args.query));
+  if (!emb) return fail("embedding unavailable (check OPENAI_API_KEY)");
+  const sb = svc();
+  const top_k = Math.min(Math.max(Number(args.top_k ?? 5), 1), 10);
+  const { data, error } = await sb.rpc("zara_match_knowledge_chunks", {
+    query_embedding: emb as any, match_threshold: 0.4, match_count: top_k * 2,
+  });
+  if (error) return fail(error.message);
+  let rows = data ?? [];
+  if (args.type) {
+    rows = rows.filter((r: any) => r?.metadata?.source_type === args.type);
+  }
+  rows = rows.slice(0, top_k);
+  // Bump retrieval counters
+  const docIds = Array.from(new Set(rows.map((r: any) => r.document_id))).filter(Boolean);
+  if (docIds.length) await sb.rpc("zara_bump_retrieval_counts", { doc_ids: docIds as any });
+  return ok({ results: rows, count: rows.length });
+}
+
+async function get_winning_pattern(args: any) {
+  if (!args?.scenario) return fail("scenario required");
+  const emb = await embedQuery(String(args.scenario));
+  if (!emb) return fail("embedding unavailable (check OPENAI_API_KEY)");
+  const sb = svc();
+  const { data, error } = await sb.rpc("zara_match_winning_conversations", {
+    query_embedding: emb as any, match_threshold: 0.45, match_count: 3,
+  });
+  if (error) return fail(error.message);
+  return ok({ patterns: data ?? [], count: (data ?? []).length });
+}
+
+async function get_project_deep_dive(args: any) {
+  const sb = svc();
+  let q = sb.from("presale_projects")
+    .select("id, slug, name, city, uzair_pitch, common_objections, honest_caveats, who_this_fits, who_this_doesnt_fit, mortgage_broker_note, deep_dive_updated_at");
+  if (args?.project_slug) q = q.eq("slug", args.project_slug);
+  else if (args?.project_id) q = q.eq("id", args.project_id);
+  else return fail("project_slug or project_id required");
+  const { data, error } = await q.maybeSingle();
+  if (error) return fail(error.message);
+  if (!data) return fail("project not found");
+  return ok({ project: data });
+}
+
+async function get_market_context(args: any) {
+  const sb = svc();
+  const weeksBack = Math.min(Math.max(Number(args?.weeks_back ?? 4), 1), 52);
+  const since = new Date(Date.now() - weeksBack * 7 * 24 * 3600 * 1000).toISOString().slice(0, 10);
+  let q = sb.from("market_intel").select("week_starting, area, building_type, metric, value, source, notes")
+    .gte("week_starting", since).order("week_starting", { ascending: false }).limit(40);
+  if (args?.area) q = q.ilike("area", `%${args.area}%`);
+  if (args?.building_type) q = q.ilike("building_type", `%${args.building_type}%`);
+  const { data, error } = await q;
+  if (error) return fail(error.message);
+  return ok({ rows: data ?? [], count: (data ?? []).length, weeks_back: weeksBack });
+}
+
 // ── Dispatch ───────────────────────────────────────────────────────────
 
 const REGISTRY: Record<string, (args: any, ctx: Ctx) => Promise<unknown>> = {
@@ -327,6 +401,8 @@ const REGISTRY: Record<string, (args: any, ctx: Ctx) => Promise<unknown>> = {
   schedule_follow_up, list_pending_drafts, approve_draft, send_briefing_summary,
   list_projects, project_details, recommend_projects_for_lead, web_research,
   log_training_feedback, show_engagement_score,
+  // RAG
+  search_knowledge, get_winning_pattern, get_project_deep_dive, get_market_context,
 };
 
 Deno.serve(async (req) => {
