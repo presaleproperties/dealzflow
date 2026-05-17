@@ -2,18 +2,20 @@
 // recent approval decisions, training feedback, and lets you review/apply
 // auto-generated prompt evolution suggestions that get appended as system
 // prompt addenda used on the next chat turn.
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Pill } from '@/components/crm/shared/Pill';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import { formatDistanceToNow } from 'date-fns';
 import {
   ArrowLeft, Sparkles, Wrench, ShieldCheck, ShieldAlert, Brain, ThumbsUp,
   ThumbsDown, GraduationCap, CheckCircle2, XCircle, Loader2, Building2,
-  Activity as ActivityIcon,
+  Activity as ActivityIcon, BookOpen, Plus, Trash2, RefreshCw, AlertCircle,
 } from 'lucide-react';
 
 // Mirrors supabase/functions/_shared/zara-tool-defs.ts — kept in sync manually.
@@ -103,6 +105,102 @@ export default function ZaraTrainingPage() {
       if (error) throw error;
       return data ?? [];
     },
+  });
+
+  // ── Knowledge base (RAG corpus) ───────────────────────────────
+  const { data: kbDocs = [] } = useQuery({
+    queryKey: ['zara-kb-documents'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('zara_knowledge_documents')
+        .select('id,title,source_type,status,total_chunks,total_tokens,error_message,retrieval_count,indexed_at,uploaded_at')
+        .order('uploaded_at', { ascending: false })
+        .limit(100);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  const { data: kbStats } = useQuery({
+    queryKey: ['zara-kb-stats'],
+    queryFn: async () => {
+      const [docs, chunks, wins] = await Promise.all([
+        supabase.from('zara_knowledge_documents').select('id,status', { count: 'exact', head: false }),
+        supabase.from('zara_knowledge_chunks').select('id', { count: 'exact', head: true }),
+        supabase.from('zara_winning_conversations').select('id', { count: 'exact', head: true }),
+      ]);
+      const indexed = (docs.data ?? []).filter((d: any) => d.status === 'indexed').length;
+      const failed = (docs.data ?? []).filter((d: any) => d.status === 'failed').length;
+      return {
+        totalDocs: docs.data?.length ?? 0,
+        indexed,
+        failed,
+        chunks: chunks.count ?? 0,
+        wins: wins.count ?? 0,
+      };
+    },
+  });
+
+  const [kbTitle, setKbTitle] = useState('');
+  const [kbType, setKbType] = useState<'playbook' | 'script' | 'faq' | 'note'>('playbook');
+  const [kbContent, setKbContent] = useState('');
+
+  const addKb = useMutation({
+    mutationFn: async () => {
+      if (!kbTitle.trim() || !kbContent.trim()) throw new Error('Title and content required');
+      const { data: u } = await supabase.auth.getUser();
+      const { data: doc, error } = await supabase
+        .from('zara_knowledge_documents')
+        .insert({
+          title: kbTitle.trim(),
+          source_type: kbType,
+          raw_content: kbContent,
+          status: 'pending',
+          uploaded_by: u.user?.id ?? null,
+        })
+        .select('id')
+        .single();
+      if (error) throw error;
+      const { error: invErr } = await supabase.functions.invoke('zara-ingest-document', {
+        body: { documentId: doc.id },
+      });
+      if (invErr) throw invErr;
+      return doc.id;
+    },
+    onSuccess: () => {
+      toast.success('Indexed. Zara will use it on the next turn.');
+      setKbTitle(''); setKbContent('');
+      qc.invalidateQueries({ queryKey: ['zara-kb-documents'] });
+      qc.invalidateQueries({ queryKey: ['zara-kb-stats'] });
+    },
+    onError: (e: any) => toast.error(e.message ?? 'Could not index'),
+  });
+
+  const reindexKb = useMutation({
+    mutationFn: async (id: string) => {
+      await supabase.from('zara_knowledge_documents').update({ status: 'pending', error_message: null }).eq('id', id);
+      const { error } = await supabase.functions.invoke('zara-ingest-document', { body: { documentId: id } });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success('Re-indexed');
+      qc.invalidateQueries({ queryKey: ['zara-kb-documents'] });
+      qc.invalidateQueries({ queryKey: ['zara-kb-stats'] });
+    },
+    onError: (e: any) => toast.error(e.message ?? 'Re-index failed'),
+  });
+
+  const deleteKb = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('zara_knowledge_documents').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success('Deleted');
+      qc.invalidateQueries({ queryKey: ['zara-kb-documents'] });
+      qc.invalidateQueries({ queryKey: ['zara-kb-stats'] });
+    },
+    onError: (e: any) => toast.error(e.message ?? 'Delete failed'),
   });
 
   const decisionStats = useMemo(() => {
@@ -222,7 +320,139 @@ export default function ZaraTrainingPage() {
           />
         </section>
 
-        {/* Capabilities */}
+        {/* Zara Brain — knowledge base */}
+        <section>
+          <SectionHeader
+            title="Zara Brain — knowledge base"
+            subtitle="Playbooks, scripts, FAQs, and notes Zara retrieves from on every reply. Embeddings via OpenAI text-embedding-3-small."
+          />
+
+          {/* KB stats */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 mb-3">
+            <StatCard
+              icon={<BookOpen className="w-3.5 h-3.5" />}
+              label="Documents"
+              value={String(kbStats?.totalDocs ?? 0)}
+              sub={`${kbStats?.indexed ?? 0} indexed · ${kbStats?.failed ?? 0} failed`}
+            />
+            <StatCard
+              icon={<Brain className="w-3.5 h-3.5" />}
+              label="Chunks indexed"
+              value={String(kbStats?.chunks ?? 0)}
+              sub="≈400 tokens each, 50-token overlap"
+            />
+            <StatCard
+              icon={<Sparkles className="w-3.5 h-3.5" />}
+              label="Winning conversations"
+              value={String(kbStats?.wins ?? 0)}
+              sub="closed-deal patterns Zara mirrors"
+            />
+            <StatCard
+              icon={<ActivityIcon className="w-3.5 h-3.5" />}
+              label="Coverage"
+              value={kbStats && kbStats.indexed > 0 ? 'Active' : 'Empty'}
+              sub={kbStats && kbStats.indexed === 0 ? 'Add a document below to start grounding' : 'Zara grounds every reply in your corpus'}
+            />
+          </div>
+
+          {/* Add document */}
+          <div className="rounded-lg border border-border/60 bg-card p-3 mb-3">
+            <div className="text-[11.5px] uppercase tracking-wider text-muted-foreground font-semibold mb-2">Add document</div>
+            <div className="grid grid-cols-1 md:grid-cols-[1fr_140px] gap-2 mb-2">
+              <Input
+                value={kbTitle}
+                onChange={(e) => setKbTitle(e.target.value)}
+                placeholder="e.g. Surrey presale objection handling"
+                className="h-9 text-[13px]"
+              />
+              <select
+                value={kbType}
+                onChange={(e) => setKbType(e.target.value as any)}
+                className="h-9 px-3 rounded-md border border-input bg-background text-[13px]"
+              >
+                <option value="playbook">Playbook</option>
+                <option value="script">Script</option>
+                <option value="faq">FAQ</option>
+                <option value="note">Note</option>
+              </select>
+            </div>
+            <Textarea
+              value={kbContent}
+              onChange={(e) => setKbContent(e.target.value)}
+              placeholder="Paste the playbook, script, or notes. Markdown is fine. Will be chunked at ~400 tokens with 50-token overlap."
+              className="text-[13px] min-h-[140px] mb-2"
+            />
+            <div className="flex items-center justify-between gap-2">
+              <div className="text-[10.5px] text-muted-foreground">
+                {kbContent.length.toLocaleString()} chars · ~{Math.ceil(kbContent.length / 4).toLocaleString()} tokens
+              </div>
+              <Button
+                size="sm"
+                disabled={addKb.isPending || !kbTitle.trim() || !kbContent.trim()}
+                onClick={() => addKb.mutate()}
+                className="bg-primary text-primary-foreground hover:bg-primary/90"
+              >
+                {addKb.isPending ? <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" /> : <Plus className="w-3.5 h-3.5 mr-1" />}
+                Index document
+              </Button>
+            </div>
+          </div>
+
+          {/* Document list */}
+          {kbDocs.length === 0 ? (
+            <EmptyCard>No documents yet. Add Uzair's playbooks, objection scripts, or project FAQs to ground every reply.</EmptyCard>
+          ) : (
+            <div className="rounded-lg border border-border/60 bg-card divide-y divide-border/60">
+              {kbDocs.map((d: any) => {
+                const tone =
+                  d.status === 'indexed' ? 'success'
+                  : d.status === 'failed' ? 'danger'
+                  : d.status === 'embedding' || d.status === 'chunking' || d.status === 'pending' ? 'warning'
+                  : 'neutral';
+                const busy = reindexKb.isPending || deleteKb.isPending;
+                return (
+                  <div key={d.id} className="px-3 py-2.5 flex items-start gap-2 text-[12px]">
+                    <BookOpen className="w-3.5 h-3.5 text-muted-foreground mt-0.5 shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap mb-0.5">
+                        <span className="font-medium truncate max-w-[300px]">{d.title}</span>
+                        <Pill size="sm" tone={tone as any}>{d.status}</Pill>
+                        <Pill size="sm" tone="neutral">{d.source_type}</Pill>
+                        {d.retrieval_count > 0 && (
+                          <span className="text-[10.5px] text-muted-foreground">retrieved {d.retrieval_count}×</span>
+                        )}
+                      </div>
+                      <div className="text-[10.5px] text-muted-foreground">
+                        {d.total_chunks ?? 0} chunks · {(d.total_tokens ?? 0).toLocaleString()} tokens · {formatDistanceToNow(new Date(d.uploaded_at), { addSuffix: true })}
+                      </div>
+                      {d.error_message && (
+                        <div className="text-[11px] text-destructive mt-1 flex items-start gap-1">
+                          <AlertCircle className="w-3 h-3 mt-0.5 shrink-0" />
+                          <span>{d.error_message}</span>
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <Button size="sm" variant="ghost" disabled={busy} onClick={() => reindexKb.mutate(d.id)} title="Re-index">
+                        <RefreshCw className="w-3.5 h-3.5" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        disabled={busy}
+                        onClick={() => { if (confirm(`Delete "${d.title}"? Chunks will be removed.`)) deleteKb.mutate(d.id); }}
+                        title="Delete"
+                      >
+                        <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </section>
+
         <section>
           <SectionHeader
             title="What Zara can do"

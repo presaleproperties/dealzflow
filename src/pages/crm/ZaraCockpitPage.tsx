@@ -31,6 +31,7 @@ type StoredMsg = {
   tool_name: string | null;
   tool_result: any | null;
   created_at: string;
+  metadata?: any;
 };
 
 type ToolUiState = {
@@ -150,8 +151,75 @@ function ToolPill({ tool, onDecide, deciding }: {
   );
 }
 
+function SourcesPill({ sources }: { sources: any }) {
+  const [open, setOpen] = useState(false);
+  const counts = {
+    k: sources?.chunks?.length ?? 0,
+    w: sources?.wins?.length ?? 0,
+    p: sources?.projects?.length ?? 0,
+    m: sources?.market?.length ?? 0,
+  };
+  const total = counts.k + counts.w + counts.p + counts.m;
+  if (!total) return null;
+  return (
+    <div className="mt-1">
+      <button
+        onClick={() => setOpen((o) => !o)}
+        className="inline-flex items-center gap-1.5 text-[10.5px] uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors"
+        title="Knowledge sources Zara consulted for this reply"
+      >
+        <Brain className="w-3 h-3 text-primary" />
+        Consulted {total} source{total === 1 ? '' : 's'}
+        <ChevronDown className={`w-3 h-3 transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+      {open && (
+        <div className="mt-1 rounded-md border border-border/60 bg-card p-2 text-[11px] space-y-1.5">
+          {counts.k > 0 && (
+            <div>
+              <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-0.5">Playbook · {counts.k}</div>
+              {sources.chunks.map((c: any, i: number) => (
+                <div key={c.id ?? i} className="text-foreground/80 truncate">
+                  K{i + 1} · {c.title ?? 'Untitled'} · <span className="text-muted-foreground tabular-nums">{(c.similarity * 100).toFixed(0)}%</span>
+                </div>
+              ))}
+            </div>
+          )}
+          {counts.w > 0 && (
+            <div>
+              <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-0.5">Past wins · {counts.w}</div>
+              {sources.wins.map((w: any, i: number) => (
+                <div key={w.id ?? i} className="text-foreground/80 truncate">
+                  W{i + 1} · {w.profile ?? '—'} · <span className="text-muted-foreground tabular-nums">{(w.similarity * 100).toFixed(0)}%</span>
+                </div>
+              ))}
+            </div>
+          )}
+          {counts.p > 0 && (
+            <div>
+              <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-0.5">Projects · {counts.p}</div>
+              {sources.projects.map((p: any, i: number) => (
+                <div key={p.id ?? i} className="text-foreground/80 truncate">
+                  P{i + 1} · {p.name}{p.city ? ` (${p.city})` : ''} · <span className="text-muted-foreground tabular-nums">{(p.similarity * 100).toFixed(0)}%</span>
+                </div>
+              ))}
+            </div>
+          )}
+          {counts.m > 0 && (
+            <div>
+              <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-0.5">Market intel · {counts.m}</div>
+              {sources.market.map((m: any, i: number) => (
+                <div key={m.id ?? i} className="text-foreground/80 truncate">M{i + 1} · {m.week_of} · {m.headline ?? ''}</div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function MessageBubble({
-  role, text, tools, onFeedback, messageId, onDecide, decidingId,
+  role, text, tools, onFeedback, messageId, onDecide, decidingId, sources,
 }: {
   role: 'user' | 'assistant';
   text: string;
@@ -160,6 +228,7 @@ function MessageBubble({
   messageId?: string | null;
   onDecide?: (pending_id: string, decision: 'approve' | 'deny') => void;
   decidingId?: string | null;
+  sources?: any;
 }) {
   if (role === 'user') {
     return (
@@ -186,6 +255,7 @@ function MessageBubble({
             <ReactMarkdown remarkPlugins={[remarkGfm]}>{text}</ReactMarkdown>
           </div>
         )}
+        {sources && <SourcesPill sources={sources} />}
         {messageId && onFeedback && text && (
           <div className="flex items-center gap-1 px-1 pt-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
             <button onClick={() => onFeedback('up')} className="p-1 rounded hover:bg-muted/60" title="Helpful"><ThumbsUp className="w-3 h-3 text-muted-foreground" /></button>
@@ -205,6 +275,7 @@ export default function ZaraCockpitPage() {
   const [streaming, setStreaming] = useState(false);
   const [streamText, setStreamText] = useState('');
   const [streamTools, setStreamTools] = useState<ToolUiState[]>([]);
+  const [streamSources, setStreamSources] = useState<any>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const scrollerRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
@@ -277,7 +348,7 @@ export default function ZaraCockpitPage() {
       if (!activeId) return [];
       const { data } = await supabase
         .from('zara_messages')
-        .select('id,role,content,tool_calls,tool_call_id,tool_name,tool_result,created_at')
+        .select('id,role,content,tool_calls,tool_call_id,tool_name,tool_result,created_at,metadata')
         .eq('conversation_id', activeId)
         .order('created_at', { ascending: true });
       return (data as StoredMsg[]) ?? [];
@@ -480,6 +551,7 @@ export default function ZaraCockpitPage() {
     setStreaming(true);
     setStreamText('');
     setStreamTools([]);
+    setStreamSources(null);
 
     const { data: sess } = await supabase.auth.getSession();
     const token = sess.session?.access_token;
@@ -535,6 +607,10 @@ export default function ZaraCockpitPage() {
             qc.invalidateQueries({ queryKey: ['zara-pending-tool-calls', convId] });
           } else if (ev === 'title') {
             qc.invalidateQueries({ queryKey: ['zara-conversations'] });
+          } else if (ev === 'sources') {
+            setStreamSources(payload);
+          } else if (ev === 'warning') {
+            toast.warning(payload.message ?? 'Zara warning');
           } else if (ev === 'error') {
             toast.error(payload.message ?? 'Stream error');
           } else if (ev === 'done') {
@@ -549,6 +625,7 @@ export default function ZaraCockpitPage() {
       setStreaming(false);
       setStreamText('');
       setStreamTools([]);
+      setStreamSources(null);
       abortRef.current = null;
       qc.invalidateQueries({ queryKey: ['zara-messages', convId] });
       qc.invalidateQueries({ queryKey: ['zara-actions-feed'] });
@@ -558,13 +635,12 @@ export default function ZaraCockpitPage() {
 
   // Build the rendered message list grouping assistant text + adjacent tool rows
   const rendered = useMemo(() => {
-    const out: Array<{ kind: 'user' | 'assistant'; id: string; text: string; tools: ToolUiState[] }> = [];
+    const out: Array<{ kind: 'user' | 'assistant'; id: string; text: string; tools: ToolUiState[]; sources?: any }> = [];
     for (let i = 0; i < messages.length; i++) {
       const m = messages[i];
       if (m.role === 'user') {
         out.push({ kind: 'user', id: m.id, text: m.content ?? '', tools: [] });
       } else if (m.role === 'assistant') {
-        // Collect tool results that immediately follow assistant's tool_calls
         const toolUses = (m.tool_calls ?? []) as Array<{ id: string; name: string; input: any }>;
         const tools: ToolUiState[] = toolUses.map((tu) => {
           const result = messages.find((x) => x.role === 'tool' && x.tool_call_id === tu.id);
@@ -580,7 +656,8 @@ export default function ZaraCockpitPage() {
             pending_id: isPending ? pend?.pending_id : undefined,
           };
         });
-        out.push({ kind: 'assistant', id: m.id, text: m.content ?? '', tools });
+        const sources = (m as any).metadata?.consulted_sources ?? null;
+        out.push({ kind: 'assistant', id: m.id, text: m.content ?? '', tools, sources });
       }
     }
     return out;
@@ -701,6 +778,7 @@ export default function ZaraCockpitPage() {
                   role={m.kind}
                   text={m.text}
                   tools={m.tools}
+                  sources={(m as any).sources}
                   messageId={m.kind === 'assistant' ? m.id : null}
                   onFeedback={m.kind === 'assistant' ? (r) => sendFeedback(m.id, r) : undefined}
                   onDecide={decide}
@@ -711,7 +789,7 @@ export default function ZaraCockpitPage() {
 
             {streaming && (
               <div className="group">
-                <MessageBubble role="assistant" text={streamText} tools={streamTools} onDecide={decide} decidingId={decidingId} />
+                <MessageBubble role="assistant" text={streamText} tools={streamTools} sources={streamSources} onDecide={decide} decidingId={decidingId} />
                 {!streamText && streamTools.length === 0 && (
                   <div className="flex items-center gap-2 text-[12px] text-muted-foreground px-2 pt-1">
                     <Loader2 className="w-3 h-3 animate-spin" /> Thinking…
