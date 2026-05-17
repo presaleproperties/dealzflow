@@ -151,8 +151,75 @@ function ToolPill({ tool, onDecide, deciding }: {
   );
 }
 
+function SourcesPill({ sources }: { sources: any }) {
+  const [open, setOpen] = useState(false);
+  const counts = {
+    k: sources?.chunks?.length ?? 0,
+    w: sources?.wins?.length ?? 0,
+    p: sources?.projects?.length ?? 0,
+    m: sources?.market?.length ?? 0,
+  };
+  const total = counts.k + counts.w + counts.p + counts.m;
+  if (!total) return null;
+  return (
+    <div className="mt-1">
+      <button
+        onClick={() => setOpen((o) => !o)}
+        className="inline-flex items-center gap-1.5 text-[10.5px] uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors"
+        title="Knowledge sources Zara consulted for this reply"
+      >
+        <Brain className="w-3 h-3 text-primary" />
+        Consulted {total} source{total === 1 ? '' : 's'}
+        <ChevronDown className={`w-3 h-3 transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+      {open && (
+        <div className="mt-1 rounded-md border border-border/60 bg-card p-2 text-[11px] space-y-1.5">
+          {counts.k > 0 && (
+            <div>
+              <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-0.5">Playbook · {counts.k}</div>
+              {sources.chunks.map((c: any, i: number) => (
+                <div key={c.id ?? i} className="text-foreground/80 truncate">
+                  K{i + 1} · {c.title ?? 'Untitled'} · <span className="text-muted-foreground tabular-nums">{(c.similarity * 100).toFixed(0)}%</span>
+                </div>
+              ))}
+            </div>
+          )}
+          {counts.w > 0 && (
+            <div>
+              <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-0.5">Past wins · {counts.w}</div>
+              {sources.wins.map((w: any, i: number) => (
+                <div key={w.id ?? i} className="text-foreground/80 truncate">
+                  W{i + 1} · {w.profile ?? '—'} · <span className="text-muted-foreground tabular-nums">{(w.similarity * 100).toFixed(0)}%</span>
+                </div>
+              ))}
+            </div>
+          )}
+          {counts.p > 0 && (
+            <div>
+              <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-0.5">Projects · {counts.p}</div>
+              {sources.projects.map((p: any, i: number) => (
+                <div key={p.id ?? i} className="text-foreground/80 truncate">
+                  P{i + 1} · {p.name}{p.city ? ` (${p.city})` : ''} · <span className="text-muted-foreground tabular-nums">{(p.similarity * 100).toFixed(0)}%</span>
+                </div>
+              ))}
+            </div>
+          )}
+          {counts.m > 0 && (
+            <div>
+              <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-0.5">Market intel · {counts.m}</div>
+              {sources.market.map((m: any, i: number) => (
+                <div key={m.id ?? i} className="text-foreground/80 truncate">M{i + 1} · {m.week_of} · {m.headline ?? ''}</div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function MessageBubble({
-  role, text, tools, onFeedback, messageId, onDecide, decidingId,
+  role, text, tools, onFeedback, messageId, onDecide, decidingId, sources,
 }: {
   role: 'user' | 'assistant';
   text: string;
@@ -161,6 +228,7 @@ function MessageBubble({
   messageId?: string | null;
   onDecide?: (pending_id: string, decision: 'approve' | 'deny') => void;
   decidingId?: string | null;
+  sources?: any;
 }) {
   if (role === 'user') {
     return (
@@ -187,6 +255,7 @@ function MessageBubble({
             <ReactMarkdown remarkPlugins={[remarkGfm]}>{text}</ReactMarkdown>
           </div>
         )}
+        {sources && <SourcesPill sources={sources} />}
         {messageId && onFeedback && text && (
           <div className="flex items-center gap-1 px-1 pt-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
             <button onClick={() => onFeedback('up')} className="p-1 rounded hover:bg-muted/60" title="Helpful"><ThumbsUp className="w-3 h-3 text-muted-foreground" /></button>
