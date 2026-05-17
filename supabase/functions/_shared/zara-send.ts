@@ -140,6 +140,26 @@ export async function autoSendDraft(admin: any, draftId: string): Promise<{ ok: 
     meta: { channel: draft.channel, contact_id: contact.id, error: sendErr, ...sendMeta },
   });
 
+  // Outbound audit row — final provider decision keyed by draft_id.
+  try {
+    await admin.from('crm_zara_outbound_audit').insert({
+      contact_id: contact.id,
+      draft_id: draftId,
+      channel: draft.channel,
+      trigger_kind: draft.trigger_kind ?? null,
+      template_key: draft.trigger_kind ?? null,
+      subject: draft.subject ?? null,
+      confidence: draft.confidence ?? null,
+      decision: sendOk ? 'autosent' : 'send_failed',
+      decision_reason: sendOk
+        ? `delivered via ${draft.channel}`
+        : `provider error: ${sendErr ?? 'unknown'}`,
+      provider_message_id: (sendMeta as any)?.gmail_message_id ?? (sendMeta as any)?.sid ?? null,
+      rule_evaluation: { source: 'autoSendDraft' },
+      meta: sendMeta,
+    });
+  } catch (e) { console.warn('outbound audit insert failed', e); }
+
   if (sendOk) {
     // Bump last_touch_at on the contact so cold_nudge logic respects this send.
     await admin.from('crm_contacts').update({ last_touch_at: new Date().toISOString() }).eq('id', contact.id);

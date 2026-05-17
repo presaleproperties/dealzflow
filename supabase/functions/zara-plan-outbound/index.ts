@@ -130,10 +130,22 @@ Deno.serve(async (req) => {
   const generated: any[] = [];
   const skipped: any[] = [];
 
+  const writeAudit = async (row: Record<string, unknown>) => {
+    try { await admin.from('crm_zara_outbound_audit').insert(row); }
+    catch (e) { console.warn('audit insert failed', e); }
+  };
+
   for (const lead of leads ?? []) {
     if (generated.length >= remaining || generated.length >= limit) break;
     const tags: string[] = (lead.tags as string[] | null) ?? [];
-    if (tags.includes('zara:muted')) { skipped.push({ id: lead.id, reason: 'muted' }); continue; }
+    if (tags.includes('zara:muted')) {
+      skipped.push({ id: lead.id, reason: 'muted' });
+      await writeAudit({
+        contact_id: lead.id, decision: 'skipped', decision_reason: 'lead is muted (zara:muted tag)',
+        rule_evaluation: { tag_muted: true, requested_trigger: wantTrigger },
+      });
+      continue;
+    }
 
     // Per-lead weekly cap
     const { count: recent } = await admin
@@ -141,18 +153,38 @@ Deno.serve(async (req) => {
       .select('id', { count: 'exact', head: true })
       .eq('contact_id', lead.id)
       .gte('created_at', new Date(now - 7 * 86400_000).toISOString());
-    if ((recent ?? 0) >= perLeadWeekly) { skipped.push({ id: lead.id, reason: 'lead_cap' }); continue; }
+    if ((recent ?? 0) >= perLeadWeekly) {
+      skipped.push({ id: lead.id, reason: 'lead_cap' });
+      await writeAudit({
+        contact_id: lead.id, decision: 'skipped', decision_reason: `per-lead weekly cap reached (${recent}/${perLeadWeekly})`,
+        rule_evaluation: { weekly_drafts: recent, per_lead_weekly_cap: perLeadWeekly, requested_trigger: wantTrigger },
+      });
+      continue;
+    }
 
-    // Pick a trigger
+    // Pick a trigger — record the full rule evaluation for audit.
     let trigger: string | null = null;
     let context = '';
+    const ruleEval: Record<string, unknown> = {
+      requested_trigger: wantTrigger,
+      weekly_drafts: recent ?? 0,
+      per_lead_weekly_cap: perLeadWeekly,
+      cold_nudge_threshold_days: coldDays,
+      sandbox_mode: sandboxMode,
+      autonomous_outbound: !!settings.autonomous_outbound,
+      is_test_contact: tags.includes('zara_test_contact'),
+    };
 
     const lastTouch = lead.last_touch_at ? new Date(lead.last_touch_at).getTime() : null;
     const created = lead.created_at ? new Date(lead.created_at).getTime() : null;
+    ruleEval.last_touch_at = lead.last_touch_at ?? null;
+    ruleEval.created_at = lead.created_at ?? null;
+    ruleEval.idle_days = lastTouch ? Math.round((now - lastTouch) / 86400_000) : null;
 
     if ((!wantTrigger || wantTrigger === 'new_lead_welcome') && created && (now - created) < 5 * 60_000 && !lastTouch) {
       trigger = 'new_lead_welcome';
       context = `New lead just assigned to Zara. No outbound exists yet. Status: ${lead.status ?? 'new'}.`;
+      ruleEval.matched = 'new_lead_welcome';
     } else if (!wantTrigger || wantTrigger === 'presale_burst') {
       const since = new Date(now - 7 * 86400_000).toISOString();
       const { data: events } = await admin
@@ -166,10 +198,13 @@ Deno.serve(async (req) => {
         ['floorplan_download', 'deck_revisit', 'email_open'].includes(e.type)
       );
       const hot = burst.length >= 2 || burst.some((e: any) => e.type === 'floorplan_download');
+      ruleEval.presale_burst_events = burst.length;
+      ruleEval.presale_burst_types = burst.map((e: any) => e.type);
       if (hot) {
         trigger = 'presale_burst';
         const projects = Array.from(new Set(burst.map((e: any) => e.project_slug).filter(Boolean))).slice(0, 2);
         context = `Presale activity burst (${burst.length} events in 7d): ${burst.map((e: any) => e.type).join(', ')}. Projects: ${projects.join(', ') || 'unknown'}.`;
+        ruleEval.matched = 'presale_burst';
       }
     }
 
@@ -183,36 +218,47 @@ Deno.serve(async (req) => {
         .lte('starts_at', cutoff)
         .gte('starts_at', since)
         .limit(1);
+      ruleEval.post_showing_match = (showings?.length ?? 0) > 0;
       if ((showings?.length ?? 0) > 0) {
         trigger = 'post_showing';
         const s = showings![0] as any;
         context = `Showing 24h ago at ${s.project_name ?? 'project'} (${s.status ?? 'completed'}). Light follow-up.`;
+        ruleEval.matched = 'post_showing';
       }
     }
 
     if (!trigger && (!wantTrigger || wantTrigger === 'cold_nudge')) {
       const idleMs = lastTouch ? (now - lastTouch) : (created ? (now - created) : 0);
+      ruleEval.cold_nudge_idle_days = Math.round(idleMs / 86400_000);
       if (idleMs >= coldDays * 86400_000) {
         trigger = 'cold_nudge';
         const days = Math.round(idleMs / 86400_000);
         context = `No outbound or reply in ${days} days. Status: ${lead.status ?? 'unknown'}. Re-engage with one warm question.`;
+        ruleEval.matched = 'cold_nudge';
       }
     }
 
-    // Initial introduction: Zara has never written to this lead. Always say hi
-    // once per assigned lead so she doesn't sit silent on contacts she owns.
     if (!trigger && (!wantTrigger || wantTrigger === 'initial_outreach')) {
       const { count: priorDrafts } = await admin
         .from('crm_zara_drafts')
         .select('id', { count: 'exact', head: true })
         .eq('contact_id', lead.id);
+      ruleEval.prior_drafts = priorDrafts ?? 0;
       if ((priorDrafts ?? 0) === 0) {
         trigger = 'initial_outreach';
         context = `First touch from Zara. Lead is assigned to her but she has never written. Status: ${lead.status ?? 'new'}. Warm introduction + ONE light question — do not pitch.`;
+        ruleEval.matched = 'initial_outreach';
       }
     }
 
-    if (!trigger) { skipped.push({ id: lead.id, reason: 'no_trigger' }); continue; }
+    if (!trigger) {
+      skipped.push({ id: lead.id, reason: 'no_trigger' });
+      await writeAudit({
+        contact_id: lead.id, decision: 'skipped', decision_reason: 'no trigger rule matched',
+        rule_evaluation: ruleEval,
+      });
+      continue;
+    }
 
     // Dedupe: don't create another pending draft for same lead+trigger
     const { count: existingPending } = await admin
@@ -221,7 +267,15 @@ Deno.serve(async (req) => {
       .eq('contact_id', lead.id)
       .eq('trigger_kind', trigger)
       .in('status', ['pending', 'snoozed']);
-    if ((existingPending ?? 0) > 0) { skipped.push({ id: lead.id, reason: 'duplicate_pending' }); continue; }
+    if ((existingPending ?? 0) > 0) {
+      skipped.push({ id: lead.id, reason: 'duplicate_pending' });
+      await writeAudit({
+        contact_id: lead.id, trigger_kind: trigger, template_key: trigger,
+        decision: 'skipped', decision_reason: 'duplicate pending draft already exists for this trigger',
+        rule_evaluation: ruleEval,
+      });
+      continue;
+    }
 
     const channel = pickChannel(lead);
     const fullName = [lead.first_name, lead.last_name].filter(Boolean).join(' ') || 'Lead';
@@ -250,18 +304,36 @@ Draft the outbound message per the system rules. Strict JSON only.`;
         success: false, error: String(e),
       });
       skipped.push({ id: lead.id, reason: 'ai_error', error: String(e) });
+      await writeAudit({
+        contact_id: lead.id, trigger_kind: trigger, template_key: trigger, channel, model,
+        decision: 'failed', decision_reason: `AI draft generation failed: ${String(e).slice(0, 200)}`,
+        rule_evaluation: ruleEval,
+      });
       continue;
     }
     const ai = aiResult.json;
 
     const body = String(ai?.body ?? '').trim();
-    if (!body) { skipped.push({ id: lead.id, reason: 'empty_body' }); continue; }
+    if (!body) {
+      skipped.push({ id: lead.id, reason: 'empty_body' });
+      await writeAudit({
+        contact_id: lead.id, trigger_kind: trigger, template_key: trigger, channel, model,
+        decision: 'failed', decision_reason: 'AI returned empty body',
+        rule_evaluation: ruleEval,
+      });
+      continue;
+    }
 
     const subject = channel === 'email' ? (String(ai?.subject ?? '').trim() || `Quick note for ${lead.first_name ?? 'you'}`) : null;
     const confidence = Math.max(0, Math.min(1, Number(ai?.confidence ?? 0.6)));
 
     if (opts.dry_run) {
       generated.push({ contact_id: lead.id, trigger, channel, subject, body, reasoning: ai?.reasoning, confidence });
+      await writeAudit({
+        contact_id: lead.id, trigger_kind: trigger, template_key: trigger, channel, model, confidence, subject,
+        decision: 'dry_run', decision_reason: 'dry_run mode — draft generated but not persisted',
+        rule_evaluation: ruleEval,
+      });
       continue;
     }
 
@@ -281,7 +353,15 @@ Draft the outbound message per the system rules. Strict JSON only.`;
       .select('id')
       .single();
 
-    if (insErr) { skipped.push({ id: lead.id, reason: 'insert_error', error: insErr.message }); continue; }
+    if (insErr) {
+      skipped.push({ id: lead.id, reason: 'insert_error', error: insErr.message });
+      await writeAudit({
+        contact_id: lead.id, trigger_kind: trigger, template_key: trigger, channel, model, confidence, subject,
+        decision: 'failed', decision_reason: `draft insert failed: ${insErr.message}`,
+        rule_evaluation: ruleEval,
+      });
+      continue;
+    }
 
     // Capture {LOOKUP:...} placeholders as knowledge gaps
     await captureLookupGaps(admin, `${subject ?? ''}\n${body}`, lead.id, inserted.id);
@@ -297,14 +377,39 @@ Draft the outbound message per the system rules. Strict JSON only.`;
     // Autonomous send: if enabled, send immediately and update draft → 'sent'.
     // SANDBOX GATE: block autonomous sends to non-test contacts when mode=sandbox.
     const isTestContact = tags.includes('zara_test_contact');
+    const baseAudit = {
+      contact_id: lead.id, draft_id: inserted.id, trigger_kind: trigger, template_key: trigger,
+      channel, model, confidence, subject, rule_evaluation: ruleEval,
+    };
+
     if (settings.autonomous_outbound && sandboxMode && !isTestContact) {
       await admin.from('crm_zara_drafts').update({ status: 'sandbox_blocked' }).eq('id', inserted.id);
       generated.push({ id: inserted.id, contact_id: lead.id, trigger, channel, autonomous: true, sent: false, blocked: 'sandbox_real_lead' });
+      await writeAudit({
+        ...baseAudit, decision: 'sandbox_blocked',
+        decision_reason: 'sandbox mode is on and the contact is not tagged zara_test_contact',
+      });
     } else if (settings.autonomous_outbound) {
+      await writeAudit({
+        ...baseAudit, decision: 'autosend_attempted',
+        decision_reason: 'autonomous_outbound is on — sending immediately',
+      });
       const sent = await autoSendDraft(admin, inserted.id);
       generated.push({ id: inserted.id, contact_id: lead.id, trigger, channel, autonomous: true, sent: sent.ok, error: sent.error });
+      // Outcome row updated by autoSendDraft via draft_id; also append a final result row here for clarity.
+      await writeAudit({
+        ...baseAudit,
+        decision: sent.ok ? 'autosent' : 'send_failed',
+        decision_reason: sent.ok ? 'message sent via provider' : `send failed: ${sent.error ?? 'unknown'}`,
+        provider_message_id: (sent.meta as any)?.gmail_message_id ?? (sent.meta as any)?.sid ?? null,
+        meta: sent.meta ?? {},
+      });
     } else {
       generated.push({ id: inserted.id, contact_id: lead.id, trigger, channel });
+      await writeAudit({
+        ...baseAudit, decision: 'draft_only',
+        decision_reason: 'autonomous_outbound disabled — draft awaiting human approval',
+      });
     }
   }
 
