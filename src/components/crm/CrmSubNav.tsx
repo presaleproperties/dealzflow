@@ -86,6 +86,7 @@ export function CrmSubNav() {
               }}
             >
               {tab.label}
+              {tab.path === '/crm/zara' && <ZaraQueueBadge className="ml-1.5" />}
               {active && (
                 <span
                   className="absolute left-0 right-0 -bottom-px h-[2px] rounded-t-sm"
