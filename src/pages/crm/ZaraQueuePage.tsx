@@ -246,11 +246,51 @@ export default function ZaraQueuePage() {
       <div className="flex items-center justify-between px-4 py-3 border-b border-border gap-3 flex-wrap">
         <div>
           <h1 className="text-lg font-bold">Zara queue</h1>
-          <p className="text-xs text-muted-foreground">{pending.length} pending · {drafts.length} total</p>
+          <p className="text-xs text-muted-foreground">
+            {pending.length} shown · {pendingAll.length} pending · {drafts.length} total
+          </p>
         </div>
         <div className="flex gap-2">
           <Button size="sm" variant="outline" onClick={seedTestContacts}>Seed test contacts</Button>
         </div>
+      </div>
+
+      <div className="flex items-center gap-3 flex-wrap px-4 py-2 border-b border-border text-[11px]">
+        <FilterGroup label="Channel">
+          {(['all','email','sms','whatsapp'] as const).map((v) => (
+            <FilterChip key={v} active={fChannel === v} onClick={() => setFChannel(v)}>{v}</FilterChip>
+          ))}
+        </FilterGroup>
+        <FilterGroup label="Source">
+          {(['all','K','W','P','none'] as const).map((v) => (
+            <FilterChip
+              key={v}
+              active={fSource === v}
+              onClick={() => setFSource(v)}
+              title={v === 'K' ? 'Knowledge chunks' : v === 'W' ? 'Winning conversations' : v === 'P' ? 'Projects' : v === 'none' ? 'No RAG sources' : 'All sources'}
+            >
+              {v}
+            </FilterChip>
+          ))}
+        </FilterGroup>
+        <FilterGroup label="Tag">
+          <select
+            value={fTag}
+            onChange={(e) => setFTag(e.target.value)}
+            className="h-6 px-2 rounded-md border border-border bg-background text-[11px]"
+          >
+            <option value="all">all</option>
+            {tagOptions.map((t) => <option key={t} value={t}>{t}</option>)}
+          </select>
+        </FilterGroup>
+        {(fChannel !== 'all' || fSource !== 'all' || fTag !== 'all') && (
+          <button
+            onClick={() => { setFChannel('all'); setFSource('all'); setFTag('all'); }}
+            className="text-[11px] text-muted-foreground hover:text-foreground underline"
+          >
+            Reset
+          </button>
+        )}
       </div>
 
       <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-3">
