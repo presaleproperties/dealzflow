@@ -143,9 +143,10 @@ export async function logEngagementEvents(events: EngagementEventInput[]): Promi
     const rows = (events ?? []).filter((e) => e?.contactId);
     if (!rows.length) return;
     const actorId = await resolveActorId();
+    const payload = rows.map((r) => toRow(r, actorId));
     const { error } = await supabase
       .from('crm_engagement_events')
-      .insert(rows.map((r) => toRow(r, actorId)));
+      .insert(payload as never);
     if (error) console.warn('[engagementLog] bulk insert failed', error.message);
   } catch (err) {
     console.warn('[engagementLog] bulk threw', err);
