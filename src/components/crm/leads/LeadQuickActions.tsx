@@ -1,5 +1,7 @@
 import { useState } from 'react';
-import { Mail, CalendarDays, ListTodo, ArrowRightLeft, UserCheck, MessageSquare, Link2, Zap } from 'lucide-react';
+import { Mail, CalendarDays, ListTodo, ArrowRightLeft, UserCheck, MessageSquare, Link2, Zap, Sparkles } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 import { CallButton } from '@/components/crm/dialer/DialerWidget';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -27,6 +29,30 @@ export function LeadQuickActions({ contact }: { contact: CrmContact }) {
   const [showTask, setShowTask] = useState(false);
   const [showBooking, setShowBooking] = useState(false);
   const [showEnroll, setShowEnroll] = useState(false);
+
+  const [sendingProjects, setSendingProjects] = useState(false);
+
+  const handleSendProjectDetails = async () => {
+    setSendingProjects(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('zara-send-project-details', {
+        body: { contactId: contact.id },
+      });
+      if (error) throw error;
+      const res = data as any;
+      if (res?.queued) {
+        toast.success('Zara drafted project details — review in /crm/zara/queue', { duration: 5000 });
+      } else if (res?.no_matches) {
+        toast.warning('No matching projects found for this lead');
+      } else {
+        toast.success('Project details draft created');
+      }
+    } catch (e: any) {
+      toast.error(e?.message ?? 'Failed to draft project details');
+    } finally {
+      setSendingProjects(false);
+    }
+  };
 
   const handlePipelineChange = (segId: string) => {
     const seg = pipelines.find(p => p.id === segId);
@@ -82,6 +108,16 @@ export function LeadQuickActions({ contact }: { contact: CrmContact }) {
             onClick={() => setShowEnroll(true)}
           >
             <Zap className="w-3.5 h-3.5" style={{ color: 'hsl(45 90% 55%)' }} /> Enroll in Automation
+          </Button>
+          <Button
+            size="sm"
+            className="h-9 text-xs gap-1.5 justify-start col-span-2 bg-primary text-primary-foreground hover:bg-primary/90"
+            onClick={handleSendProjectDetails}
+            disabled={sendingProjects || !contact.email}
+            title={contact.email ? 'Zara drafts a branded project showcase email' : 'No email on file'}
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+            {sendingProjects ? 'Drafting…' : 'Send Project Details'}
           </Button>
         </div>
 

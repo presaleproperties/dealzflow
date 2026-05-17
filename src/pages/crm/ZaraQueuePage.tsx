@@ -17,6 +17,8 @@ type Draft = {
   inbound_text: string;
   inbound_at: string;
   draft_text: string;
+  draft_html: string | null;
+  template_id_used: string | null;
   draft_subject: string | null;
   intent: string | null;
   confidence: number | null;
@@ -45,6 +47,12 @@ export default function ZaraQueuePage() {
   const [fChannel, setFChannel] = useState<'all' | 'email' | 'sms' | 'whatsapp'>('all');
   const [fSource, setFSource] = useState<'all' | 'K' | 'W' | 'P' | 'none'>('all');
   const [fTag, setFTag] = useState<string>('all');
+  const [showPlain, setShowPlain] = useState<Set<string>>(new Set());
+  const togglePlain = (id: string) => setShowPlain((prev) => {
+    const next = new Set(prev);
+    next.has(id) ? next.delete(id) : next.add(id);
+    return next;
+  });
 
   const { data: settings } = useQuery({
     queryKey: ['zara-settings'],
@@ -316,7 +324,33 @@ export default function ZaraQueuePage() {
 
                 <div className="text-[12px] text-muted-foreground border-l-2 border-border pl-3 py-1 mb-2 italic">"{d.inbound_text}"</div>
 
-                <div className="border border-primary/30 bg-primary/5 rounded p-3 mb-3 text-[13px] whitespace-pre-wrap">{d.draft_text}</div>
+                {d.channel === 'email' && d.draft_subject && (
+                  <div className="text-[12px] font-semibold mb-1">Subject: <span className="font-normal">{d.draft_subject}</span></div>
+                )}
+                {d.channel === 'email' && d.draft_html && !showPlain.has(d.id) ? (
+                  <div className="border border-primary/30 bg-white rounded mb-3 overflow-hidden">
+                    <iframe
+                      title={`zara-draft-${d.id}`}
+                      sandbox=""
+                      srcDoc={d.draft_html}
+                      className="w-full"
+                      style={{ height: 420, border: 0, background: 'white' }}
+                    />
+                    <div className="flex items-center justify-between gap-2 px-3 py-1.5 border-t border-border bg-muted/30 text-[11px] text-muted-foreground">
+                      <span>Branded HTML preview {d.template_id_used ? '· template applied' : '· fallback scaffold'}</span>
+                      <button onClick={() => togglePlain(d.id)} className="underline hover:text-foreground">Show plain text</button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="border border-primary/30 bg-primary/5 rounded p-3 mb-3 text-[13px] whitespace-pre-wrap">
+                    {d.draft_text}
+                    {d.channel === 'email' && d.draft_html && (
+                      <div className="mt-2 pt-2 border-t border-border text-[11px] text-muted-foreground">
+                        <button onClick={() => togglePlain(d.id)} className="underline hover:text-foreground">Show HTML preview</button>
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 <div className="flex items-center gap-2 flex-wrap mb-3">
                   <Pill size="sm" tone="neutral">{d.intent ?? 'unknown'}</Pill>

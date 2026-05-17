@@ -72,8 +72,23 @@ Deno.serve(async (req) => {
           status: 'queued',
         });
       } else if (draft.channel === 'email') {
+        const to = (contact.email ?? '').trim();
+        if (!to) throw new Error('contact_email_missing');
+        // Prefer branded HTML draft when present; fall back to plain-text wrapped in a <p>.
+        const html: string =
+          (draft as any).draft_html && String((draft as any).draft_html).trim().length > 0
+            ? String((draft as any).draft_html)
+            : `<p style="font-family:Inter,system-ui,sans-serif;white-space:pre-wrap;">${
+                finalText.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+              }</p>`;
         const { error } = await admin.functions.invoke('bridge-send-email', {
-          body: { contactId: draft.contact_id, subject: draft.draft_subject ?? '(no subject)', body: finalText },
+          body: {
+            to,
+            subject: draft.draft_subject ?? '(no subject)',
+            html,
+            contact_id: draft.contact_id,
+            template_id: (draft as any).template_id_used ?? null,
+          },
         });
         if (error) throw error;
       }

@@ -20,6 +20,7 @@ import {
 import DataImportSection from '@/components/crm/settings/DataImportSection';
 import DataManagerSection from '@/components/crm/settings/DataManagerSection';
 import { ZaraModeSection } from '@/components/crm/settings/ZaraModeSection';
+import { ZaraEmailBehaviorSection } from '@/components/crm/settings/ZaraEmailBehaviorSection';
 import EmailSettingsSection from '@/components/crm/settings/EmailSettingsSection';
 import ReplySignatureCard from '@/components/crm/settings/ReplySignatureCard';
 import ProjectsManagerSection from '@/components/crm/settings/ProjectsManagerSection';
@@ -279,7 +280,7 @@ export default function CrmSettingsPage() {
           {activeTab === 'leadflow'      && <SectionErrorBoundary name="Lead Flow"><LeadFlowSection /></SectionErrorBoundary>}
           {activeTab === 'sources'       && <SectionErrorBoundary name="Source Library"><SourceManagerSection /></SectionErrorBoundary>}
           {activeTab === 'plan'          && <SectionErrorBoundary name="Plan & Billing"><PlanBillingSection /></SectionErrorBoundary>}
-          {activeTab === 'zara'          && <SectionErrorBoundary name="Zara AI"><ZaraModeSection /></SectionErrorBoundary>}
+          {activeTab === 'zara'          && <SectionErrorBoundary name="Zara AI"><div className="space-y-6"><ZaraModeSection /><ZaraEmailBehaviorSection /></div></SectionErrorBoundary>}
         </div>
       </div>
     </div>
