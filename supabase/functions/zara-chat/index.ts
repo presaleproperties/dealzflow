@@ -423,7 +423,7 @@ Deno.serve(async (req) => {
     if (mode === "off") {
       return new Response("Zara is currently off.", { status: 423, headers: corsHeaders });
     }
-    const ctx: ToolCtx = {
+    const ctx: ToolCtx & { consulted_sources?: any } = {
       user_id: user.id, conversation_id,
       zara_enabled: true,
       test_phones: settings?.test_phone_numbers ?? [],
