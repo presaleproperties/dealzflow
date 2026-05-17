@@ -133,23 +133,56 @@ Deno.serve(async (req) => {
   // ---------- UPSERT ----------
   let inserted = 0, updated = 0, skipped = 0;
 
+  // Helpers
+  const firstString = (...vals: unknown[]): string | null => {
+    for (const v of vals) {
+      if (typeof v === "string" && v.trim()) return v.trim();
+    }
+    return null;
+  };
+  const pickFloorPlansUrl = (full: any): string | null => {
+    const fp = full?.floor_plans ?? full?.floorPlans;
+    if (!fp) return null;
+    if (typeof fp === "string" && fp.trim()) return fp.trim();
+    if (Array.isArray(fp)) {
+      for (const item of fp) {
+        const u = firstString(item?.url, item?.pdf_url, item?.file_url, item?.href, item?.src);
+        if (u) return u;
+      }
+    }
+    return null;
+  };
+  const pickHero = (full: any, summary: BridgeProject): string | null =>
+    firstString(
+      full?.hero_image_url, full?.heroImageUrl, full?.featured_image,
+      full?.thumbnail_url, full?.image_url, full?.cover_url,
+      summary.featured_image, (summary as any).hero_image_url, (summary as any).image_url,
+    );
+
   for (const p of bySlug.values()) {
     const slug = (p.slug ?? p.project_slug ?? "").trim();
     const name = (p.name ?? "").trim();
     if (!slug || !name) { skipped++; continue; }
 
+    // Pull full project for deck/floor plans/description/hero. Tolerate failures.
+    let full: any = null;
+    try {
+      full = await presaleBridge.getProject(slug);
+    } catch (e) {
+      errors.push({ q: `get:${slug}`, err: (e as Error).message });
+    }
+    await sleep(120);
+
     // Look up existing row by presale_slug FIRST, then by name_lower.
     const { data: existing } = await supa
       .from("crm_projects")
-      .select("id,city,neighborhood,developer,property_type,price_from,status,completion_date,marketing_url")
+      .select("id,city,neighborhood,developer,property_type,price_from,price_to,status,completion_date,marketing_url,brochure_url,floor_plans_url,hero_image_url,notes,bedrooms_offered")
       .eq("presale_slug", slug)
       .maybeSingle();
 
-    const completionDate = p.completion_year
-      ? `${p.completion_year}-01-01`
-      : null;
-    // Public-facing share URL — prefer SEO slug from sitemap when available,
-    // otherwise fall back to the short bridge slug.
+    const completionYear = (full?.completion_year ?? p.completion_year) as number | null | undefined;
+    const completionDate = completionYear ? `${completionYear}-01-01` : null;
+    // Public-facing share URL — prefer SEO slug from sitemap when available.
     const seoSlug = seoBySlug.get(slug);
     const marketingUrl = `https://presaleproperties.com/${seoSlug ?? slug}`;
 
@@ -160,20 +193,37 @@ Deno.serve(async (req) => {
         || (!!seoSlug && !existing.marketing_url.includes(seoSlug))
       : true;
 
-    // Only fill blank fields — don't overwrite agent edits.
+    const incomingPriceFrom = (full?.price_min ?? full?.priceRange?.min ?? p.starting_price) as number | null | undefined;
+    const incomingPriceTo = (full?.price_max ?? full?.priceRange?.max) as number | null | undefined;
+    const incomingDeck = firstString(full?.pitch_deck_url, full?.pitchDeckUrl, (full as any)?.brochure_url);
+    const incomingFloorPlans = pickFloorPlansUrl(full);
+    const incomingHero = pickHero(full, p);
+    const incomingDescription = firstString(full?.description, (full as any)?.overview, (full as any)?.summary);
+    const incomingBedrooms = firstString((full as any)?.bedrooms_offered, (full as any)?.bedrooms);
+
+    // COALESCE: never overwrite an existing non-null value with NULL or with a freshly-null incoming value.
+    const coalesce = <T,>(existingVal: T | null | undefined, incoming: T | null | undefined): T | null =>
+      (existingVal ?? incoming ?? null) as T | null;
+
     const payload: Record<string, unknown> = {
       name,
       presale_slug: slug,
       slug,
       is_active: true,
-      city: existing?.city ?? p.city ?? null,
-      neighborhood: existing?.neighborhood ?? p.neighborhood ?? null,
-      developer: existing?.developer ?? p.developer_name ?? p.developer ?? null,
-      property_type: existing?.property_type ?? p.project_type ?? null,
-      price_from: existing?.price_from ?? p.starting_price ?? null,
-      status: existing?.status ?? p.status ?? null,
-      completion_date: existing?.completion_date ?? completionDate,
+      city: coalesce(existing?.city, full?.city ?? p.city),
+      neighborhood: coalesce(existing?.neighborhood, full?.neighborhood ?? p.neighborhood),
+      developer: coalesce(existing?.developer, full?.developer ?? (full as any)?.developer_name ?? p.developer_name ?? p.developer),
+      property_type: coalesce(existing?.property_type, full?.project_type ?? p.project_type),
+      price_from: coalesce(existing?.price_from, incomingPriceFrom),
+      price_to: coalesce(existing?.price_to, incomingPriceTo),
+      status: coalesce(existing?.status, full?.status ?? p.status),
+      completion_date: coalesce(existing?.completion_date, completionDate),
       marketing_url: existingIsLegacy ? marketingUrl : existing?.marketing_url,
+      brochure_url: coalesce(existing?.brochure_url, incomingDeck),
+      floor_plans_url: coalesce(existing?.floor_plans_url, incomingFloorPlans),
+      hero_image_url: coalesce(existing?.hero_image_url, incomingHero),
+      notes: coalesce(existing?.notes, incomingDescription),
+      bedrooms_offered: coalesce(existing?.bedrooms_offered, incomingBedrooms),
     };
 
     if (existing?.id) {
@@ -190,7 +240,6 @@ Deno.serve(async (req) => {
         .from("crm_projects")
         .insert(payload);
       if (insertErr) {
-        // Likely unique conflict on name_lower — patch by name match.
         const { data: byName } = await supa
           .from("crm_projects")
           .select("id")
