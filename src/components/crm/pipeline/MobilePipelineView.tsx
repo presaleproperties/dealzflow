@@ -6,7 +6,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useCrmContacts } from '@/hooks/useCrmContacts';
 import { useCrmLeadSegments } from '@/hooks/useCrmLeadSegments';
 import { useMyAgentName } from '@/hooks/useTeamAgents';
-import { contactMatchesSegment } from '@/lib/segmentMatching';
+import { contactMatchesSegment, orderSegmentsBySpecificity } from '@/lib/segmentMatching';
 import { formatContactName } from '@/lib/format';
 import { formatDistanceToNow } from 'date-fns';
 import type { CrmContact } from '@/hooks/useCrmContacts';
@@ -82,7 +82,7 @@ export function MobilePipelineView() {
         map[canonicalSegmentId].push(c);
         return;
       }
-      for (const seg of pipelineSegments) {
+      for (const seg of orderSegmentsBySpecificity(pipelineSegments)) {
         if (contactMatchesSegment(c, seg.filter_config, seg.id)) { map[seg.id].push(c); break; }
       }
     });

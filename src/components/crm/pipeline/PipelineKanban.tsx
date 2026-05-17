@@ -48,7 +48,7 @@ function getSegmentColor(segment: { name?: string | null; color?: string | null;
 }
 
 /* ─── Shared segment matching ─── */
-import { contactMatchesSegment } from '@/lib/segmentMatching';
+import { contactMatchesSegment, orderSegmentsBySpecificity } from '@/lib/segmentMatching';
 
 /* ─── Helpers ─── */
 function getInitials(name: string | null) {
