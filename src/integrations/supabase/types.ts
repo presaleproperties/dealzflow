@@ -7334,6 +7334,9 @@ export type Database = {
       }
       zara_settings: {
         Row: {
+          email_append_signature: boolean
+          email_fallback_template_id: string | null
+          email_use_template_scaffold: boolean
           enabled_at: string | null
           enabled_by: string | null
           id: number
@@ -7342,6 +7345,9 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          email_append_signature?: boolean
+          email_fallback_template_id?: string | null
+          email_use_template_scaffold?: boolean
           enabled_at?: string | null
           enabled_by?: string | null
           id?: number
@@ -7350,6 +7356,9 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          email_append_signature?: boolean
+          email_fallback_template_id?: string | null
+          email_use_template_scaffold?: boolean
           enabled_at?: string | null
           enabled_by?: string | null
           id?: number
@@ -7358,6 +7367,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "zara_settings_email_fallback_template_id_fkey"
+            columns: ["email_fallback_template_id"]
+            isOneToOne: false
+            referencedRelation: "crm_email_templates"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "zara_settings_enabled_by_fkey"
             columns: ["enabled_by"]
@@ -7378,6 +7394,7 @@ export type Database = {
           consulted_sources: Json
           contact_id: string
           created_at: string
+          draft_html: string | null
           draft_language: string | null
           draft_subject: string | null
           draft_text: string
@@ -7394,6 +7411,7 @@ export type Database = {
           reasoning: string | null
           sent_at: string | null
           status: string
+          template_id_used: string | null
         }
         Insert: {
           approval_method?: string | null
@@ -7405,6 +7423,7 @@ export type Database = {
           consulted_sources?: Json
           contact_id: string
           created_at?: string
+          draft_html?: string | null
           draft_language?: string | null
           draft_subject?: string | null
           draft_text: string
@@ -7421,6 +7440,7 @@ export type Database = {
           reasoning?: string | null
           sent_at?: string | null
           status?: string
+          template_id_used?: string | null
         }
         Update: {
           approval_method?: string | null
@@ -7432,6 +7452,7 @@ export type Database = {
           consulted_sources?: Json
           contact_id?: string
           created_at?: string
+          draft_html?: string | null
           draft_language?: string | null
           draft_subject?: string | null
           draft_text?: string
@@ -7448,6 +7469,7 @@ export type Database = {
           reasoning?: string | null
           sent_at?: string | null
           status?: string
+          template_id_used?: string | null
         }
         Relationships: [
           {
@@ -7476,6 +7498,13 @@ export type Database = {
             columns: ["inbound_event_id"]
             isOneToOne: false
             referencedRelation: "crm_engagement_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "zara_suggested_replies_template_id_used_fkey"
+            columns: ["template_id_used"]
+            isOneToOne: false
+            referencedRelation: "crm_email_templates"
             referencedColumns: ["id"]
           },
         ]
