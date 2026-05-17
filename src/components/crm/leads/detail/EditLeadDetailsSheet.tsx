@@ -19,6 +19,7 @@ import { useCrmProjects, useCreateCrmProject } from '@/hooks/useCrmProjects';
 import { useCrmLeadTypes, useCreateCrmLeadType } from '@/hooks/useCrmLeadTypes';
 import { useCrmSources } from '@/hooks/useCrmSources';
 import { InlineLibraryPicker } from '@/components/crm/leads/InlineLibraryPicker';
+import { logEngagementEvent, logEngagementEvents } from '@/lib/engagementLog';
 import type { CrmContact } from '@/hooks/useCrmContacts';
 
 interface Props {
