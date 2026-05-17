@@ -362,6 +362,34 @@ export default function ZaraQueuePage() {
                   <TrainedFromChip sources={d.consulted_sources} />
                 </div>
 
+                {Array.isArray(d.citations) && d.citations.length > 0 && (
+                  <div className="mb-3 rounded-md border border-border bg-muted/30 px-2.5 py-2">
+                    <div className="text-[10px] uppercase tracking-wide text-muted-foreground mb-1">
+                      Sources cited
+                    </div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {d.citations.map((c: any) => {
+                        const sim = typeof c.similarity === 'number' ? Math.round(c.similarity * 100) : null;
+                        const loc = [c.city, c.neighborhood].filter(Boolean).join(' / ');
+                        const title = `${c.name}${loc ? ' — ' + loc : ''}${sim != null ? ' · ' + sim + '% match' : ''}${c.source ? ' · ' + c.source : ''}`;
+                        return (
+                          <span
+                            key={`${d.id}-cit-${c.n}`}
+                            title={title}
+                            className="inline-flex items-center gap-1 rounded border border-border bg-background px-1.5 py-0.5 text-[11px] text-foreground"
+                          >
+                            <span className="font-mono text-[10px] text-muted-foreground">[{c.n}]</span>
+                            <span className="truncate max-w-[180px]">{c.name}</span>
+                            {sim != null && (
+                              <span className="text-[10px] text-muted-foreground">{sim}%</span>
+                            )}
+                          </span>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
                 {editingId === d.id ? (
                   <div className="space-y-2">
                     <Textarea value={editText} onChange={(e) => setEditText(e.target.value)} rows={4} />
