@@ -2958,6 +2958,7 @@ export type Database = {
           developer: string | null
           floor_plans_filename: string | null
           floor_plans_url: string | null
+          hero_image_url: string | null
           id: string
           is_active: boolean
           last_viewed_at: string | null
@@ -2995,6 +2996,7 @@ export type Database = {
           developer?: string | null
           floor_plans_filename?: string | null
           floor_plans_url?: string | null
+          hero_image_url?: string | null
           id?: string
           is_active?: boolean
           last_viewed_at?: string | null
@@ -3032,6 +3034,7 @@ export type Database = {
           developer?: string | null
           floor_plans_filename?: string | null
           floor_plans_url?: string | null
+          hero_image_url?: string | null
           id?: string
           is_active?: boolean
           last_viewed_at?: string | null
