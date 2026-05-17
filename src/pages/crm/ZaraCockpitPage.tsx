@@ -572,7 +572,11 @@ export default function ZaraCockpitPage() {
       const res = await fetch(`${SUPABASE_URL}/functions/v1/zara-chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ conversation_id: convId, message: text }),
+        body: JSON.stringify({
+          conversation_id: convId,
+          message: text,
+          page_context: pinnedId ? { surface: 'zara-cockpit', contact_id: pinnedId } : { surface: 'zara-cockpit' },
+        }),
         signal: abort.signal,
       });
       if (!res.ok || !res.body) {
