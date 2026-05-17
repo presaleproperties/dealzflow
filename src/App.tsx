@@ -335,7 +335,8 @@ const App = () => (
                     <Route path="/crm/calendar" element={<ProtectedRoute><CrmLayout><CrmCalendarPage /></CrmLayout></ProtectedRoute>} />
                     <Route path="/crm/reports" element={<ProtectedRoute><CrmLayout><CrmReportsPage /></CrmLayout></ProtectedRoute>} />
                     <Route path="/crm/reports/engagement" element={<ProtectedRoute><CrmLayout><CrmEngagementReportsPage /></CrmLayout></ProtectedRoute>} />
-                    <Route path="/crm/zara" element={<ProtectedRoute><CrmLayout><ZaraQueuePage /></CrmLayout></ProtectedRoute>} />
+                    <Route path="/crm/zara" element={<ProtectedRoute><CrmLayout><ZaraCockpitPage /></CrmLayout></ProtectedRoute>} />
+                    <Route path="/crm/zara/queue" element={<ProtectedRoute><CrmLayout><ZaraQueuePage /></CrmLayout></ProtectedRoute>} />
                     <Route path="/crm/settings" element={<ProtectedRoute><CrmLayout><CrmSettingsPage /></CrmLayout></ProtectedRoute>} />
                     <Route path="/crm/integrations" element={<ProtectedRoute><CrmLayout requireRole={['owner', 'admin']}><CrmIntegrationsPage /></CrmLayout></ProtectedRoute>} />
                     <Route path="/crm/behavior-leads" element={<ProtectedRoute><CrmLayout requireRole={['owner', 'admin']}><CrmBehaviorLeadsPage /></CrmLayout></ProtectedRoute>} />
