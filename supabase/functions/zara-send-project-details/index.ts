@@ -13,6 +13,7 @@ import {
   htmlToPlain,
   getZaraEmailPrefs,
 } from "../_shared/zara-email-render.ts";
+import { resolveAssignedToUuid } from "../_shared/zara-guardrails.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -163,6 +164,11 @@ ${priceRange ? `<div style="color:#1a1a2e;font-size:16px;margin-bottom:10px;">${
   const subject = interpolate((tpl as any).subject ?? "Curated projects for {{first_name}}", vars);
   const text = htmlToPlain(html);
 
+  // ── Resolve assigned_to safely ─────────────────────────────────────
+  // Prefer the lead's assigned agent; fall back to the caller (button-clicker).
+  let assignedTo: string | null = await resolveAssignedToUuid(sb, (contact as any).assigned_to);
+  if (!assignedTo && userId) assignedTo = userId;
+
   // ── Insert into queue ────────────────────────────────────────────────
   const now = new Date().toISOString();
   const { data: ins, error: insErr } = await sb.from("zara_suggested_replies").insert({
@@ -176,6 +182,7 @@ ${priceRange ? `<div style="color:#1a1a2e;font-size:16px;margin-bottom:10px;">${
     inbound_at: now,
     intent: "send_project_details",
     status: "pending",
+    assigned_to: assignedTo,
     consulted_sources: { projects: top.map((p) => ({ id: p.id, name: p.name, slug: p.slug })) },
   }).select("id").single();
   if (insErr) return reply({ ok: false, error: insErr.message }, 500);

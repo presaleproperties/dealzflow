@@ -78,6 +78,33 @@ export function levenshtein(a: string, b: string): number {
   return prev[n];
 }
 
+/**
+ * Resolve a crm_contacts.assigned_to display-name string into a
+ * crm_team.user_id UUID. Returns null on no match OR on any error so
+ * inserts into UUID-typed columns never fail.
+ */
+export async function resolveAssignedToUuid(
+  admin: any,
+  displayName: string | null | undefined,
+): Promise<string | null> {
+  if (!displayName) return null;
+  try {
+    const { data, error } = await admin
+      .from('crm_team')
+      .select('user_id')
+      .eq('display_name', displayName)
+      .maybeSingle();
+    if (error) {
+      console.warn('[resolveAssignedToUuid] query error:', error.message, 'for', displayName);
+      return null;
+    }
+    return data?.user_id ?? null;
+  } catch (e) {
+    console.warn('[resolveAssignedToUuid] caught:', e, 'for', displayName);
+    return null;
+  }
+}
+
 export const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
