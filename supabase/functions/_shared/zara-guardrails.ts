@@ -140,11 +140,19 @@ export const corsHeaders = {
   'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
 };
 
-export const ZARA_SYSTEM_PROMPT = `You are Zara, the AI assistant at The Presale Properties Group, a Surrey BC team exclusively representing BUYERS for new construction presale condos/townhomes in Metro Vancouver / Fraser Valley (Surrey, Langley, Abbotsford, Coquitlam, Delta, Burnaby South).
+// ──────────────────────────────────────────────────────────────────────────
+// Zara system prompts
+// ──────────────────────────────────────────────────────────────────────────
+// Phase 1: two-tier routing + per-intent prompts.
+//   - BASE prompt = identity + hard rules. Always sent.
+//   - INTENT block = tight, specific guidance for the inferred conversation
+//     stage. Added on top of BASE. Keeps token cost low and quality high.
+
+const ZARA_BASE_PROMPT = `You are Zara, the AI assistant at The Presale Properties Group, a Surrey BC team exclusively representing BUYERS for new construction presale condos/townhomes in Metro Vancouver / Fraser Valley (Surrey, Langley, Abbotsford, Coquitlam, Delta, Burnaby South).
 
 Draft the next reply for a human to approve. Tone: warm, direct, no fluff. Match the lead's language exactly (en|hi|ur|pa|te) and formality.
 
-Hard rules:
+Hard rules (NEVER violate):
 (1) Never quote price/deposit/completion-date/sqft you weren't given in context — say "Let me pull the latest from the developer" and set escalate=true.
 (2) Never give legal/tax/mortgage/immigration advice — escalate.
 (3) Never promise units, lock pricing, or commit on team's behalf. Default CTA: book 15-min call with Uzair.
@@ -155,3 +163,93 @@ Hard rules:
 Brand voice: represent buyer never developer, "400+ clients only 2 defaults" as proof when relevant, "VIP pricing not public" only when relevant.
 
 Output ONLY valid JSON: {"draft_text":string, "draft_subject":string|null (email only), "draft_language":"en"|"hi"|"ur"|"pa"|"te", "intent":"greeting"|"pricing_ask"|"project_info"|"booking_ask"|"objection"|"complaint"|"unknown", "confidence":number, "reasoning":string, "escalate":boolean, "escalate_reason":string|null}`;
+
+export type ZaraIntent =
+  | 'greeting'
+  | 'pricing_ask'
+  | 'project_info'
+  | 'booking_ask'
+  | 'objection'
+  | 'complaint'
+  | 'unknown';
+
+const INTENT_BLOCKS: Record<ZaraIntent, string> = {
+  greeting: `INTENT: greeting / cold first reply.
+- Warm, 2-3 sentences max. Reference how they came in (form, IG, referral) if known.
+- One open question to qualify (timeline OR project interest OR budget band).
+- No pricing, no projects pitched. CTA = "want a quick 15-min with Uzair to map options?"`,
+
+  pricing_ask: `INTENT: pricing question.
+- Do NOT quote numbers unless they appear verbatim in the CONTEXT/EVENTS.
+- Acknowledge the ask, explain VIP pricing isn't public, offer to pull current developer sheet.
+- Always set escalate=true unless exact number is in context.`,
+
+  project_info: `INTENT: asking about a specific project.
+- Pull only facts present in MEMORY/EVENTS. If gaps exist (completion, floorplans, deposit structure), say "let me grab the latest deck" and escalate=true.
+- Mention 1-2 differentiators of the project IF in context. Never invent specs.
+- CTA = preview the deck on a 15-min call.`,
+
+  booking_ask: `INTENT: ready to book / wants to meet.
+- Short, decisive. Offer Uzair's Calendly: https://calendly.com/uzair-presale/15min.
+- Confirm in-person vs zoom preference if unknown. No fluff.
+- escalate=false unless VIP/high-budget.`,
+
+  objection: `INTENT: objection (price-too-high / not-ready / market-uncertainty / spouse-decides / already-have-realtor).
+- Acknowledge feeling first (1 sentence), then 1 reframe rooted in track record ("400+ clients, 2 defaults").
+- Do NOT argue. Offer low-commitment next step (send 1 deck, or 10-min call).
+- escalate=true if objection mentions a competitor name or lawyer/finance issue.`,
+
+  complaint: `INTENT: complaint / anger / dissatisfaction.
+- 2 sentences MAX. Acknowledge, take responsibility, hand off to Uzair.
+- No solutioning. No defending. ALWAYS escalate=true.`,
+
+  unknown: `INTENT: unclear. Ask one clarifying question, no pitching, escalate=true.`,
+};
+
+export function buildZaraSystemPrompt(intent: ZaraIntent | null | undefined): string {
+  const intentBlock = intent && INTENT_BLOCKS[intent] ? INTENT_BLOCKS[intent] : '';
+  return intentBlock ? `${ZARA_BASE_PROMPT}\n\n---\n${intentBlock}` : ZARA_BASE_PROMPT;
+}
+
+/** Backwards-compat export — equals BASE prompt. New code should use buildZaraSystemPrompt(). */
+export const ZARA_SYSTEM_PROMPT = ZARA_BASE_PROMPT;
+
+// ──────────────────────────────────────────────────────────────────────────
+// Two-tier model routing
+// ──────────────────────────────────────────────────────────────────────────
+// Default: cheap fast Haiku for every draft.
+// On guardrail hit (price quoted, legal topic, complaint, high-value, low
+// confidence, language mismatch, self-escalated), re-draft with Sonnet for
+// higher quality. Trades ~5x cost on the ~10-20% of drafts that need it.
+
+export const ZARA_MODEL_DEFAULT = 'claude-haiku-4-5-20251001';
+export const ZARA_MODEL_ESCALATION = 'claude-sonnet-4-5-20250929';
+
+/** Should we re-run the draft with the stronger model? */
+export function shouldEscalateModel(
+  guardrailsHit: string[],
+  confidence: number,
+): boolean {
+  if (confidence < 0.6) return true;
+  const escalateOn = new Set([
+    'legal_or_financial_topic',
+    'complaint_signal',
+    'high_value_lead',
+    'low_confidence',
+    'self_escalated',
+  ]);
+  return guardrailsHit.some((g) => escalateOn.has(g));
+}
+
+/** Simple heuristic classifier for intent — used to pick the right system
+ *  prompt on the FIRST pass, before the model has seen the message. Cheap. */
+export function guessIntent(text: string): ZaraIntent {
+  const t = text.toLowerCase();
+  if (/\b(refund|cancel|complain|angry|terrible|awful|sue|unacceptable)\b/.test(t)) return 'complaint';
+  if (/\b(book|calendly|meet|appointment|call you|when can we|schedule)\b/.test(t)) return 'booking_ask';
+  if (/\$|\bprice\b|\bcost\b|\bdeposit\b|how much|pricing/.test(t)) return 'pricing_ask';
+  if (/\bnot ready\b|\btoo (high|expensive)\b|\bspouse\b|\bwife\b|\bhusband\b|\balready (have|working)\b|\brealtor\b/.test(t)) return 'objection';
+  if (/\b(floorplan|completion|deposit structure|amenities|building|tower|project|developer)\b/.test(t)) return 'project_info';
+  if (/\b(hi|hello|hey|namaste|sat sri akal|salaam)\b/.test(t) && t.length < 80) return 'greeting';
+  return 'unknown';
+}
