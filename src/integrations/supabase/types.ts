@@ -6922,8 +6922,10 @@ export type Database = {
           created_at: string
           id: string
           last_message_at: string | null
+          last_message_snippet: string | null
           pinned: boolean
           title: string
+          title_regenerated_at_turn: number
           user_id: string
         }
         Insert: {
@@ -6931,8 +6933,10 @@ export type Database = {
           created_at?: string
           id?: string
           last_message_at?: string | null
+          last_message_snippet?: string | null
           pinned?: boolean
           title?: string
+          title_regenerated_at_turn?: number
           user_id: string
         }
         Update: {
@@ -6940,8 +6944,10 @@ export type Database = {
           created_at?: string
           id?: string
           last_message_at?: string | null
+          last_message_snippet?: string | null
           pinned?: boolean
           title?: string
+          title_regenerated_at_turn?: number
           user_id?: string
         }
         Relationships: []
@@ -7097,6 +7103,7 @@ export type Database = {
           metadata: Json
           model: string | null
           output_tokens: number | null
+          page_context: Json | null
           role: string
           tool_call_id: string | null
           tool_calls: Json | null
@@ -7112,6 +7119,7 @@ export type Database = {
           metadata?: Json
           model?: string | null
           output_tokens?: number | null
+          page_context?: Json | null
           role: string
           tool_call_id?: string | null
           tool_calls?: Json | null
@@ -7127,6 +7135,7 @@ export type Database = {
           metadata?: Json
           model?: string | null
           output_tokens?: number | null
+          page_context?: Json | null
           role?: string
           tool_call_id?: string | null
           tool_calls?: Json | null

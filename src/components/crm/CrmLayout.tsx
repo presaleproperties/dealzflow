@@ -8,6 +8,8 @@ import { CrmSectionScope } from './CrmSectionScope';
 import { PageTransition } from '@/components/layout/PageTransition';
 import { useLocation } from 'react-router-dom';
 import { SafeAreaPreview } from '@/components/dev/SafeAreaPreview';
+import { ZaraDock } from '@/components/zara/ZaraDock';
+import { useZaraKeyboard } from '@/hooks/useZaraKeyboard';
 
 interface CrmLayoutProps {
   requireRole?: ('owner' | 'admin')[];

@@ -1,55 +1,68 @@
-# Zara Cockpit + Complete — Phased Build
+# Zara Experience — One-shot ship plan
 
-`ANTHROPIC_API_KEY` is now configured. Spec stays 1:1 — only delivery is phased so each piece actually works end-to-end before the next layer lands.
+Eight tiers, layered on Tier 2 + Cockpit + Brain. Kill switch + engagement log preserved. No new secrets.
 
-## Phase 1 — Foundation (this turn after approval)
+## Step 1 — DB migration (one call)
 
-**Schema (1 migration, all 8 tables):**
-- `zara_conversations`, `zara_messages`, `zara_actions_log`
-- `presale_projects`, `zara_training_feedback`, `zara_prompt_evolution`, `zara_system_prompt_addenda`, `zara_research_cache`
-- Full RLS, indexes, the `mode='off'` enforcement helper
+```sql
+ALTER TABLE zara_messages ADD COLUMN IF NOT EXISTS page_context jsonb;
+ALTER TABLE zara_conversations
+  ADD COLUMN IF NOT EXISTS last_message_snippet text,
+  ADD COLUMN IF NOT EXISTS title_regenerated_at_turn int NOT NULL DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS archived boolean NOT NULL DEFAULT false,
+  ADD COLUMN IF NOT EXISTS pinned boolean NOT NULL DEFAULT false;
+CREATE INDEX IF NOT EXISTS idx_zara_conv_recent ON zara_conversations(last_message_at DESC);
+```
 
-**Move queue:** existing `/crm/zara` → `/crm/zara/queue`. Route registered, sidebar/links updated.
+(`zara_conversations` likely already has owner-scoped RLS — we don't touch policies.)
 
-**Cockpit shell at `/crm/zara`:** 3-column layout (conversations rail / chat / live activity rail). Conversations rail fully wired (create/pin/archive/rename, persisted). Live activity rail wired with realtime on `zara_actions_log`. Empty chat panel with quick-action chips + input + Cmd/Ctrl+J global shortcut.
+## Step 2 — Edge fn `zara-chat`
 
-**Acceptance hit in phase 1:** #1, #3, #17, #21.
+- Accept `page_context` in request body.
+- Store on the user-message insert (`zara_messages.page_context`).
+- Inject `<current_view>` block into system prompt (surface, url, optional lead+project lookup via service client).
+- Append the pronoun-resolution paragraph after the existing rules.
+- Update `last_message_snippet` (strip markdown, 100 chars) when persisting assistant text.
+- Regenerate title at turn 2 (existing), 6, 12 via Haiku (max 6 words). Track via `title_regenerated_at_turn`.
+- Populate `metadata.referenced_contact_ids` / `referenced_project_ids` from tool results that surface those IDs (best-effort scan of `get_lead_context` / `recommend_projects_for_lead` outputs).
 
-## Phase 2 — Brain (next turn)
+## Step 3 — Frontend hooks + state (`src/hooks/`)
 
-**Edge fns:** `zara-chat` (SSE, Claude Haiku 4.5 default, Sonnet escalation, addenda append, mode-off guard, auto-title), `zara-tool-execute` (switch over 19 tools, service-role writes, action logging).
+- `useZaraPageContext.ts` — derives `{surface, contact_id?, project_id?, campaign_id?, url, label}` from `useLocation` + params. Surface inferred by route prefix.
+- `useZaraDock.ts` (Zustand) — `{open, conversationId, setOpen, setConversationId, toggle}`. Persist to `localStorage` (`zara_dock_open`, `zara_dock_conversation_id`).
+- `useZaraKeyboard.ts` — Cmd/Ctrl+J toggle, Cmd/Ctrl+K new conv, Cmd/Ctrl+/ focus input, Esc close, `/` focus search. Extend (replace usage of) `useZaraShortcut`.
+- `useZaraConversations.ts` — list/CRUD (pin, rename, archive, delete) via supabase. Realtime subscription on `zara_messages` for active conv.
 
-**Tool catalog:** all 19 tools implemented. `update_lead` returns pending-confirmation; `confirm_update_lead` commits. `get_lead_context` auto-injects `relevant_projects`. `draft_*` respects `zara_enabled` gate.
+## Step 4 — Components (`src/components/zara/`)
 
-**Chat UI:** SSE consumption, streaming tokens, inline tool-status pills + 1-line summaries, inline approval card for `update_lead`, horizontal project cards for `match_lead_to_projects`, 👍/👎 → `zara_training_feedback`, follow-up chips (cached secondary Haiku call), voice input (SpeechRecognition + language dropdown), conversation auto-title.
+- `ZaraDock.tsx` — root mount: launcher (closed) + slide-in panel (open). 400px desktop, full-screen mobile. Hidden on `/crm/zara`, `/crm/zara/about`, `/crm/zara/train`, `/crm/zara/projects/:id`.
+- `ZaraDockHeader.tsx` — avatar + name + mode pill + maximize/history/help/close buttons.
+- `ZaraChatStream.tsx` — shared message renderer (markdown, code-blocks with copy, lead/project link rewriting, sources pill expand, per-bubble copy, time tooltip with tokens). Used by dock AND cockpit.
+- `ZaraComposer.tsx` — auto-resize textarea + mic + language + send + Cmd/Ctrl+Enter. Below: `ZaraQuickActionChips`.
+- `ZaraQuickActionChips.tsx` — surface→chips map; clicking sends prefilled message with implicit `contact_id` injected via dock store.
+- `ZaraConversationListOverlay.tsx` — search, filter tabs, sort, grouped sticky headers (Pinned/Today/Yesterday/Week/Earlier), row actions menu (pin/rename/archive/export/delete), keyboard nav. Used in dock history button and cockpit left rail.
+- `useZaraExportMarkdown.ts` — client-side export to `.md`.
 
-**Acceptance hit in phase 2:** #4, #5, #9, #12-#16, #18-#20, #22, #23, #26.
+## Step 5 — Mount
 
-## Phase 3 — Knowledge + Self-awareness (final turn)
+Add `<ZaraDock />` + `useZaraKeyboard()` inside `CrmLayout.tsx` (outside `PageTransition`, sibling to `BottomNav`). Replace old `useZaraShortcut` global usage in `App.tsx` to forward to dock toggle when on `/crm/*`.
 
-**Edge fns:** `zara-sync-projects` (presaleproperties.com scrape + CSV fallback + weekly cron), `zara-feedback-roll-up` (weekly Sonnet meta-analysis), `zara-web-research` (24h cache).
+## Step 6 — Refactor cockpit
 
-**Admin pages:**
-- `/crm/zara/projects` — table, filters, sync button, CSV import, add/edit/archive, Surrey/Langley/Abbotsford/Coquitlam/Delta/Burnaby-South seed CSV
-- `/crm/zara/about` — 5 sections (status hero, knowledge coverage, performance charts, prompt evolution with "Apply to system prompt", capability matrix)
+Swap `ZaraCockpitPage` message rendering + composer + chips to use the shared `ZaraChatStream` + `ZaraComposer` + `ZaraQuickActionChips` + `ZaraConversationListOverlay` so behaviour matches dock 1:1. Keep cockpit's max-width layout and project/queue panels.
 
-**Queue training UI:** "Tell Zara why" modal on rejected/edited drafts in `/crm/zara/queue` → `zara_training_feedback`.
+## Step 7 — Deploy + verify
 
-**Lead detail integration:** "Talk to Zara about this lead" button on `/crm/leads/:id`.
+- Deploy `zara-chat`.
+- Run `bun run build`.
+- Smoke-test: open dock from `/crm/leads`, navigate, confirm persistence; send from `/crm/leads/:id` and check `page_context` saved + chips render; test pin/rename/archive/export/delete; Cmd/Ctrl+J/K/Esc.
 
-**Acceptance hit in phase 3:** #2, #6-#8, #10, #11, #24, #25.
+## Technical details
 
----
-
-## Technical Notes (you can skip these)
-
-- **Model**: keeping Claude Haiku 4.5 / Sonnet 4.5 per spec. Anthropic SSE format is different from Lovable AI Gateway — I'll hand-roll the `EventSource` parser, not use the AI SDK.
-- **Tool loop**: max 8 tool turns per user message to prevent runaway. Logged per call.
-- **Voice**: feature-detected, mic hidden on Safari iOS for now (Web Speech API gap).
-- **Project sync**: scraping presaleproperties.com depends on its HTML structure — if it changes, the CSV fallback keeps the admin usable.
-- **Realtime addenda**: addenda fetched per `zara-chat` call (no cache) so "Apply to system prompt" takes effect on the very next message.
-- **Test mode**: `zara_test_contact` tagged contacts bypass the `zara_enabled=false` guard in `draft_*` (matches existing Tier 2 behavior).
-
-## What you're approving
-
-Approving = green light to start Phase 1 immediately in this thread, then I continue Phase 2 and Phase 3 in the next two messages without re-asking. Reject the plan if you'd rather I attempt all 26 criteria in one shot (faster, more breakage) or compress further.
+- Surface inference: `/crm/leads/:id` → `lead_detail` + `contact_id`; `/crm/leads` → `leads_list`; `/crm/pipeline` → `pipeline`; `/crm/chats*` → `chats`; `/crm/email*` → `email`; `/crm/scheduler` → `calendar`; `/crm/templates` → `templates`; `/crm/zara/queue` → `queue`; `/crm/zara/projects` → `projects_list`; `/crm/reports*|/crm/email/analytics` → `reports`; `/crm/behavior*|/dashboard` → `dashboard`; else `other`.
+- Hidden routes computed once via regex array.
+- Realtime: single channel per `conversation_id`; subscribe both dock+cockpit, de-dupe by message id.
+- Title regen: scheduled inline at end of stream (non-blocking `await`), gated by `title_regenerated_at_turn`.
+- Markdown link rewriting: post-render walk on text nodes with built-from-metadata Map. Avoid wrapping inside code blocks.
+- Touch targets: `min-h-11 min-w-11` on mobile controls.
+- Theme: gold launcher uses `bg-primary text-primary-foreground`; surface uses `bg-background border-border`. No raw hex.

@@ -43,7 +43,8 @@ Rules:
 - Prefer real data via tools over guessing. If you don't know, call a tool.
 - When the user names a lead, call get_lead_context first.
 - Keep responses tight, scannable, markdown-formatted.
-- For projects, prefer recommend_projects_for_lead when a lead context exists.`;
+- For projects, prefer recommend_projects_for_lead when a lead context exists.
+- A <current_view> block tells you what Uzair is looking at right now. When his message uses pronouns ("this lead", "him", "her", "this project") or is ambiguous, resolve them to whatever's in <current_view>. If <current_view> shows a lead and Uzair says "draft a follow-up", draft it for THAT lead — no need to ask which one.`;
 
 type ToolCtx = { user_id: string; conversation_id: string; zara_enabled: boolean; test_phones: string[] };
 
@@ -91,8 +92,46 @@ async function runTool(name: string, input: unknown, ctx: ToolCtx) {
   return await res.json();
 }
 
-async function persistAssistantTurn(convId: string, text: string, toolCalls: any[], usage: any, consultedSources?: any) {
+function stripMarkdown(s: string) {
+  return s.replace(/```[\s\S]*?```/g, "")
+    .replace(/`[^`]*`/g, "")
+    .replace(/!\[[^\]]*\]\([^)]+\)/g, "")
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
+    .replace(/[*_#>~]+/g, "")
+    .replace(/\s+/g, " ").trim();
+}
+
+function extractReferencedIds(toolUses: any[], toolResults: Map<string, any>) {
+  const contactIds = new Set<string>();
+  const projectIds = new Set<string>();
+  const scan = (val: any) => {
+    if (!val || typeof val !== "object") return;
+    if (Array.isArray(val)) { for (const v of val) scan(v); return; }
+    for (const [k, v] of Object.entries(val)) {
+      if (typeof v === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v)) {
+        const key = k.toLowerCase();
+        if (key === "contact_id" || key === "id" && /contact|lead/.test(JSON.stringify(val).toLowerCase().slice(0, 200))) contactIds.add(v);
+        if (key === "contact_id") contactIds.add(v);
+        if (key === "project_id" || (key === "id" && val && (val as any).slug && (val as any).name)) projectIds.add(v);
+      } else if (v && typeof v === "object") scan(v);
+    }
+  };
+  for (const tu of toolUses) {
+    const out = toolResults.get(tu.id);
+    if (out) scan(out);
+    if (tu.input) scan(tu.input);
+  }
+  return { contact_ids: Array.from(contactIds), project_ids: Array.from(projectIds) };
+}
+
+async function persistAssistantTurn(convId: string, text: string, toolCalls: any[], usage: any, consultedSources?: any, referencedIds?: { contact_ids: string[]; project_ids: string[] }) {
   const sb = svc();
+  const metadata: any = {};
+  if (consultedSources) metadata.consulted_sources = consultedSources;
+  if (referencedIds && (referencedIds.contact_ids.length || referencedIds.project_ids.length)) {
+    metadata.referenced_contact_ids = referencedIds.contact_ids;
+    metadata.referenced_project_ids = referencedIds.project_ids;
+  }
   const payload: any = {
     conversation_id: convId, role: "assistant",
     content: text || null,
@@ -101,9 +140,17 @@ async function persistAssistantTurn(convId: string, text: string, toolCalls: any
     output_tokens: usage?.output_tokens ?? null,
     model: ANTHROPIC_MODEL,
   };
-  if (consultedSources) payload.metadata = { consulted_sources: consultedSources };
+  if (Object.keys(metadata).length) payload.metadata = metadata;
   const { data, error } = await sb.from("zara_messages").insert(payload).select("id").single();
   if (error) console.error("persist assistant", error);
+  // Update conversation snippet (first 100 chars of stripped markdown)
+  if (text) {
+    const snippet = stripMarkdown(text).slice(0, 100);
+    sb.from("zara_conversations")
+      .update({ last_message_snippet: snippet, last_message_at: new Date().toISOString() })
+      .eq("id", convId)
+      .then(() => {}, () => {});
+  }
   return data?.id ?? null;
 }
 
@@ -198,8 +245,70 @@ async function maybeAutoTitle(convId: string, firstUserText: string) {
   const { data } = await sb.from("zara_conversations").select("title").eq("id", convId).maybeSingle();
   if (data?.title && data.title !== "New conversation") return null;
   const title = firstUserText.slice(0, 60).replace(/\s+/g, " ").trim() + (firstUserText.length > 60 ? "…" : "");
-  await sb.from("zara_conversations").update({ title, last_message_at: new Date().toISOString() }).eq("id", convId);
+  await sb.from("zara_conversations").update({ title, last_message_at: new Date().toISOString(), title_regenerated_at_turn: 2 }).eq("id", convId);
   return title;
+}
+
+// Regenerate a tight conversation title using Haiku at turn milestones.
+async function regenerateTitleIfDue(convId: string, currentUserTurn: number) {
+  const milestones = [6, 12];
+  if (!milestones.includes(currentUserTurn)) return null;
+  const sb = svc();
+  const { data: conv } = await sb.from("zara_conversations")
+    .select("title_regenerated_at_turn").eq("id", convId).maybeSingle();
+  if ((conv?.title_regenerated_at_turn ?? 0) >= currentUserTurn) return null;
+  const { data: msgs } = await sb.from("zara_messages")
+    .select("role,content").eq("conversation_id", convId)
+    .in("role", ["user", "assistant"])
+    .order("created_at", { ascending: true }).limit(24);
+  const transcript = (msgs ?? [])
+    .map((m: any) => `${m.role === "user" ? "User" : "Zara"}: ${stripMarkdown(m.content ?? "").slice(0, 240)}`)
+    .join("\n").slice(0, 4000);
+  try {
+    const r = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: { "x-api-key": ANTHROPIC_API_KEY, "anthropic-version": "2023-06-01", "content-type": "application/json" },
+      body: JSON.stringify({
+        model: ANTHROPIC_MODEL, max_tokens: 40,
+        system: "Return ONLY a 2-6 word sentence-case title summarizing the conversation. No quotes, no period.",
+        messages: [{ role: "user", content: transcript }],
+      }),
+    });
+    if (!r.ok) return null;
+    const j = await r.json();
+    const title = String(j?.content?.[0]?.text ?? "").trim().replace(/^["']|["']$/g, "").slice(0, 60);
+    if (!title) return null;
+    await sb.from("zara_conversations").update({ title, title_regenerated_at_turn: currentUserTurn }).eq("id", convId);
+    return title;
+  } catch { return null; }
+}
+
+async function buildCurrentViewBlock(pc: any): Promise<string> {
+  if (!pc || typeof pc !== "object") return "";
+  const sb = svc();
+  const lines: string[] = ["<current_view>"];
+  lines.push(`Surface: ${pc.surface ?? "other"}`);
+  if (pc.url) lines.push(`URL: ${pc.url}`);
+  if (pc.label) lines.push(`Label: ${pc.label}`);
+  if (pc.contact_id) {
+    const { data: c } = await sb.from("crm_contacts")
+      .select("id, full_name, pipeline_status, lead_type, last_touch_at")
+      .eq("id", pc.contact_id).maybeSingle();
+    if (c) {
+      const last = c.last_touch_at ? new Date(c.last_touch_at).toISOString() : "—";
+      lines.push(`Currently viewing lead: ${c.full_name ?? "(unknown)"} [id=${c.id}] · stage=${c.pipeline_status ?? "?"} · type=${c.lead_type ?? "?"} · last activity=${last}`);
+    } else {
+      lines.push(`Currently viewing lead id: ${pc.contact_id}`);
+    }
+  }
+  if (pc.project_id) {
+    const { data: p } = await sb.from("presale_projects")
+      .select("id, name, city").eq("id", pc.project_id).maybeSingle();
+    if (p) lines.push(`Currently viewing project: ${p.name}${p.city ? ` (${p.city})` : ""} [id=${p.id}]`);
+  }
+  if (pc.campaign_id) lines.push(`Currently viewing campaign id: ${pc.campaign_id}`);
+  lines.push("</current_view>");
+  return lines.join("\n");
 }
 
 async function callAnthropic(messages: any[], system: string, signal: AbortSignal) {
@@ -303,7 +412,7 @@ Deno.serve(async (req) => {
     const user = userData?.user;
     if (!user) return new Response("Unauthorized", { status: 401, headers: corsHeaders });
 
-    const { conversation_id, message } = await req.json();
+    const { conversation_id, message, page_context } = await req.json();
     if (!conversation_id || !message) return new Response("conversation_id and message required", { status: 400, headers: corsHeaders });
 
     // Check mode
@@ -315,12 +424,15 @@ Deno.serve(async (req) => {
     }
     const ctx: ToolCtx = {
       user_id: user.id, conversation_id,
-      zara_enabled: true, // Per-contact gate checked inside draft tools
+      zara_enabled: true,
       test_phones: settings?.test_phone_numbers ?? [],
     };
 
-    // Persist the user message
-    await sb.from("zara_messages").insert({ conversation_id, role: "user", content: message });
+    // Persist the user message (with page_context snapshot)
+    await sb.from("zara_messages").insert({
+      conversation_id, role: "user", content: message,
+      page_context: page_context ?? null,
+    });
     await sb.from("zara_conversations").update({ last_message_at: new Date().toISOString() }).eq("id", conversation_id);
 
     // Load history + load system prompt addenda
@@ -340,10 +452,12 @@ Deno.serve(async (req) => {
       ragSources = r.sources;
     }
 
-    // System assembly: <retrieved_context> goes BEFORE addenda so addenda
-    // (which encode the agent's voice / corrections) still get the final say.
+    // System assembly: <retrieved_context> goes BEFORE addenda; <current_view>
+    // goes after retrieval so the model can use it to resolve pronouns.
+    const currentViewBlock = await buildCurrentViewBlock(page_context);
     const systemParts = [SYSTEM_PROMPT_BASE];
     if (ragBlock) systemParts.push(ragBlock);
+    if (currentViewBlock) systemParts.push(currentViewBlock);
     for (const a of (addenda ?? [])) systemParts.push((a as any).addendum);
     const system = systemParts.join("\n\n");
 
@@ -367,6 +481,7 @@ Deno.serve(async (req) => {
           let messages = toAnthropicMessages([...history, { role: "user", content: message }]);
           let turn = 0;
           let lastAssistantId: string | null = null;
+          const toolResultsById = new Map<string, any>();
 
           while (turn < MAX_TOOL_TURNS) {
             turn++;
@@ -376,20 +491,21 @@ Deno.serve(async (req) => {
             const assistantContent: any[] = [];
             if (text) assistantContent.push({ type: "text", text });
             for (const tu of toolUses) assistantContent.push({ type: "tool_use", id: tu.id, name: tu.name, input: tu.input });
-            // Persist consulted_sources only on the first assistant turn (the
-            // one that actually used the retrieved context).
             const persistSources = turn === 1 ? ragSources : undefined;
-            lastAssistantId = await persistAssistantTurn(conversation_id, text, toolUses, usage, persistSources);
+            const referencedIds = extractReferencedIds(toolUses, toolResultsById);
+            lastAssistantId = await persistAssistantTurn(conversation_id, text, toolUses, usage, persistSources, referencedIds);
             messages.push({ role: "assistant", content: assistantContent });
 
             if (stopReason !== "tool_use" || toolUses.length === 0) {
               send("done", { message_id: lastAssistantId, usage });
+              // Title regen at milestones (non-blocking)
+              const newUserTurnCount = userTurns + 1;
+              regenerateTitleIfDue(conversation_id, newUserTurnCount).then((t) => {
+                if (t) { try { send("title", { title: t }); } catch { /* stream closed */ } }
+              }, () => {});
               break;
             }
 
-            // Execute each tool sequentially, emit start + result.
-            // For tools that require user approval, persist a pending row
-            // and feed a synthetic tool_result back to Anthropic so it stops.
             const toolResults: any[] = [];
             let anyPending = false;
             for (const tu of toolUses) {
@@ -405,6 +521,7 @@ Deno.serve(async (req) => {
                   message: `Awaiting user approval for ${tu.name}. Briefly tell the user what's being proposed and stop — do not call any more tools until they decide.`,
                 };
                 await persistToolResult(conversation_id, tu.id, tu.name, out);
+                toolResultsById.set(tu.id, out);
                 toolResults.push({ type: "tool_result", tool_use_id: tu.id, content: JSON.stringify(out) });
                 anyPending = true;
                 continue;
@@ -412,14 +529,12 @@ Deno.serve(async (req) => {
               send("tool_start", { id: tu.id, name: tu.name, input: tu.input });
               const out = await runTool(tu.name, tu.input, ctx);
               await persistToolResult(conversation_id, tu.id, tu.name, out);
+              toolResultsById.set(tu.id, out);
               send("tool_result", { id: tu.id, name: tu.name, output: out });
               toolResults.push({ type: "tool_result", tool_use_id: tu.id, content: JSON.stringify(out) });
             }
             messages.push({ role: "user", content: toolResults });
-            if (anyPending) {
-              // One more turn so the model can summarize, then it should stop.
-              // The next turn's tool_use (if any) will also gate.
-            }
+            if (anyPending) { /* allow one more summarising turn */ }
           }
 
           if (turn >= MAX_TOOL_TURNS) {
