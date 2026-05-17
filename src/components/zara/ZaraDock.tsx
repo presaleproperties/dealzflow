@@ -77,8 +77,9 @@ function useNameLinks(contactIds: string[], projectIds: string[]) {
     queryKey: ['zara-link-contacts', contactIds.join(',')],
     enabled: contactIds.length > 0,
     queryFn: async () => {
-      const { data } = await supabase.from('crm_contacts').select('id, full_name').in('id', contactIds);
-      return (data as Array<{ id: string; full_name: string | null }>) ?? [];
+      const { data } = await supabase.from('crm_contacts').select('id, first_name, last_name').in('id', contactIds);
+      const rows = (data as Array<{ id: string; first_name: string | null; last_name: string | null }> | null) ?? [];
+      return rows.map((r) => ({ id: r.id, full_name: [r.first_name, r.last_name].filter(Boolean).join(' ').trim() || null }));
     },
   });
   const { data: projects = [] } = useQuery({
