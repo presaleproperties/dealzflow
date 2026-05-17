@@ -275,9 +275,28 @@ Deno.serve(async (req) => {
               break;
             }
 
-            // Execute each tool sequentially, emit start + result
+            // Execute each tool sequentially, emit start + result.
+            // For tools that require user approval, persist a pending row
+            // and feed a synthetic tool_result back to Anthropic so it stops.
             const toolResults: any[] = [];
+            let anyPending = false;
             for (const tu of toolUses) {
+              if (NEEDS_APPROVAL.has(tu.name)) {
+                const { data: pend } = await sb.from("zara_pending_tool_calls").insert({
+                  conversation_id, message_id: lastAssistantId,
+                  tool_use_id: tu.id, tool_name: tu.name, tool_input: tu.input,
+                  requested_by: user.id, status: "pending",
+                }).select("id").single();
+                send("tool_pending", { id: tu.id, name: tu.name, input: tu.input, pending_id: pend?.id });
+                const out = {
+                  ok: false, pending_approval: true, pending_id: pend?.id,
+                  message: `Awaiting user approval for ${tu.name}. Briefly tell the user what's being proposed and stop — do not call any more tools until they decide.`,
+                };
+                await persistToolResult(conversation_id, tu.id, tu.name, out);
+                toolResults.push({ type: "tool_result", tool_use_id: tu.id, content: JSON.stringify(out) });
+                anyPending = true;
+                continue;
+              }
               send("tool_start", { id: tu.id, name: tu.name, input: tu.input });
               const out = await runTool(tu.name, tu.input, ctx);
               await persistToolResult(conversation_id, tu.id, tu.name, out);
@@ -285,6 +304,10 @@ Deno.serve(async (req) => {
               toolResults.push({ type: "tool_result", tool_use_id: tu.id, content: JSON.stringify(out) });
             }
             messages.push({ role: "user", content: toolResults });
+            if (anyPending) {
+              // One more turn so the model can summarize, then it should stop.
+              // The next turn's tool_use (if any) will also gate.
+            }
           }
 
           if (turn >= MAX_TOOL_TURNS) {
