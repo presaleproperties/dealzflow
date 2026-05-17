@@ -176,8 +176,8 @@ ${memoryRow?.summary ?? '(no memory yet)'}
 MEMORY FACTS (durable deal context — trust these unless the inbound contradicts them):
 ${memoryRow?.facts && Object.keys(memoryRow.facts).length > 0 ? JSON.stringify(memoryRow.facts, null, 2) : '(no facts captured yet)'}
 
-RELEVANT PROJECT KNOWLEDGE (retrieved via vector search — use these facts, do not invent others):
-${ragContext || '(no project matches above similarity floor — answer from memory only and do not quote specific prices, deposit terms, or completion dates)'}
+RELEVANT PROJECT KNOWLEDGE (retrieved via vector search — use these facts, do not invent others. Each project is prefixed with a [N] tag; when you state a project-specific fact (price, deposit, completion year, location, pitch line) append the matching [N] marker inline, e.g. "completing 2027 [1]". Use markers sparingly — at most one per sentence, only for facts pulled from the knowledge block below. Do NOT cite memory, events, or general knowledge.):
+${ragContext || '(no project matches above similarity floor — answer from memory only, do not quote specific prices, deposit terms, or completion dates, and do not emit any [N] citation markers)'}
 
 LAST 10 EVENTS:
 ${eventLines}
