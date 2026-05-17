@@ -92,7 +92,35 @@ export default function ZaraQueuePage() {
     return () => { supabase.removeChannel(ch); };
   }, [qc]);
 
-  const pending = drafts.filter((d) => d.status === 'pending');
+  const pendingAll = drafts.filter((d) => d.status === 'pending');
+
+  const tagOptions = useMemo(() => {
+    const set = new Set<string>();
+    pendingAll.forEach((d) => {
+      const c = contactMap.get(d.contact_id);
+      (c?.tags ?? []).forEach((t: string) => t && set.add(t));
+    });
+    return Array.from(set).sort();
+  }, [pendingAll, contactMap]);
+
+  const sourceCount = (s: any) =>
+    (s?.chunks?.length ?? 0) + (s?.wins?.length ?? 0) + (s?.projects?.length ?? 0);
+
+  const pending = useMemo(() => {
+    return pendingAll.filter((d) => {
+      if (fChannel !== 'all' && d.channel !== fChannel) return false;
+      const s = d.consulted_sources ?? {};
+      if (fSource === 'K' && !(s.chunks?.length > 0)) return false;
+      if (fSource === 'W' && !(s.wins?.length > 0)) return false;
+      if (fSource === 'P' && !(s.projects?.length > 0)) return false;
+      if (fSource === 'none' && sourceCount(s) > 0) return false;
+      if (fTag !== 'all') {
+        const c = contactMap.get(d.contact_id);
+        if (!(c?.tags ?? []).includes(fTag)) return false;
+      }
+      return true;
+    });
+  }, [pendingAll, fChannel, fSource, fTag, contactMap]);
 
   const banner = (() => {
     const m = settings?.mode ?? 'sandbox';
