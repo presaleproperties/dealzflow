@@ -125,7 +125,7 @@ function extractReferencedIds(toolUses: any[], toolResults: Map<string, any>) {
   return { contact_ids: Array.from(contactIds), project_ids: Array.from(projectIds) };
 }
 
-async function persistAssistantTurn(convId: string, text: string, toolCalls: any[], usage: any, consultedSources?: any, referencedIds?: { contact_ids: string[]; project_ids: string[] }) {
+async function persistAssistantTurn(convId: string, text: string, toolCalls: any[], usage: any, consultedSources?: any, referencedIds?: { contact_ids: string[]; project_ids: string[] }, agentUserId?: string, pinnedContactId?: string | null) {
   const sb = svc();
   const metadata: any = {};
   if (consultedSources) metadata.consulted_sources = consultedSources;
@@ -144,6 +144,21 @@ async function persistAssistantTurn(convId: string, text: string, toolCalls: any
   if (Object.keys(metadata).length) payload.metadata = metadata;
   const { data, error } = await sb.from("zara_messages").insert(payload).select("id").single();
   if (error) console.error("persist assistant", error);
+
+  // Shadow-write to new single-rolling table (zara_chat_messages) — keyed by agent.
+  if (agentUserId) {
+    const parts: any[] = [];
+    if (text) parts.push({ type: "text", text });
+    for (const tc of toolCalls) parts.push({ type: "tool_use", id: tc.id, name: tc.name, input: tc.input });
+    if (consultedSources) parts.push({ type: "sources", sources: consultedSources });
+    sb.from("zara_chat_messages").insert({
+      agent_user_id: agentUserId,
+      role: "assistant",
+      parts,
+      pinned_contact_id: pinnedContactId ?? null,
+    }).then(() => {}, (e) => console.warn("zara_chat_messages assistant write failed", e));
+  }
+
   // Update conversation snippet (first 100 chars of stripped markdown)
   if (text) {
     const snippet = stripMarkdown(text).slice(0, 100);
