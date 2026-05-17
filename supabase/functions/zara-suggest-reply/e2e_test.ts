@@ -16,52 +16,39 @@
 
 import "https://deno.land/std@0.224.0/dotenv/load.ts";
 import { assert, assertEquals } from "https://deno.land/std@0.224.0/assert/mod.ts";
+import postgres from "https://deno.land/x/postgresjs@v3.4.4/mod.js";
 
 const SUPABASE_URL = Deno.env.get("VITE_SUPABASE_URL")!;
 const ANON_KEY = Deno.env.get("VITE_SUPABASE_PUBLISHABLE_KEY")!;
+const DB_URL = Deno.env.get("SUPABASE_DB_URL")!;
 
 const TEST_TAG = "zara_test_contact";
 const TEST_EMAIL = `zara-e2e-${crypto.randomUUID().slice(0, 8)}@example.test`;
 const ASSIGNED_TO = "Uzair Muhammad"; // matches existing crm_team display_name
 
-async function psql(sql: string): Promise<string> {
-  const cmd = new Deno.Command("psql", {
-    args: ["-v", "ON_ERROR_STOP=1", "-A", "-t", "-c", sql],
-    stdout: "piped",
-    stderr: "piped",
-  });
-  const { code, stdout, stderr } = await cmd.output();
-  if (code !== 0) {
-    throw new Error(`psql failed: ${new TextDecoder().decode(stderr)}`);
-  }
-  return new TextDecoder().decode(stdout).trim();
-}
+const sql = postgres(DB_URL, { max: 1, prepare: false });
 
 async function createTestContact(): Promise<string> {
-  const sql = `
+  const rows = await sql`
     INSERT INTO public.crm_contacts (
       first_name, last_name, email, assigned_to, tags, zara_enabled,
       status, lead_type, budget_min, budget_max, languages, project
     ) VALUES (
-      'ZaraE2E', 'Tester', '${TEST_EMAIL}', '${ASSIGNED_TO}',
-      ARRAY['${TEST_TAG}'], true,
+      'ZaraE2E', 'Tester', ${TEST_EMAIL}, ${ASSIGNED_TO},
+      ARRAY[${TEST_TAG}]::text[], true,
       'New', 'buyer', 800000, 1200000,
-      ARRAY['English'], 'Surrey presale'
+      ARRAY['English']::text[], 'Surrey presale'
     )
-    RETURNING id;
+    RETURNING id::text AS id
   `;
-  const id = await psql(sql);
-  assert(id.length > 0, "failed to create test contact");
-  return id;
+  return rows[0].id as string;
 }
 
 async function cleanupTestContact(id: string) {
-  // hard-delete contact + memory + drafts so we don't leak rows. Order matters
-  // because of FKs (zara_suggested_replies references contact_id).
-  await psql(`DELETE FROM public.zara_suggested_replies WHERE contact_id = '${id}';`);
-  await psql(`DELETE FROM public.zara_lead_memory WHERE contact_id = '${id}';`);
-  await psql(`DELETE FROM public.crm_engagement_events WHERE contact_id = '${id}';`);
-  await psql(`DELETE FROM public.crm_contacts WHERE id = '${id}';`);
+  await sql`DELETE FROM public.zara_suggested_replies WHERE contact_id = ${id}::uuid`;
+  await sql`DELETE FROM public.zara_lead_memory WHERE contact_id = ${id}::uuid`;
+  await sql`DELETE FROM public.crm_engagement_events WHERE contact_id = ${id}::uuid`;
+  await sql`DELETE FROM public.crm_contacts WHERE id = ${id}::uuid`;
 }
 
 async function callFn(path: string, body: unknown) {
