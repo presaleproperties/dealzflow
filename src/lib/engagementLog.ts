@@ -117,9 +117,9 @@ function toRow(input: EngagementEventInput, actorId: string | null) {
     direction: input.direction ?? null,
     campaign_id: input.campaignId ?? null,
     thread_id: input.threadId ?? null,
-    metadata: input.metadata ?? {},
+    metadata: (input.metadata ?? {}) as Record<string, unknown>,
     occurred_at: occurredAt,
-  };
+  } as never;
 }
 
 /** Fire-and-forget: log a single engagement event. Never throws. */
