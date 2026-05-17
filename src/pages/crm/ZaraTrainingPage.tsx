@@ -418,12 +418,12 @@ export default function ZaraTrainingPage() {
                         <span className="font-medium truncate max-w-[300px]">{d.title}</span>
                         <Pill size="sm" tone={tone as any}>{d.status}</Pill>
                         <Pill size="sm" tone="neutral">{d.source_type}</Pill>
-                        {d.times_retrieved > 0 && (
-                          <span className="text-[10.5px] text-muted-foreground">retrieved {d.times_retrieved}×</span>
+                        {d.retrieval_count > 0 && (
+                          <span className="text-[10.5px] text-muted-foreground">retrieved {d.retrieval_count}×</span>
                         )}
                       </div>
                       <div className="text-[10.5px] text-muted-foreground">
-                        {d.total_chunks ?? 0} chunks · {(d.total_tokens ?? 0).toLocaleString()} tokens · {formatDistanceToNow(new Date(d.created_at), { addSuffix: true })}
+                        {d.total_chunks ?? 0} chunks · {(d.total_tokens ?? 0).toLocaleString()} tokens · {formatDistanceToNow(new Date(d.uploaded_at), { addSuffix: true })}
                       </div>
                       {d.error_message && (
                         <div className="text-[11px] text-destructive mt-1 flex items-start gap-1">
