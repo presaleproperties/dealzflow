@@ -326,6 +326,19 @@ Draft Zara's reply now. Return ONLY the JSON object.`;
       })
       .then(() => {});
 
+    // 10b. Roll per-lead memory using the inbound + the (not-yet-sent) draft.
+    //      Fire-and-forget; failures must not affect the caller.
+    fetch(`${SUPABASE_URL}/functions/v1/zara-roll-memory`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${SERVICE_KEY}` },
+      body: JSON.stringify({
+        contact_id: contactId,
+        inbound_text: inboundText,
+        draft_text: parsed.draft_text ?? null,
+        kind: 'draft',
+      }),
+    }).catch((e) => console.warn('[zara-suggest-reply] roll-memory kick failed', e));
+
     // 11. Notify agent only in live mode
     if (settings.mode === 'live') {
       admin.functions.invoke('zara-notify-agent', { body: { draftId: draft.id } }).then(() => {});
