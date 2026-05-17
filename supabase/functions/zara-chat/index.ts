@@ -245,8 +245,70 @@ async function maybeAutoTitle(convId: string, firstUserText: string) {
   const { data } = await sb.from("zara_conversations").select("title").eq("id", convId).maybeSingle();
   if (data?.title && data.title !== "New conversation") return null;
   const title = firstUserText.slice(0, 60).replace(/\s+/g, " ").trim() + (firstUserText.length > 60 ? "…" : "");
-  await sb.from("zara_conversations").update({ title, last_message_at: new Date().toISOString() }).eq("id", convId);
+  await sb.from("zara_conversations").update({ title, last_message_at: new Date().toISOString(), title_regenerated_at_turn: 2 }).eq("id", convId);
   return title;
+}
+
+// Regenerate a tight conversation title using Haiku at turn milestones.
+async function regenerateTitleIfDue(convId: string, currentUserTurn: number) {
+  const milestones = [6, 12];
+  if (!milestones.includes(currentUserTurn)) return null;
+  const sb = svc();
+  const { data: conv } = await sb.from("zara_conversations")
+    .select("title_regenerated_at_turn").eq("id", convId).maybeSingle();
+  if ((conv?.title_regenerated_at_turn ?? 0) >= currentUserTurn) return null;
+  const { data: msgs } = await sb.from("zara_messages")
+    .select("role,content").eq("conversation_id", convId)
+    .in("role", ["user", "assistant"])
+    .order("created_at", { ascending: true }).limit(24);
+  const transcript = (msgs ?? [])
+    .map((m: any) => `${m.role === "user" ? "User" : "Zara"}: ${stripMarkdown(m.content ?? "").slice(0, 240)}`)
+    .join("\n").slice(0, 4000);
+  try {
+    const r = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: { "x-api-key": ANTHROPIC_API_KEY, "anthropic-version": "2023-06-01", "content-type": "application/json" },
+      body: JSON.stringify({
+        model: ANTHROPIC_MODEL, max_tokens: 40,
+        system: "Return ONLY a 2-6 word sentence-case title summarizing the conversation. No quotes, no period.",
+        messages: [{ role: "user", content: transcript }],
+      }),
+    });
+    if (!r.ok) return null;
+    const j = await r.json();
+    const title = String(j?.content?.[0]?.text ?? "").trim().replace(/^["']|["']$/g, "").slice(0, 60);
+    if (!title) return null;
+    await sb.from("zara_conversations").update({ title, title_regenerated_at_turn: currentUserTurn }).eq("id", convId);
+    return title;
+  } catch { return null; }
+}
+
+async function buildCurrentViewBlock(pc: any): Promise<string> {
+  if (!pc || typeof pc !== "object") return "";
+  const sb = svc();
+  const lines: string[] = ["<current_view>"];
+  lines.push(`Surface: ${pc.surface ?? "other"}`);
+  if (pc.url) lines.push(`URL: ${pc.url}`);
+  if (pc.label) lines.push(`Label: ${pc.label}`);
+  if (pc.contact_id) {
+    const { data: c } = await sb.from("crm_contacts")
+      .select("id, full_name, pipeline_status, lead_type, last_touch_at")
+      .eq("id", pc.contact_id).maybeSingle();
+    if (c) {
+      const last = c.last_touch_at ? new Date(c.last_touch_at).toISOString() : "—";
+      lines.push(`Currently viewing lead: ${c.full_name ?? "(unknown)"} [id=${c.id}] · stage=${c.pipeline_status ?? "?"} · type=${c.lead_type ?? "?"} · last activity=${last}`);
+    } else {
+      lines.push(`Currently viewing lead id: ${pc.contact_id}`);
+    }
+  }
+  if (pc.project_id) {
+    const { data: p } = await sb.from("presale_projects")
+      .select("id, name, city").eq("id", pc.project_id).maybeSingle();
+    if (p) lines.push(`Currently viewing project: ${p.name}${p.city ? ` (${p.city})` : ""} [id=${p.id}]`);
+  }
+  if (pc.campaign_id) lines.push(`Currently viewing campaign id: ${pc.campaign_id}`);
+  lines.push("</current_view>");
+  return lines.join("\n");
 }
 
 async function callAnthropic(messages: any[], system: string, signal: AbortSignal) {
