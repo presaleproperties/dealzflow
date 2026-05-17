@@ -107,6 +107,102 @@ export default function ZaraTrainingPage() {
     },
   });
 
+  // ── Knowledge base (RAG corpus) ───────────────────────────────
+  const { data: kbDocs = [], refetch: refetchKb } = useQuery({
+    queryKey: ['zara-kb-documents'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('zara_knowledge_documents')
+        .select('id,title,source_type,status,total_chunks,total_tokens,error_message,times_retrieved,indexed_at,created_at')
+        .order('created_at', { ascending: false })
+        .limit(100);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  const { data: kbStats } = useQuery({
+    queryKey: ['zara-kb-stats'],
+    queryFn: async () => {
+      const [docs, chunks, wins] = await Promise.all([
+        supabase.from('zara_knowledge_documents').select('id,status', { count: 'exact', head: false }),
+        supabase.from('zara_knowledge_chunks').select('id', { count: 'exact', head: true }),
+        supabase.from('zara_winning_conversations').select('id', { count: 'exact', head: true }),
+      ]);
+      const indexed = (docs.data ?? []).filter((d: any) => d.status === 'indexed').length;
+      const failed = (docs.data ?? []).filter((d: any) => d.status === 'failed').length;
+      return {
+        totalDocs: docs.data?.length ?? 0,
+        indexed,
+        failed,
+        chunks: chunks.count ?? 0,
+        wins: wins.count ?? 0,
+      };
+    },
+  });
+
+  const [kbTitle, setKbTitle] = useState('');
+  const [kbType, setKbType] = useState<'playbook' | 'script' | 'faq' | 'note'>('playbook');
+  const [kbContent, setKbContent] = useState('');
+
+  const addKb = useMutation({
+    mutationFn: async () => {
+      if (!kbTitle.trim() || !kbContent.trim()) throw new Error('Title and content required');
+      const { data: u } = await supabase.auth.getUser();
+      const { data: doc, error } = await supabase
+        .from('zara_knowledge_documents')
+        .insert({
+          title: kbTitle.trim(),
+          source_type: kbType,
+          raw_content: kbContent,
+          status: 'pending',
+          created_by: u.user?.id ?? null,
+        })
+        .select('id')
+        .single();
+      if (error) throw error;
+      const { error: invErr } = await supabase.functions.invoke('zara-ingest-document', {
+        body: { documentId: doc.id },
+      });
+      if (invErr) throw invErr;
+      return doc.id;
+    },
+    onSuccess: () => {
+      toast.success('Indexed. Zara will use it on the next turn.');
+      setKbTitle(''); setKbContent('');
+      qc.invalidateQueries({ queryKey: ['zara-kb-documents'] });
+      qc.invalidateQueries({ queryKey: ['zara-kb-stats'] });
+    },
+    onError: (e: any) => toast.error(e.message ?? 'Could not index'),
+  });
+
+  const reindexKb = useMutation({
+    mutationFn: async (id: string) => {
+      await supabase.from('zara_knowledge_documents').update({ status: 'pending', error_message: null }).eq('id', id);
+      const { error } = await supabase.functions.invoke('zara-ingest-document', { body: { documentId: id } });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success('Re-indexed');
+      qc.invalidateQueries({ queryKey: ['zara-kb-documents'] });
+      qc.invalidateQueries({ queryKey: ['zara-kb-stats'] });
+    },
+    onError: (e: any) => toast.error(e.message ?? 'Re-index failed'),
+  });
+
+  const deleteKb = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('zara_knowledge_documents').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success('Deleted');
+      qc.invalidateQueries({ queryKey: ['zara-kb-documents'] });
+      qc.invalidateQueries({ queryKey: ['zara-kb-stats'] });
+    },
+    onError: (e: any) => toast.error(e.message ?? 'Delete failed'),
+  });
+
   const decisionStats = useMemo(() => {
     const total = decisions.length;
     let approved = 0, edited = 0, rejected = 0;
