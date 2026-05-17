@@ -134,7 +134,7 @@ facts: ${JSON.stringify(prior.facts ?? {}, null, 2)}
 LEAD BASE INFO:
 - name: ${name}
 - tags: ${(contactRow.tags ?? []).join(", ") || "(none)"}
-- project_interest: ${contactRow.project_interest ?? "(none)"}
+- project_interest: ${contactRow.project ?? "(none)"}
 - budget hint: min=${contactRow.budget_min ?? "?"} max=${contactRow.budget_max ?? "?"}
 
 NEW TURN (kind=${turn.kind}):
