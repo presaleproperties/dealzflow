@@ -32,12 +32,12 @@ async function createTestContact(): Promise<string> {
   const rows = await sql`
     INSERT INTO public.crm_contacts (
       first_name, last_name, email, assigned_to, tags, zara_enabled,
-      status, lead_type, budget_min, budget_max, languages, project
+      status, lead_type, budget_min, budget_max, language, project
     ) VALUES (
       'ZaraE2E', 'Tester', ${TEST_EMAIL}, ${ASSIGNED_TO},
       ARRAY[${TEST_TAG}]::text[], true,
       'New', 'buyer', 800000, 1200000,
-      ARRAY['English']::text[], 'Surrey presale'
+      'English', 'Surrey presale'
     )
     RETURNING id::text AS id
   `;
