@@ -152,6 +152,7 @@ Deno.test({
       }
     } finally {
       await cleanupTestContact(contactId);
+      await sql.end({ timeout: 5 });
     }
   },
 });
