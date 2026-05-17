@@ -556,11 +556,28 @@ export default function ZaraCockpitPage() {
               />
               <button
                 type="button"
-                title="Voice input (coming soon)"
-                disabled
-                className="w-8 h-8 rounded-lg text-muted-foreground hover:bg-muted/60 flex items-center justify-center disabled:opacity-40"
+                title={ptt.state === 'recording' ? 'Release to send' : 'Hold to talk'}
+                onMouseDown={(e) => { e.preventDefault(); ptt.start(); }}
+                onMouseUp={(e) => { e.preventDefault(); ptt.stop(); }}
+                onMouseLeave={() => { if (ptt.state === 'recording') ptt.stop(); }}
+                onTouchStart={(e) => { e.preventDefault(); ptt.start(); }}
+                onTouchEnd={(e) => { e.preventDefault(); ptt.stop(); }}
+                disabled={streaming || ptt.state === 'transcribing'}
+                className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors disabled:opacity-40 ${
+                  ptt.state === 'recording'
+                    ? 'bg-destructive text-destructive-foreground animate-pulse'
+                    : ptt.state === 'transcribing'
+                    ? 'bg-muted text-muted-foreground'
+                    : 'text-muted-foreground hover:bg-muted/60'
+                }`}
               >
-                <Mic className="w-4 h-4" />
+                {ptt.state === 'transcribing' ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : ptt.state === 'recording' ? (
+                  <MicOff className="w-4 h-4" />
+                ) : (
+                  <Mic className="w-4 h-4" />
+                )}
               </button>
               {streaming ? (
                 <Button size="sm" variant="outline" onClick={() => abortRef.current?.abort()}>Stop</Button>
