@@ -837,6 +837,7 @@ export default function ZaraCockpitPage() {
                   className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors disabled:opacity-40 ${
                     ptt.state === 'recording'
                       ? (pttCancelArmedRef.current ? 'bg-muted text-muted-foreground' : 'bg-destructive text-destructive-foreground animate-pulse')
+                      : ptt.state === 'transcribing'
                       ? 'bg-muted text-muted-foreground'
                       : 'text-muted-foreground hover:bg-muted/60'
                   }`}
