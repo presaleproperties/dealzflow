@@ -109,6 +109,16 @@ export function LeadQuickActions({ contact }: { contact: CrmContact }) {
           >
             <Zap className="w-3.5 h-3.5" style={{ color: 'hsl(45 90% 55%)' }} /> Enroll in Automation
           </Button>
+          <Button
+            size="sm"
+            className="h-9 text-xs gap-1.5 justify-start col-span-2 bg-primary text-primary-foreground hover:bg-primary/90"
+            onClick={handleSendProjectDetails}
+            disabled={sendingProjects || !contact.email}
+            title={contact.email ? 'Zara drafts a branded project showcase email' : 'No email on file'}
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+            {sendingProjects ? 'Drafting…' : 'Send Project Details'}
+          </Button>
         </div>
 
         <div className="space-y-2 pt-1">
