@@ -10,9 +10,10 @@ import { formatDistanceToNow } from 'date-fns';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import {
-  Plus, Pin, Search, Send, Mic, Sparkles, Inbox, ChevronRight,
+  Plus, Pin, Search, Send, Mic, MicOff, Sparkles, Inbox, ChevronRight,
   Activity as ActivityIcon, ThumbsUp, ThumbsDown, Wrench, Loader2, ChevronDown,
 } from 'lucide-react';
+import { usePushToTalk } from '@/hooks/usePushToTalk';
 
 type Conv = {
   id: string; title: string; pinned: boolean; archived: boolean;
@@ -278,6 +279,20 @@ export default function ZaraCockpitPage() {
     }
   };
 
+  const ptt = usePushToTalk({
+    onTranscript: (t) => {
+      setInput((prev) => {
+        const joined = prev ? `${prev.trim()} ${t}` : t;
+        // resize textarea on next tick
+        requestAnimationFrame(() => {
+          const el = inputRef.current;
+          if (el) { el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 200) + 'px'; el.focus(); }
+        });
+        return joined;
+      });
+    },
+  });
+
   const onSend = async () => {
     const text = input.trim();
     if (!text || streaming) return;
@@ -541,11 +556,28 @@ export default function ZaraCockpitPage() {
               />
               <button
                 type="button"
-                title="Voice input (coming soon)"
-                disabled
-                className="w-8 h-8 rounded-lg text-muted-foreground hover:bg-muted/60 flex items-center justify-center disabled:opacity-40"
+                title={ptt.state === 'recording' ? 'Release to send' : 'Hold to talk'}
+                onMouseDown={(e) => { e.preventDefault(); ptt.start(); }}
+                onMouseUp={(e) => { e.preventDefault(); ptt.stop(); }}
+                onMouseLeave={() => { if (ptt.state === 'recording') ptt.stop(); }}
+                onTouchStart={(e) => { e.preventDefault(); ptt.start(); }}
+                onTouchEnd={(e) => { e.preventDefault(); ptt.stop(); }}
+                disabled={streaming || ptt.state === 'transcribing'}
+                className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors disabled:opacity-40 ${
+                  ptt.state === 'recording'
+                    ? 'bg-destructive text-destructive-foreground animate-pulse'
+                    : ptt.state === 'transcribing'
+                    ? 'bg-muted text-muted-foreground'
+                    : 'text-muted-foreground hover:bg-muted/60'
+                }`}
               >
-                <Mic className="w-4 h-4" />
+                {ptt.state === 'transcribing' ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : ptt.state === 'recording' ? (
+                  <MicOff className="w-4 h-4" />
+                ) : (
+                  <Mic className="w-4 h-4" />
+                )}
               </button>
               {streaming ? (
                 <Button size="sm" variant="outline" onClick={() => abortRef.current?.abort()}>Stop</Button>
@@ -558,7 +590,7 @@ export default function ZaraCockpitPage() {
             </div>
             <div className="mt-2 text-center text-[10.5px] text-muted-foreground">
               <Link to="/crm/zara/about" className="hover:text-foreground transition-colors">
-                Cmd/Ctrl+Enter to send · {streaming ? 'streaming…' : 'ready'}
+                Cmd/Ctrl+Enter to send · Hold mic to talk · {ptt.state === 'recording' ? 'recording…' : ptt.state === 'transcribing' ? 'transcribing…' : streaming ? 'streaming…' : 'ready'}
               </Link>
             </div>
           </div>
