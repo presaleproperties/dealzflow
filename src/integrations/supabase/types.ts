@@ -7334,6 +7334,9 @@ export type Database = {
       }
       zara_settings: {
         Row: {
+          email_append_signature: boolean
+          email_fallback_template_id: string | null
+          email_use_template_scaffold: boolean
           enabled_at: string | null
           enabled_by: string | null
           id: number
@@ -7342,6 +7345,9 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          email_append_signature?: boolean
+          email_fallback_template_id?: string | null
+          email_use_template_scaffold?: boolean
           enabled_at?: string | null
           enabled_by?: string | null
           id?: number
@@ -7350,6 +7356,9 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          email_append_signature?: boolean
+          email_fallback_template_id?: string | null
+          email_use_template_scaffold?: boolean
           enabled_at?: string | null
           enabled_by?: string | null
           id?: number
@@ -7358,6 +7367,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "zara_settings_email_fallback_template_id_fkey"
+            columns: ["email_fallback_template_id"]
+            isOneToOne: false
+            referencedRelation: "crm_email_templates"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "zara_settings_enabled_by_fkey"
             columns: ["enabled_by"]
