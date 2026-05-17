@@ -26,7 +26,15 @@ type ZaraSettings = {
   model_classify: string;
   model_draft: string;
   system_prompt_version: string;
+  autonomous_outbound: boolean;
+  auto_showcase_triggers: string[];
+  auto_showcase_count: number;
 };
+
+const SHOWCASE_TRIGGER_OPTIONS: { key: string; label: string; desc: string }[] = [
+  { key: 'presale_burst', label: 'Presale activity burst', desc: 'Floorplan downloads, deck revisits, repeated opens' },
+  { key: 'initial_outreach', label: 'First touch (initial outreach)', desc: 'Zara has never written to this lead before' },
+];
 
 export default function ZaraSettingsPage() {
   const navigate = useNavigate();
