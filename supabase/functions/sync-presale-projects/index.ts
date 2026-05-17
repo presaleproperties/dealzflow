@@ -179,9 +179,7 @@ Deno.serve(async (req) => {
     const incomingDescription = firstString(full?.description, (full as any)?.overview, (full as any)?.summary);
     const incomingBedrooms = firstString((full as any)?.bedrooms_offered, (full as any)?.bedrooms);
 
-    // COALESCE: never overwrite an existing non-null value with NULL or with a freshly-null incoming value.
-    const coalesce = <T,>(existingVal: T | null | undefined, incoming: T | null | undefined): T | null =>
-      (existingVal ?? incoming ?? null) as T | null;
+    // COALESCE imported from ./helpers.ts — preserves existing non-null values.
 
     const payload: Record<string, unknown> = {
       name,
