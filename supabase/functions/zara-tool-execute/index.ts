@@ -484,6 +484,158 @@ async function get_market_context(args: any) {
   return ok({ rows: data ?? [], count: (data ?? []).length, weeks_back: weeksBack });
 }
 
+// ── Phase 4 tools ──────────────────────────────────────────────────────
+
+async function resolveAgentCalendly(sb: ReturnType<typeof svc>, contactId: string): Promise<{ url: string | null; agent_name: string | null; agent_id: string | null }> {
+  const { data: contact } = await sb.from("crm_contacts").select("assigned_to").eq("id", contactId).maybeSingle();
+  const assigned = (contact as any)?.assigned_to ?? null;
+  if (!assigned) return { url: null, agent_name: null, agent_id: null };
+  // assigned_to may be a uuid OR a display_name — try both
+  let teamRow: any = null;
+  if (/^[0-9a-f-]{36}$/i.test(assigned)) {
+    const { data } = await sb.from("crm_team").select("id,display_name,presale_snapshot").eq("user_id", assigned).maybeSingle();
+    teamRow = data;
+  }
+  if (!teamRow) {
+    const { data } = await sb.from("crm_team").select("id,display_name,presale_snapshot").ilike("display_name", assigned).maybeSingle();
+    teamRow = data;
+  }
+  const snap = (teamRow?.presale_snapshot ?? {}) as Record<string, any>;
+  const url = snap.calendly_url || snap.calendlyUrl || snap.booking_url || snap.calendar_url || null;
+  return { url, agent_name: teamRow?.display_name ?? null, agent_id: teamRow?.id ?? null };
+}
+
+async function book_calendly(args: any, ctx: Ctx) {
+  if (!args?.contact_id) return fail("contact_id required");
+  const sb = svc();
+  const { url, agent_name } = await resolveAgentCalendly(sb, args.contact_id);
+  if (!url) return fail("No Calendly/booking URL found for the assigned agent. Have them add one in Settings → Identity.");
+  let draft_id: string | null = null;
+  if (args.draft_channel) {
+    const blurb = args.message?.trim() || `Easiest way to lock a time — pick a slot that works for you:`;
+    const body = `${blurb}\n\n${url}`;
+    if (args.draft_channel === "email") {
+      const r = await draft_email({ contact_id: args.contact_id, subject: "Quick chat?", body, cta_text: "Book a time", cta_url: url, purpose: "booking" }, ctx) as any;
+      draft_id = r?.draft_id ?? null;
+    } else {
+      const r = await draftMessage({ contact_id: args.contact_id, body }, ctx, args.draft_channel) as any;
+      draft_id = r?.draft_id ?? null;
+    }
+  }
+  await logAction(ctx, "book_calendly", { channel: args.draft_channel }, "ok", args.contact_id);
+  return ok({ booking_url: url, agent_name, draft_id });
+}
+
+async function resolveProject(sb: ReturnType<typeof svc>, args: any): Promise<{ presale: any; crm: any } | null> {
+  let presale: any = null, crm: any = null;
+  if (args.project_slug) {
+    presale = (await sb.from("presale_projects").select("*").eq("slug", args.project_slug).maybeSingle()).data;
+    crm = (await sb.from("crm_projects").select("*").or(`slug.eq.${args.project_slug},presale_slug.eq.${args.project_slug}`).maybeSingle()).data;
+  } else if (args.project_id) {
+    presale = (await sb.from("presale_projects").select("*").eq("id", args.project_id).maybeSingle()).data;
+    crm = (await sb.from("crm_projects").select("*").eq("id", args.project_id).maybeSingle()).data;
+  } else if (args.project_name) {
+    presale = (await sb.from("presale_projects").select("*").ilike("name", `%${args.project_name}%`).limit(1).maybeSingle()).data;
+    crm = (await sb.from("crm_projects").select("*").ilike("name", `%${args.project_name}%`).limit(1).maybeSingle()).data;
+  } else return null;
+  return { presale, crm };
+}
+
+async function get_pricing(args: any, _ctx: Ctx) {
+  const sb = svc();
+  const r = await resolveProject(sb, args);
+  if (!r || (!r.presale && !r.crm)) return fail("project not found (pass project_slug, project_id, or project_name)");
+  const p = r.presale; const c = r.crm;
+  return ok({
+    project_name: p?.name ?? c?.name,
+    slug: p?.slug ?? c?.slug,
+    price_range_low: p?.price_range_low ?? c?.price_from ?? null,
+    price_range_high: p?.price_range_high ?? c?.price_to ?? null,
+    starting_psf: p?.starting_psf ?? null,
+    deposit_structure: p?.deposit_structure ?? null,
+    pricing_url: c?.pricing_url ?? null,
+    pricing_filename: c?.pricing_filename ?? null,
+    status: p?.status ?? c?.status ?? null,
+    caveats: p?.honest_caveats ?? null,
+    last_synced_at: p?.last_synced_at ?? null,
+  });
+}
+
+async function attach_floorplan(args: any, ctx: Ctx) {
+  const sb = svc();
+  const r = await resolveProject(sb, args);
+  if (!r || (!r.presale && !r.crm)) return fail("project not found");
+  const c = r.crm; const p = r.presale;
+  const floor_url = c?.floor_plans_url ?? null;
+  const floor_filename = c?.floor_plans_filename ?? null;
+  const brochure_url = c?.brochure_url ?? p?.brochure_url ?? null;
+  if (!floor_url && !brochure_url) return fail("No floor plan or brochure on file for this project");
+  let draft_id: string | null = null;
+  if (args.draft && args.contact_id) {
+    const name = p?.name ?? c?.name ?? "the project";
+    const body = `Floor plans for ${name} are attached below:\n\n${floor_url ?? brochure_url}`;
+    const d = await draft_email({ contact_id: args.contact_id, subject: `${name} — floor plans`, body, cta_text: "View floor plans", cta_url: floor_url ?? brochure_url, purpose: "project_info" }, ctx) as any;
+    draft_id = d?.draft_id ?? null;
+  }
+  await logAction(ctx, "attach_floorplan", { project: p?.slug ?? c?.slug, draft: !!args.draft }, "ok", args.contact_id ?? null);
+  return ok({ project_name: p?.name ?? c?.name, floor_plans_url: floor_url, floor_plans_filename: floor_filename, brochure_url, draft_id });
+}
+
+async function schedule_follow_up_smart(args: any, ctx: Ctx) {
+  if (!args?.contact_id) return fail("contact_id required");
+  const sb = svc();
+  let cadence: string = args.cadence ?? "auto";
+  let dueAt = args.due_at as string | undefined;
+  if (!dueAt) {
+    if (cadence === "auto") {
+      const { data: c } = await sb.from("crm_contacts").select("engagement_score,lead_tier").eq("id", args.contact_id).maybeSingle();
+      const tier = (c as any)?.lead_tier ?? (((c as any)?.engagement_score ?? 0) >= 70 ? "hot" : ((c as any)?.engagement_score ?? 0) >= 40 ? "warm" : "cold");
+      cadence = tier;
+    }
+    const days = cadence === "hot" ? 1 : cadence === "warm" ? 3 : 7;
+    dueAt = new Date(Date.now() + days * 24 * 3600 * 1000).toISOString();
+  }
+  const { data, error } = await sb.from("crm_tasks").insert({
+    contact_id: args.contact_id,
+    due_date: dueAt,
+    title: (args.note ?? `Zara smart follow-up (${cadence})`).slice(0, 120),
+    description: args.note ?? null,
+    task_type: "follow_up",
+    status: "pending",
+  }).select("id").single();
+  if (error) return fail(error.message);
+  await logAction(ctx, "schedule_follow_up_smart", { cadence, due_at: dueAt }, "ok", args.contact_id);
+  return ok({ task_id: data.id, due_at: dueAt, cadence });
+}
+
+async function enrich_lead(args: any, _ctx: Ctx) {
+  if (!args?.contact_id) return fail("contact_id required");
+  const sb = svc();
+  const [contactRes, idsRes, actsRes, memRes] = await Promise.all([
+    sb.from("crm_contacts").select("*").eq("id", args.contact_id).maybeSingle(),
+    sb.from("crm_contact_identities").select("kind,value,is_primary,created_at").eq("contact_id", args.contact_id),
+    sb.from("crm_activity_events").select("event_type,description,occurred_at").eq("contact_id", args.contact_id).order("occurred_at", { ascending: false }).limit(15),
+    sb.from("zara_lead_memory").select("facts,updated_at").eq("contact_id", args.contact_id).maybeSingle(),
+  ]);
+  if (!contactRes.data) return fail("lead not found");
+  const c: any = contactRes.data;
+  const score = c.engagement_score ?? 0;
+  const tier = c.lead_tier ?? (score >= 70 ? "hot" : score >= 40 ? "warm" : "cold");
+  return ok({
+    contact: {
+      id: c.id, name: [c.first_name, c.last_name].filter(Boolean).join(" ").trim() || "(unknown)",
+      email: c.email, phone: c.phone, status: c.status, language: c.language, tags: c.tags,
+      city: c.city, city_pref: c.city_pref, budget_max: c.budget_max, bedrooms_preferred: c.bedrooms_preferred,
+      assigned_to: c.assigned_to, last_touch_at: c.last_touch_at, created_at: c.created_at,
+    },
+    identities: idsRes.data ?? [],
+    engagement: { score, tier },
+    recent_activity: actsRes.data ?? [],
+    memory_facts: (memRes.data as any)?.facts ?? null,
+    memory_updated_at: (memRes.data as any)?.updated_at ?? null,
+  });
+}
+
 // ── Dispatch ───────────────────────────────────────────────────────────
 
 const REGISTRY: Record<string, (args: any, ctx: Ctx) => Promise<unknown>> = {
@@ -495,6 +647,8 @@ const REGISTRY: Record<string, (args: any, ctx: Ctx) => Promise<unknown>> = {
   create_template, update_template,
   // RAG
   search_knowledge, get_winning_pattern, get_project_deep_dive, get_market_context,
+  // Phase 4
+  book_calendly, get_pricing, attach_floorplan, schedule_follow_up_smart, enrich_lead,
 };
 
 Deno.serve(async (req) => {
