@@ -53,24 +53,80 @@ const QUICK_ACTIONS = [
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
 
-function ToolPill({ tool }: { tool: ToolUiState }) {
-  const [open, setOpen] = useState(false);
+const TOOL_LABELS: Record<string, string> = {
+  update_lead: 'Update lead',
+  confirm_update_lead: 'Confirm lead update',
+  draft_email: 'Draft email',
+  draft_sms: 'Draft SMS',
+  add_lead_note: 'Add note',
+  add_lead_tag: 'Add tag',
+  set_lead_status: 'Change status',
+  schedule_follow_up: 'Schedule follow-up',
+  approve_draft: 'Approve & send draft',
+};
+
+function ToolPill({ tool, onDecide, deciding }: {
+  tool: ToolUiState;
+  onDecide?: (pending_id: string, decision: 'approve' | 'deny') => void;
+  deciding?: boolean;
+}) {
+  const [open, setOpen] = useState(tool.status === 'pending');
   const Icon = tool.status === 'running' ? Loader2 : Wrench;
-  const tone = tool.status === 'error' ? 'destructive' : tool.status === 'done' ? 'success' : 'warning';
+  const tone =
+    tool.status === 'error' || tool.status === 'denied' ? 'destructive'
+      : tool.status === 'done' ? 'success'
+      : tool.status === 'pending' ? 'warning'
+      : 'warning';
+  const isPending = tool.status === 'pending' && !!tool.pending_id;
+  const borderCls = isPending
+    ? 'border-amber-500/50 ring-1 ring-amber-500/20'
+    : 'border-border/60';
   return (
-    <div className="my-2 rounded-lg border border-border/60 bg-card text-[12px] overflow-hidden">
+    <div className={`my-2 rounded-lg border bg-card text-[12px] overflow-hidden ${borderCls}`}>
       <button
         onClick={() => setOpen((o) => !o)}
         className="w-full flex items-center gap-2 px-3 py-2 hover:bg-muted/50 transition-colors text-left"
       >
         <Icon className={`w-3.5 h-3.5 ${tool.status === 'running' ? 'animate-spin text-primary' : 'text-muted-foreground'}`} />
         <span className="font-medium font-mono text-[11px]">{tool.name}</span>
-        <Pill size="sm" tone={tone as any}>{tool.status}</Pill>
+        <Pill size="sm" tone={tone as any}>{tool.status === 'pending' ? 'needs approval' : tool.status}</Pill>
         <ChevronDown className={`w-3 h-3 ml-auto text-muted-foreground transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
       {open && (
         <div className="border-t border-border/60 bg-muted/20 p-2 space-y-2">
-          {tool.input && (
+          {isPending && (
+            <div className="rounded-md border border-amber-500/40 bg-amber-500/5 p-2.5">
+              <div className="text-[12px] font-semibold mb-1.5">
+                {TOOL_LABELS[tool.name] ?? 'Action'} — approval required
+              </div>
+              <div className="text-[11.5px] text-muted-foreground mb-2">
+                Zara wants to run <span className="font-mono">{tool.name}</span>. Review the input below and confirm.
+              </div>
+              {tool.input && (
+                <pre className="text-[10.5px] font-mono whitespace-pre-wrap break-words bg-background rounded p-2 border border-border/40 max-h-48 overflow-auto mb-2">
+                  {JSON.stringify(tool.input, null, 2)}
+                </pre>
+              )}
+              <div className="flex items-center gap-2 justify-end">
+                <button
+                  disabled={deciding}
+                  onClick={() => onDecide?.(tool.pending_id!, 'deny')}
+                  className="px-3 py-1.5 text-[11.5px] rounded-md border border-border hover:bg-muted/60 disabled:opacity-50"
+                >
+                  Deny
+                </button>
+                <button
+                  disabled={deciding}
+                  onClick={() => onDecide?.(tool.pending_id!, 'approve')}
+                  className="px-3 py-1.5 text-[11.5px] rounded-md bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 inline-flex items-center gap-1"
+                >
+                  {deciding ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
+                  Approve & run
+                </button>
+              </div>
+            </div>
+          )}
+          {!isPending && tool.input && (
             <div>
               <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Input</div>
               <pre className="text-[10.5px] font-mono whitespace-pre-wrap break-words bg-background rounded p-2 border border-border/40">
