@@ -408,19 +408,42 @@ export default function ZaraCockpitPage() {
     }
   };
 
+  const [transcript, setTranscript] = useState<string | null>(null);
+  const transcriptRef = useRef<HTMLTextAreaElement>(null);
+
   const ptt = usePushToTalk({
     onTranscript: (t) => {
-      setInput((prev) => {
-        const joined = prev ? `${prev.trim()} ${t}` : t;
-        // resize textarea on next tick
-        requestAnimationFrame(() => {
-          const el = inputRef.current;
-          if (el) { el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 200) + 'px'; el.focus(); }
-        });
-        return joined;
+      setTranscript((prev) => (prev ? `${prev.trim()} ${t}` : t));
+      requestAnimationFrame(() => {
+        const el = transcriptRef.current;
+        if (el) {
+          el.style.height = 'auto';
+          el.style.height = Math.min(el.scrollHeight, 220) + 'px';
+          el.focus();
+          el.setSelectionRange(el.value.length, el.value.length);
+        }
       });
     },
   });
+
+  const sendTranscript = () => {
+    const text = (transcript ?? '').trim();
+    if (!text) { setTranscript(null); return; }
+    setInput(text);
+    setTranscript(null);
+    setTimeout(() => onSend(), 0);
+  };
+
+  const appendTranscriptToInput = () => {
+    const text = (transcript ?? '').trim();
+    if (!text) { setTranscript(null); return; }
+    setInput((prev) => (prev ? `${prev.trim()} ${text}` : text));
+    setTranscript(null);
+    requestAnimationFrame(() => {
+      const el = inputRef.current;
+      if (el) { el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 200) + 'px'; el.focus(); }
+    });
+  };
 
   const onSend = async () => {
     const text = input.trim();
@@ -684,6 +707,62 @@ export default function ZaraCockpitPage() {
 
         <div className="border-t border-border/60 px-5 py-3">
           <div className="max-w-2xl mx-auto">
+            {transcript !== null && (
+              <div className="mb-2 rounded-2xl border border-primary/40 bg-primary/5 p-3 animate-in fade-in slide-in-from-bottom-1">
+                <div className="flex items-center justify-between mb-1.5">
+                  <div className="flex items-center gap-1.5 text-[11.5px] font-medium text-primary">
+                    <Mic className="w-3.5 h-3.5" /> Transcript preview · edit before sending
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setTranscript(null)}
+                    className="text-[11px] text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    Discard
+                  </button>
+                </div>
+                <textarea
+                  ref={transcriptRef}
+                  value={transcript}
+                  onChange={(e) => {
+                    setTranscript(e.target.value);
+                    const el = e.currentTarget;
+                    el.style.height = 'auto';
+                    el.style.height = Math.min(el.scrollHeight, 220) + 'px';
+                  }}
+                  onKeyDown={(e) => {
+                    if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+                      e.preventDefault();
+                      sendTranscript();
+                    } else if (e.key === 'Escape') {
+                      e.preventDefault();
+                      setTranscript(null);
+                    }
+                  }}
+                  rows={2}
+                  placeholder="Transcribed text…"
+                  className="w-full resize-none bg-transparent outline-none text-[14px] leading-snug min-h-[44px] max-h-[220px] text-foreground"
+                />
+                <div className="mt-2 flex items-center justify-between gap-2">
+                  <div className="text-[10.5px] text-muted-foreground">
+                    Cmd/Ctrl+Enter to send · Esc to discard
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <Button size="sm" variant="outline" onClick={appendTranscriptToInput} disabled={!transcript.trim()}>
+                      Append to message
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={sendTranscript}
+                      disabled={!transcript.trim() || streaming}
+                      className="bg-primary text-primary-foreground hover:bg-primary/90"
+                    >
+                      <Send className="w-3.5 h-3.5 mr-1" /> Send
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
             <div className="relative flex items-end gap-2 rounded-2xl border border-border bg-card focus-within:border-primary/60 focus-within:ring-2 focus-within:ring-primary/15 transition-all p-2">
               <textarea
                 ref={inputRef}
