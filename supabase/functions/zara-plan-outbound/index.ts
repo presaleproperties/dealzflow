@@ -138,10 +138,13 @@ Deno.serve(async (req) => {
   for (const lead of leads ?? []) {
     if (generated.length >= remaining || generated.length >= limit) break;
     const tags: string[] = (lead.tags as string[] | null) ?? [];
+    const earlyChannel = pickChannel(lead);
     if (tags.includes('zara:muted')) {
       skipped.push({ id: lead.id, reason: 'muted' });
       await writeAudit({
-        contact_id: lead.id, decision: 'skipped', decision_reason: 'lead is muted (zara:muted tag)',
+        contact_id: lead.id, channel: earlyChannel, model,
+        trigger_kind: wantTrigger ?? null, template_key: wantTrigger ?? null,
+        decision: 'skipped', decision_reason: 'lead is muted (zara:muted tag)',
         rule_evaluation: { tag_muted: true, requested_trigger: wantTrigger },
       });
       continue;
@@ -156,7 +159,9 @@ Deno.serve(async (req) => {
     if ((recent ?? 0) >= perLeadWeekly) {
       skipped.push({ id: lead.id, reason: 'lead_cap' });
       await writeAudit({
-        contact_id: lead.id, decision: 'skipped', decision_reason: `per-lead weekly cap reached (${recent}/${perLeadWeekly})`,
+        contact_id: lead.id, channel: earlyChannel, model,
+        trigger_kind: wantTrigger ?? null, template_key: wantTrigger ?? null,
+        decision: 'skipped', decision_reason: `per-lead weekly cap reached (${recent}/${perLeadWeekly})`,
         rule_evaluation: { weekly_drafts: recent, per_lead_weekly_cap: perLeadWeekly, requested_trigger: wantTrigger },
       });
       continue;
@@ -254,7 +259,9 @@ Deno.serve(async (req) => {
     if (!trigger) {
       skipped.push({ id: lead.id, reason: 'no_trigger' });
       await writeAudit({
-        contact_id: lead.id, decision: 'skipped', decision_reason: 'no trigger rule matched',
+        contact_id: lead.id, channel: earlyChannel, model,
+        trigger_kind: wantTrigger ?? null, template_key: wantTrigger ?? null,
+        decision: 'skipped', decision_reason: 'no trigger rule matched',
         rule_evaluation: ruleEval,
       });
       continue;
