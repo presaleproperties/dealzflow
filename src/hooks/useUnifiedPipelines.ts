@@ -39,10 +39,26 @@ export function useActivePipelineFor(contact: CrmContact | null | undefined) {
       const direct = pipelines.find(seg => seg.id === canonical);
       if (direct) return direct;
     }
-    for (const seg of pipelines) {
-      if (contactMatchesSegment(contact, seg.filter_config, seg.id)) return seg;
-    }
-    return null;
+    // Specificity-aware match: prefer segments that key off lead_type / tags
+    // (e.g. Presale, Resale, Commercial) over generic status-only stages
+    // (e.g. New Lead) so the row label mirrors the top pill the user picked.
+    const matches = pipelines.filter(seg =>
+      contactMatchesSegment(contact, seg.filter_config, seg.id),
+    );
+    if (matches.length === 0) return null;
+    const score = (seg: LeadSegment) => {
+      const fc = (seg.filter_config ?? {}) as Record<string, unknown>;
+      let s = 0;
+      if (Array.isArray(fc.lead_type) && (fc.lead_type as unknown[]).length) s += 3;
+      if (Array.isArray(fc.lead_type_ci) && (fc.lead_type_ci as unknown[]).length) s += 3;
+      if (Array.isArray(fc.tags) && (fc.tags as unknown[]).length) s += 3;
+      if (Array.isArray(fc.tags_any_ci) && (fc.tags_any_ci as unknown[]).length) s += 3;
+      if (typeof fc.contact_type === 'string') s += 2;
+      if (Array.isArray(fc.source) && (fc.source as unknown[]).length) s += 1;
+      // status-only segments get no bonus → they lose to type/tag segments.
+      return s;
+    };
+    return [...matches].sort((a, b) => score(b) - score(a))[0] ?? matches[0];
   }, [contact, pipelines]);
 }
 
