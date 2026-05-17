@@ -158,6 +158,8 @@ Deno.serve(async (req) => {
 
   // ---------- UPSERT ----------
   let inserted = 0, updated = 0, skipped = 0;
+  const runId = crypto.randomUUID();
+  const auditRows: Record<string, unknown>[] = [];
 
   // Helpers imported from ./helpers.ts (coalesce, firstString, pickFloorPlansUrl, pickHero).
 
