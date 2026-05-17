@@ -63,6 +63,74 @@ Deno.serve(async (req) => {
     // 4. Language detect
     const detectedLang = detectLanguage(inboundText);
 
+    // 4b. Phase-3 RAG: embed the inbound + the lead's project hint, then pull
+    // the top-3 most relevant presale projects so Zara reasons over real
+    // facts (price band, deposit, completion, objections, fit) instead of
+    // hallucinating. Failures are non-fatal — drafts still work without RAG.
+    let ragContext = "";
+    let ragProjects: Array<{ name: string; similarity: number }> = [];
+    try {
+      const ragQuery = [
+        contact.project_interest ?? "",
+        inboundText,
+      ].join(" \n ").slice(0, 4000);
+
+      const embedRes = await fetch(
+        `${SUPABASE_URL}/functions/v1/zara-embed`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${SERVICE_KEY}`,
+          },
+          body: JSON.stringify({ texts: [ragQuery] }),
+        },
+      );
+      const embedJson = await embedRes.json().catch(() => null);
+      const qvec = embedJson?.embeddings?.[0];
+      if (Array.isArray(qvec)) {
+        const { data: matches, error: matchErr } = await admin.rpc(
+          "zara_match_projects",
+          { query_embedding: qvec, match_count: 3, city_filter: null },
+        );
+        if (matchErr) {
+          console.warn("[zara-suggest-reply] zara_match_projects error", matchErr);
+        } else if (Array.isArray(matches) && matches.length > 0) {
+          ragProjects = matches.map((m: any) => ({
+            name: m.name,
+            similarity: Number(m.similarity ?? 0),
+          }));
+          ragContext = matches
+            .map((m: any, i: number) => {
+              const price = [m.price_range_low, m.price_range_high]
+                .filter((v: any) => v != null)
+                .map((v: number) => `$${Number(v).toLocaleString()}`)
+                .join(" - ");
+              return [
+                `[Project ${i + 1}] ${m.name}${m.developer ? " (" + m.developer + ")" : ""}` +
+                  ` — ${m.city ?? "?"}${m.neighborhood ? " / " + m.neighborhood : ""}` +
+                  ` — status: ${m.status ?? "?"} — completion: ${m.completion_year ?? "?"}`,
+                price ? `  price: ${price}` : null,
+                m.uzair_pitch ? `  pitch: ${String(m.uzair_pitch).slice(0, 320)}` : null,
+                m.who_this_fits ? `  who-fits: ${String(m.who_this_fits).slice(0, 240)}` : null,
+                m.common_objections?.length
+                  ? `  objections: ${(m.common_objections as string[]).slice(0, 3).join(" | ")}`
+                  : null,
+                m.honest_caveats ? `  caveats: ${String(m.honest_caveats).slice(0, 240)}` : null,
+                `  similarity: ${m.similarity?.toFixed?.(3) ?? "?"}`,
+              ].filter(Boolean).join("\n");
+            })
+            .join("\n\n");
+        }
+      } else {
+        console.warn(
+          "[zara-suggest-reply] embed unavailable for RAG (status=" + embedRes.status + ")",
+        );
+      }
+    } catch (e) {
+      console.warn("[zara-suggest-reply] RAG retrieval skipped:", e);
+    }
+
     // 5. Build user prompt
     const eventLines =
       (events ?? [])
@@ -84,6 +152,9 @@ Deno.serve(async (req) => {
 
 MEMORY SUMMARY:
 ${memoryRow?.summary ?? '(no memory yet)'}
+
+RELEVANT PROJECT KNOWLEDGE (retrieved via vector search — use these facts, do not invent others):
+${ragContext || '(no project matches above similarity floor — answer from memory only and do not quote specific prices, deposit terms, or completion dates)'}
 
 LAST 10 EVENTS:
 ${eventLines}
