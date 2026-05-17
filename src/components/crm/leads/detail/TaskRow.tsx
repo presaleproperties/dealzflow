@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
+import { logEngagementEvent } from '@/lib/engagementLog';
 import type { CrmTask } from './types';
 
 export function TaskRow({ task }: { task: CrmTask }) {
@@ -21,6 +22,16 @@ export function TaskRow({ task }: { task: CrmTask }) {
     },
     onSuccess: (prev) => {
       qc.invalidateQueries({ queryKey: ['crm-contact-tasks', task.contact_id] });
+      void logEngagementEvent({
+        contactId: task.contact_id,
+        eventType: 'task_completed',
+        source: 'crm',
+        metadata: {
+          task_id: task.id,
+          title: task.title,
+          due_at: task.due_date ?? null,
+        },
+      });
       toast.success('Task completed', {
         action: {
           label: 'Undo',

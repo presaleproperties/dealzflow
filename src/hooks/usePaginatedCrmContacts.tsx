@@ -127,6 +127,8 @@ interface PaginatedFilters {
   stale30?: boolean;
   highScore?: boolean;
   birthdayMonth?: boolean;
+  /** When set, constrains the query to these contact ids (engagement reports drill-in). */
+  engagementContactIds?: string[];
 }
 
 interface PaginatedParams {
@@ -318,6 +320,14 @@ function applyAllContactFilters(query: any, filters: PaginatedFilters) {
       }
       if (filters.segmentFilters) {
         query = applyJsonFilters(query, filters.segmentFilters);
+      }
+      if (filters.engagementContactIds) {
+        // Empty array → no matches. PostgREST `in.()` is invalid, so route
+        // through an impossible id instead.
+        const ids = filters.engagementContactIds.length
+          ? filters.engagementContactIds
+          : ['00000000-0000-0000-0000-000000000000'];
+        query = query.in('id', ids);
       }
 
   return query;

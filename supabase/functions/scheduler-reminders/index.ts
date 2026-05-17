@@ -34,7 +34,7 @@ Deno.serve(async (req) => {
     for (const w of windows) {
       const { data: bookings, error } = await supabase
         .from("crm_scheduler_bookings")
-        .select("id, invitee_email, invitee_phone, start_at, status")
+        .select("id, contact_id, invitee_email, invitee_phone, start_at, status")
         .is('deleted_at', null)
         .in("status", ["confirmed", "rescheduled"])
         .gte("start_at", new Date(w.minMs).toISOString())
@@ -155,6 +155,28 @@ Deno.serve(async (req) => {
               .update({ status: "sent", sent_at: new Date().toISOString() })
               .eq("booking_id", b.id).eq("reminder_kind", w.kind).eq("channel", "sms");
             totalSent++;
+            // Fire-and-forget engagement log. Staged=true because SMS still
+            // routes through the legacy outbound queue, not Twilio direct.
+            try {
+              if (b.contact_id) {
+                await supabase.from('crm_engagement_events').insert({
+                  contact_id: b.contact_id,
+                  actor_id: null,
+                  event_type: 'sms_sent',
+                  source: 'scheduler',
+                  direction: 'outbound',
+                  metadata: {
+                    booking_id: b.id,
+                    reminder_kind: w.kind,
+                    recipient: b.invitee_phone,
+                    scheduled_for: b.start_at,
+                    staged: true,
+                  },
+                });
+              }
+            } catch (logErr) {
+              console.warn('engagement log (sms) failed', logErr);
+            }
           } catch (e) {
             await supabase
               .from("crm_scheduler_reminder_log")

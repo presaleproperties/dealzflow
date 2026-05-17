@@ -30,6 +30,7 @@ import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useEngagementFilterIds, isEngagementFilter, ENGAGEMENT_FILTER_LABELS } from '@/hooks/useEngagementFilterIds';
 
 const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
 
@@ -376,6 +377,13 @@ export default function CrmLeadsPage() {
     if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
   }, []);
 
+  // Engagement-report drill-in (URL ?filter=cold_7d|high_engagement_14d|replied_30d).
+  // Resolves to a concrete id list; while loading we pass `undefined` so the
+  // table still renders existing rows instead of flashing empty.
+  const engagementParam = searchParams.get('filter');
+  const engagementFilterKey = isEngagementFilter(engagementParam) ? engagementParam : null;
+  const { data: engagementIds, isFetching: engagementLoading } = useEngagementFilterIds(engagementFilterKey);
+
   // Built once so the paginated hook and the "Select all filtered" helper
   // run against the exact same filter set.
   const paginatedFilters = useMemo(() => ({
@@ -407,12 +415,14 @@ export default function CrmLeadsPage() {
     stale30: !!activeView.filters._stale_30,
     highScore: !!activeView.filters._high_score,
     birthdayMonth: !!activeView.filters._birthday_month,
+    engagementContactIds: engagementFilterKey ? (engagementIds ?? []) : undefined,
   }), [
     debouncedSearch, filterContactType, filterStatus, filterSource, filterAgent,
     filterProject, filterLeadType, filterLanguage, filterTags, filterExcludeTags,
     filterExcludeContactTypes, filterExcludeStatuses, filterExcludeSources, filterExcludeLeadTypes,
     filterPropertyType, filterCity, filterPreApproved, filterCampaign, letterFilter,
     pipelineView, savedViewFilters, activeSegment, activeView.filters,
+    engagementFilterKey, engagementIds,
   ]);
 
   const { contacts, totalCount, isLoading, isFetching } = usePaginatedCrmContacts({
@@ -991,6 +1001,28 @@ export default function CrmLeadsPage() {
 
           {/* Conversion funnel + untouched alert — temporarily hidden, may bring back later */}
           {/* <ConversionFunnelBanner /> */}
+
+          {/* Engagement-report drill-in chip */}
+          {engagementFilterKey && (
+            <div className="flex items-center gap-2 px-1">
+              <span className="inline-flex items-center gap-1.5 text-[12px] font-medium rounded-full bg-primary/15 text-primary px-2.5 py-1">
+                {ENGAGEMENT_FILTER_LABELS[engagementFilterKey]}
+                {engagementLoading && <span className="opacity-60">…</span>}
+                <button
+                  type="button"
+                  onClick={() => {
+                    const next = new URLSearchParams(searchParams);
+                    next.delete('filter');
+                    setSearchParams(next, { replace: true });
+                  }}
+                  className="opacity-70 hover:opacity-100"
+                  aria-label="Clear engagement filter"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </span>
+            </div>
+          )}
 
           {/* Filter pills */}
           <ActiveFilterPills filters={filterPills} onClear={clearFilter} onClearAll={clearAllFilters} />

@@ -247,6 +247,26 @@ Deno.serve(async (req) => {
       });
     } catch (e) { console.warn('activity insert failed', e); }
 
+    // Engagement event log — fire-and-forget, never blocks the booking.
+    try {
+      await supabase.from('crm_engagement_events').insert({
+        contact_id: contactId,
+        actor_id: null,
+        event_type: 'booking_created',
+        source: 'webhook',
+        metadata: {
+          booking_id: booking.id,
+          event_name: evt.title,
+          event_slug: evt.slug,
+          scheduled_at: startDate.toISOString(),
+          duration_min: evt.duration_min,
+          agent_slug: agent.slug || null,
+          invitee_email: email,
+          invitee_phone: phone,
+        },
+      });
+    } catch (e) { console.warn('engagement log (booking) failed', e); }
+
     // Showing record for project events. showing_date/showing_time are stored
     // as wall-clock values in the agent's timezone (matches how the showings
     // calendar renders them); deriving them from the UTC ISO string would

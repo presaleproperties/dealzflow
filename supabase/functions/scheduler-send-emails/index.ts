@@ -148,6 +148,34 @@ Deno.serve(async (req) => {
     const results = await Promise.allSettled(sends);
     const failed = results.filter((r) => r.status === "rejected").length;
 
+    // Fire-and-forget engagement log — every successful send adds one
+    // crm_engagement_events row scoped to the booking's contact. Wrapped in
+    // try/catch so a failed insert never blocks the response.
+    try {
+      const succeeded = results.length - failed;
+      if (succeeded > 0 && booking.contact_id) {
+        await supabase.from('crm_engagement_events').insert({
+          contact_id: booking.contact_id,
+          actor_id: null,
+          event_type: 'email_sent',
+          source: 'scheduler',
+          direction: 'outbound',
+          metadata: {
+            kind,
+            booking_id: booking.id,
+            event_slug: evtRow.slug ?? null,
+            subject: kind === 'reminder' ? (reminder_label || 'Upcoming meeting') : (evtRow.title ?? 'Meeting'),
+            scheduled_for: booking.start_at,
+            recipient: kind === 'agent_notification' || kind === 'agent_cancellation'
+              ? agentRow.email
+              : booking.invitee_email,
+          },
+        });
+      }
+    } catch (logErr) {
+      console.warn('engagement log insert failed', logErr);
+    }
+
     return new Response(JSON.stringify({ ok: true, attempted: results.length, failed }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

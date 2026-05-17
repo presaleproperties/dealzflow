@@ -1,20 +1,41 @@
 /**
  * Engagement reports — three signal cards backed by `crm_engagement_events`
- * and the `crm_contact_last_touch` view.
+ * and the `crm_contact_last_touch` view. Each card is a drill-in link that
+ * pre-filters the Leads list via `?filter=<key>`.
  */
 import { useQuery } from '@tanstack/react-query';
+import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ArrowUpRight } from 'lucide-react';
 
-function Card({ title, value, hint, loading }: { title: string; value: string | number; hint: string; loading?: boolean }) {
+function Card({
+  to,
+  title,
+  value,
+  hint,
+  loading,
+}: {
+  to: string;
+  title: string;
+  value: string | number;
+  hint: string;
+  loading?: boolean;
+}) {
   return (
-    <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
-      <p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">{title}</p>
+    <Link
+      to={to}
+      className="group rounded-xl border border-border bg-card p-5 shadow-sm transition-colors hover:border-primary/40 hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+    >
+      <div className="flex items-start justify-between gap-3">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">{title}</p>
+        <ArrowUpRight className="h-4 w-4 text-muted-foreground transition-colors group-hover:text-primary" />
+      </div>
       <div className="mt-2 text-3xl font-semibold tabular-nums text-foreground">
         {loading ? <Skeleton className="h-9 w-20" /> : value}
       </div>
       <p className="mt-1 text-[12px] text-muted-foreground">{hint}</p>
-    </div>
+    </Link>
   );
 }
 
@@ -40,7 +61,7 @@ export default function CrmEngagementReportsPage() {
       const { data, error } = await supabase
         .from('crm_engagement_events')
         .select('contact_id')
-        .in('event_type', ['email_opened', 'email_clicked', 'whatsapp_read'])
+        .in('event_type', ['email_opened', 'email_clicked', 'whatsapp_read', 'email_replied', 'sms_replied'])
         .gte('occurred_at', since);
       if (error) throw error;
       const counts: Record<string, number> = {};
@@ -91,22 +112,27 @@ export default function CrmEngagementReportsPage() {
     <div className="p-6 space-y-4">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Engagement</h1>
-        <p className="text-sm text-muted-foreground mt-1">Signals from the engagement event log.</p>
+        <p className="text-sm text-muted-foreground mt-1">
+          Signals from the engagement event log. Tap a card to drill into the matching leads.
+        </p>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card
+          to="/crm/leads?filter=cold_7d"
           title="Cold leads"
           value={cold.data ?? 0}
           hint="No inbound; last outbound more than 7 days ago"
           loading={cold.isLoading}
         />
         <Card
+          to="/crm/leads?filter=high_engagement_14d"
           title="High engagement"
           value={high.data ?? 0}
           hint="3+ engagement signals in the last 14 days"
           loading={high.isLoading}
         />
         <Card
+          to="/crm/leads?filter=replied_30d"
           title="Reply latency (median)"
           value={fmtMins(latency.data ?? null)}
           hint="Median time email_sent → email_replied, last 30 days"

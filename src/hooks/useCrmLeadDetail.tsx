@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { toast } from 'sonner';
 import type { CrmContact } from './useCrmContacts';
 import { normalizeCrmContactArrays, normalizeCrmMultiValueList } from '@/lib/crmMultiValue';
+import { logEngagementEvent } from '@/lib/engagementLog';
 
 export function useCrmContact(id: string | undefined) {
   const queryClient = useQueryClient();
@@ -181,16 +182,31 @@ export function useAddCrmTask() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (task: { contact_id: string; title: string; description?: string; due_date?: string; priority?: string; task_type?: string; assigned_to?: string }) => {
-      const { error } = await supabase.from('crm_tasks').insert(task);
+      const { data, error } = await supabase.from('crm_tasks').insert(task).select('id').maybeSingle();
       if (error) throw error;
+      return { id: data?.id as string | undefined };
     },
-    onSuccess: (_, vars) => {
+    onSuccess: (res, vars) => {
       queryClient.invalidateQueries({ queryKey: ['crm-contact-tasks', vars.contact_id] });
       // Lead score on the list is denormalized — refresh after each new task
       // so the score badge keeps up.
       queryClient.invalidateQueries({ queryKey: ['crm-contacts'] });
       queryClient.invalidateQueries({ queryKey: ['crm-contacts-paginated'] });
       queryClient.invalidateQueries({ queryKey: ['crm-contact', vars.contact_id] });
+      // Fire-and-forget engagement log — never blocks the UI even if it fails.
+      void logEngagementEvent({
+        contactId: vars.contact_id,
+        eventType: 'task_added',
+        source: 'crm',
+        metadata: {
+          task_id: res?.id ?? null,
+          title: vars.title,
+          due_at: vars.due_date ?? null,
+          task_type: vars.task_type ?? null,
+          priority: vars.priority ?? null,
+          assigned_to: vars.assigned_to ?? null,
+        },
+      });
       toast.success('Task created');
     },
     onError: (err: Error) => toast.error(err.message),
@@ -201,14 +217,28 @@ export function useAddCrmShowing() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (showing: { contact_id: string; project: string; unit?: string; showing_date: string; showing_time: string; assigned_agent?: string; notes?: string }) => {
-      const { error } = await supabase.from('crm_showings').insert(showing);
+      const { data, error } = await supabase.from('crm_showings').insert(showing).select('id').maybeSingle();
       if (error) throw error;
+      return { id: data?.id as string | undefined };
     },
-    onSuccess: (_, vars) => {
+    onSuccess: (res, vars) => {
       queryClient.invalidateQueries({ queryKey: ['crm-contact-showings', vars.contact_id] });
       queryClient.invalidateQueries({ queryKey: ['crm-contacts'] });
       queryClient.invalidateQueries({ queryKey: ['crm-contacts-paginated'] });
       queryClient.invalidateQueries({ queryKey: ['crm-contact', vars.contact_id] });
+      const scheduledAt = `${vars.showing_date}T${vars.showing_time}`;
+      void logEngagementEvent({
+        contactId: vars.contact_id,
+        eventType: 'booking_created',
+        source: 'crm',
+        metadata: {
+          showing_id: res?.id ?? null,
+          event_name: vars.project,
+          unit: vars.unit ?? null,
+          scheduled_at: scheduledAt,
+          assigned_agent: vars.assigned_agent ?? null,
+        },
+      });
       toast.success('Showing booked');
     },
     onError: (err: Error) => toast.error(err.message),
