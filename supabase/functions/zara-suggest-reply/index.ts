@@ -69,6 +69,16 @@ Deno.serve(async (req) => {
     // hallucinating. Failures are non-fatal — drafts still work without RAG.
     let ragContext = "";
     let ragProjects: Array<{ name: string; similarity: number }> = [];
+    let citations: Array<{
+      n: number;
+      name: string;
+      source: string;
+      id: string | null;
+      slug: string | null;
+      city: string | null;
+      neighborhood: string | null;
+      similarity: number;
+    }> = [];
     try {
       const ragQuery = [
         contact.project_interest ?? "",
@@ -100,6 +110,16 @@ Deno.serve(async (req) => {
             name: m.name,
             similarity: Number(m.similarity ?? 0),
           }));
+          citations = matches.map((m: any, i: number) => ({
+            n: i + 1,
+            name: String(m.name ?? `Project ${i + 1}`),
+            source: String(m.source ?? "presale"),
+            id: m.id ?? null,
+            slug: m.slug ?? null,
+            city: m.city ?? null,
+            neighborhood: m.neighborhood ?? null,
+            similarity: Number(m.similarity ?? 0),
+          }));
           ragContext = matches
             .map((m: any, i: number) => {
               const price = [m.price_range_low, m.price_range_high]
@@ -107,7 +127,7 @@ Deno.serve(async (req) => {
                 .map((v: number) => `$${Number(v).toLocaleString()}`)
                 .join(" - ");
               return [
-                `[Project ${i + 1}] ${m.name}${m.developer ? " (" + m.developer + ")" : ""}` +
+                `[${i + 1}] ${m.name}${m.developer ? " (" + m.developer + ")" : ""}` +
                   ` — ${m.city ?? "?"}${m.neighborhood ? " / " + m.neighborhood : ""}` +
                   ` — status: ${m.status ?? "?"} — completion: ${m.completion_year ?? "?"}`,
                 price ? `  price: ${price}` : null,
@@ -156,8 +176,8 @@ ${memoryRow?.summary ?? '(no memory yet)'}
 MEMORY FACTS (durable deal context — trust these unless the inbound contradicts them):
 ${memoryRow?.facts && Object.keys(memoryRow.facts).length > 0 ? JSON.stringify(memoryRow.facts, null, 2) : '(no facts captured yet)'}
 
-RELEVANT PROJECT KNOWLEDGE (retrieved via vector search — use these facts, do not invent others):
-${ragContext || '(no project matches above similarity floor — answer from memory only and do not quote specific prices, deposit terms, or completion dates)'}
+RELEVANT PROJECT KNOWLEDGE (retrieved via vector search — use these facts, do not invent others. Each project is prefixed with a [N] tag; when you state a project-specific fact (price, deposit, completion year, location, pitch line) append the matching [N] marker inline, e.g. "completing 2027 [1]". Use markers sparingly — at most one per sentence, only for facts pulled from the knowledge block below. Do NOT cite memory, events, or general knowledge.):
+${ragContext || '(no project matches above similarity floor — answer from memory only, do not quote specific prices, deposit terms, or completion dates, and do not emit any [N] citation markers)'}
 
 LAST 10 EVENTS:
 ${eventLines}
@@ -288,6 +308,7 @@ Draft Zara's reply now. Return ONLY the JSON object.`;
         model: usedModel,
         input_tokens,
         output_tokens,
+        citations,
       })
       .select()
       .single();
