@@ -156,7 +156,7 @@ export default function ZaraTrainingPage() {
           source_type: kbType,
           raw_content: kbContent,
           status: 'pending',
-          created_by: u.user?.id ?? null,
+          uploaded_by: u.user?.id ?? null,
         })
         .select('id')
         .single();
