@@ -17,6 +17,12 @@ import { DealDraftProvider } from "@/contexts/DealDraftContext";
 import { CrmAccessProvider } from "@/contexts/CrmAccessContext";
 import { CrmLayout } from "@/components/crm/CrmLayout";
 import { useNativeShell } from "@/hooks/useNativeShell";
+import { useZaraShortcut } from "@/hooks/useZaraShortcut";
+
+function ZaraShortcutMount() {
+  useZaraShortcut();
+  return null;
+}
 import { useStandaloneMode } from "@/hooks/useStandaloneMode";
 import { useGlobalTapHaptics } from "@/hooks/useGlobalTapHaptics";
 import { ScrollToTop } from "@/components/ScrollToTop";
