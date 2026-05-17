@@ -306,6 +306,34 @@ export default function ZaraQueuePage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={!!saveTplDraft} onOpenChange={(o) => !o && setSaveTplDraft(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Save as {saveTplDraft?.channel ?? ''} template</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <label className="text-[11px] uppercase tracking-wide text-muted-foreground">Title</label>
+              <Input value={tplTitle} onChange={(e) => setTplTitle(e.target.value)} placeholder="e.g. Pricing reply — Brentwood" autoFocus />
+            </div>
+            {saveTplDraft?.channel === 'email' && (
+              <div>
+                <label className="text-[11px] uppercase tracking-wide text-muted-foreground">Subject</label>
+                <Input value={tplSubject} onChange={(e) => setTplSubject(e.target.value)} placeholder="Subject line" />
+              </div>
+            )}
+            <div>
+              <label className="text-[11px] uppercase tracking-wide text-muted-foreground">Body</label>
+              <Textarea value={tplBody} onChange={(e) => setTplBody(e.target.value)} rows={8} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setSaveTplDraft(null)} disabled={tplSaving}>Cancel</Button>
+            <Button onClick={saveAsTemplate} disabled={tplSaving}>{tplSaving ? 'Saving…' : 'Save template'}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
