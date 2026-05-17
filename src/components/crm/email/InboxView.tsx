@@ -31,6 +31,7 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { useIsCompact } from '@/hooks/use-mobile';
 import { triggerHaptic } from '@/lib/haptics';
+import { logEngagementEvent } from '@/lib/engagementLog';
 import {
   Popover, PopoverContent, PopoverTrigger,
 } from '@/components/ui/popover';
