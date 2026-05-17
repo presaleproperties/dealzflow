@@ -96,6 +96,52 @@ export const ZARA_TOOLS: ZaraTool[] = [
     needs_approval: true,
   },
   {
+    name: "draft_whatsapp",
+    description:
+      "Draft a WhatsApp message to a lead. Adds to the approval queue. NOTE: WhatsApp sending is currently disabled (no Meta wire-up) — the draft will queue but not fire automatically.",
+    input_schema: {
+      type: "object",
+      properties: {
+        contact_id: { type: "string" },
+        body: { type: "string" },
+      },
+      required: ["contact_id", "body"],
+    },
+    needs_approval: true,
+  },
+  {
+    name: "create_template",
+    description:
+      "Save a reusable message template. Use when the agent says 'save that as a template called X'. channel='email' writes to crm_email_templates; channel='sms' writes to crm_sms_templates; channel='whatsapp' writes to crm_whatsapp_templates.",
+    input_schema: {
+      type: "object",
+      properties: {
+        title: { type: "string" },
+        channel: { type: "string", enum: ["email", "sms", "whatsapp"] },
+        subject: { type: "string", description: "Required for email." },
+        body: { type: "string" },
+        tags: { type: "array", items: { type: "string" } },
+      },
+      required: ["title", "channel", "body"],
+    },
+    needs_approval: true,
+  },
+  {
+    name: "update_template",
+    description:
+      "Update an existing template. Provide template_id and fields_to_update (subject/body/title/tags).",
+    input_schema: {
+      type: "object",
+      properties: {
+        template_id: { type: "string" },
+        channel: { type: "string", enum: ["email", "sms", "whatsapp"] },
+        fields_to_update: { type: "object" },
+      },
+      required: ["template_id", "fields_to_update"],
+    },
+    needs_approval: true,
+  },
+  {
     name: "add_lead_note",
     description: "Append a note to a lead's profile (writes to crm_contacts.notes).",
     input_schema: {
