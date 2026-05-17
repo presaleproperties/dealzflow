@@ -115,43 +115,73 @@ export function TrainOnWinDialog({ contactId, contactName, open, onOpenChange }:
         `Thread:\n${fullThread}`,
       ].filter(Boolean).join('\n\n');
 
-      // Best-effort embedding; if it fails, we still save the row.
+      // Best-effort embedding; on failure we still save the row and queue a re-embed.
       let embedding: number[] | null = null;
+      let embedError: string | null = null;
       try {
-        const { data: embRes } = await supabase.functions.invoke('zara-embed', {
+        const { data: embRes, error: embFnErr } = await supabase.functions.invoke('zara-embed', {
           body: { texts: [embedText.slice(0, 8000)] },
         });
+        if (embFnErr) throw embFnErr;
         const arr = (embRes as any)?.embeddings?.[0];
         if (Array.isArray(arr)) embedding = arr;
-      } catch (e) {
-        console.warn('[train-on-win] embed failed, saving without vector', e);
+        else throw new Error('embed returned no vector');
+      } catch (e: any) {
+        embedError = e?.message ?? String(e);
+        console.warn('[train-on-win] embed failed, will queue re-embed', e);
       }
 
       const tags = tagsText.split(',').map((t) => t.trim()).filter(Boolean);
 
-      const { error } = await supabase.from('zara_winning_conversations').insert({
-        lead_profile: leadProfile,
-        primary_language: primaryLanguage || null,
-        budget_range: budgetRange || null,
-        project_type: projectType || null,
-        initial_situation: initialSituation,
-        full_thread: fullThread,
-        turning_message: turningMessage,
-        why_it_worked: whyItWorked,
-        outcome,
-        source_contact_id: contactId,
-        tags,
-        embedding: embedding as any,
-        created_by: u.user?.id ?? null,
-      } as any);
+      const { data: inserted, error } = await supabase
+        .from('zara_winning_conversations')
+        .insert({
+          lead_profile: leadProfile,
+          primary_language: primaryLanguage || null,
+          budget_range: budgetRange || null,
+          project_type: projectType || null,
+          initial_situation: initialSituation,
+          full_thread: fullThread,
+          turning_message: turningMessage,
+          why_it_worked: whyItWorked,
+          outcome,
+          source_contact_id: contactId,
+          tags,
+          embedding: embedding as any,
+          created_by: u.user?.id ?? null,
+        } as any)
+        .select('id')
+        .single();
 
       if (error) {
         toast.error(error.message);
         return;
       }
-      toast.success('Trained Zara on this win', {
-        description: embedding ? 'Indexed and ready to influence future drafts.' : 'Saved — embedding will index on next training job.',
-      });
+
+      // If the embedding failed, queue a background re-embed job and notify clearly.
+      if (!embedding && inserted?.id) {
+        const { error: qErr } = await supabase.from('zara_embed_queue').insert({
+          kind: 'winning_conversation',
+          target_id: inserted.id,
+          embed_text: embedText.slice(0, 8000),
+          enqueued_by: u.user?.id ?? null,
+        } as any);
+        if (qErr) {
+          toast.warning('Saved, but could not queue re-embed', {
+            description: `${embedError ?? 'embed failed'} · ${qErr.message}`,
+            duration: 10000,
+          });
+        } else {
+          toast.warning('Saved — embedding will retry in the background', {
+            description: `${embedError ?? 'embed failed'}. Auto-retries with backoff up to 6 times.`,
+            duration: 10000,
+          });
+        }
+      } else {
+        toast.success('Trained Zara on this win', {
+          description: 'Indexed and ready to influence future drafts.',
+        });
+      }
       reset();
       onOpenChange(false);
     } finally {

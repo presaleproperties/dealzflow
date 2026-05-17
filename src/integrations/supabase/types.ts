@@ -6952,6 +6952,51 @@ export type Database = {
         }
         Relationships: []
       }
+      zara_embed_queue: {
+        Row: {
+          attempts: number
+          created_at: string
+          embed_text: string
+          enqueued_by: string | null
+          id: string
+          kind: string
+          last_error: string | null
+          max_attempts: number
+          next_attempt_at: string
+          status: string
+          target_id: string
+          updated_at: string
+        }
+        Insert: {
+          attempts?: number
+          created_at?: string
+          embed_text: string
+          enqueued_by?: string | null
+          id?: string
+          kind: string
+          last_error?: string | null
+          max_attempts?: number
+          next_attempt_at?: string
+          status?: string
+          target_id: string
+          updated_at?: string
+        }
+        Update: {
+          attempts?: number
+          created_at?: string
+          embed_text?: string
+          enqueued_by?: string | null
+          id?: string
+          kind?: string
+          last_error?: string | null
+          max_attempts?: number
+          next_attempt_at?: string
+          status?: string
+          target_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       zara_knowledge_chunks: {
         Row: {
           chunk_index: number
