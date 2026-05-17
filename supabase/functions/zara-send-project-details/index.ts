@@ -166,8 +166,10 @@ ${priceRange ? `<div style="color:#1a1a2e;font-size:16px;margin-bottom:10px;">${
 
   // ── Resolve assigned_to safely ─────────────────────────────────────
   // Prefer the lead's assigned agent; fall back to the caller (button-clicker).
-  let assignedTo: string | null = await resolveAssignedToUuid(sb, (contact as any).assigned_to);
+  const resolvedFromContact = await resolveAssignedToUuid(sb, (contact as any).assigned_to);
+  let assignedTo: string | null = resolvedFromContact;
   if (!assignedTo && userId) assignedTo = userId;
+  const safeAssignedTo = coerceUuid(assignedTo);
 
   // ── Insert into queue ────────────────────────────────────────────────
   const now = new Date().toISOString();
@@ -182,10 +184,33 @@ ${priceRange ? `<div style="color:#1a1a2e;font-size:16px;margin-bottom:10px;">${
     inbound_at: now,
     intent: "send_project_details",
     status: "pending",
-    assigned_to: coerceUuid(assignedTo),
+    assigned_to: safeAssignedTo,
     consulted_sources: { projects: top.map((p) => ({ id: p.id, name: p.name, slug: p.slug })) },
   }).select("id").single();
-  if (insErr) return reply({ ok: false, error: insErr.message }, 500);
+  if (insErr) {
+    console.error("[zara-send-project-details] insert_failed", {
+      contact_id: contactId,
+      received_assigned_to: (contact as any).assigned_to ?? null,
+      received_assigned_to_type: typeof (contact as any).assigned_to,
+      resolved_from_contact: resolvedFromContact,
+      caller_user_id: userId,
+      coerced_assigned_to: safeAssignedTo,
+      pg_error: insErr.message,
+      pg_details: (insErr as any).details ?? null,
+      pg_hint: (insErr as any).hint ?? null,
+      pg_code: (insErr as any).code ?? null,
+    });
+    return reply({
+      ok: false,
+      error: insErr.message,
+      diagnostics: {
+        received_assigned_to: (contact as any).assigned_to ?? null,
+        resolved_from_contact: resolvedFromContact,
+        caller_user_id: userId,
+        coerced_assigned_to: safeAssignedTo,
+      },
+    }, 500);
+  }
 
   // Audit log (best-effort)
   try {
