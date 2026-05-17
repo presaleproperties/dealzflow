@@ -125,6 +125,18 @@ Draft Zara's reply now. Return ONLY the JSON object.`;
       context_event_texts: (events ?? []).map((e: any) => JSON.stringify(e.metadata ?? {})),
     });
 
+    // Resolve contact.assigned_to (stored as display_name string) into a user UUID
+    // for the zara_suggested_replies.assigned_to UUID column.
+    let assignedUserId: string | null = null;
+    if (contact.assigned_to) {
+      const { data: team } = await admin
+        .from('crm_team')
+        .select('user_id')
+        .eq('display_name', contact.assigned_to)
+        .maybeSingle();
+      assignedUserId = team?.user_id ?? null;
+    }
+
     // 9. Insert draft
     const { data: draft, error: insertErr } = await admin
       .from('zara_suggested_replies')
@@ -141,7 +153,7 @@ Draft Zara's reply now. Return ONLY the JSON object.`;
         confidence: Number(parsed.confidence ?? 0),
         reasoning: parsed.reasoning ?? null,
         guardrails_hit,
-        assigned_to: contact.assigned_to ?? null,
+        assigned_to: assignedUserId,
         model: 'claude-haiku-4-5-20251001',
         input_tokens,
         output_tokens,
