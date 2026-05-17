@@ -412,7 +412,7 @@ Deno.serve(async (req) => {
     const user = userData?.user;
     if (!user) return new Response("Unauthorized", { status: 401, headers: corsHeaders });
 
-    const { conversation_id, message } = await req.json();
+    const { conversation_id, message, page_context } = await req.json();
     if (!conversation_id || !message) return new Response("conversation_id and message required", { status: 400, headers: corsHeaders });
 
     // Check mode
@@ -424,12 +424,15 @@ Deno.serve(async (req) => {
     }
     const ctx: ToolCtx = {
       user_id: user.id, conversation_id,
-      zara_enabled: true, // Per-contact gate checked inside draft tools
+      zara_enabled: true,
       test_phones: settings?.test_phone_numbers ?? [],
     };
 
-    // Persist the user message
-    await sb.from("zara_messages").insert({ conversation_id, role: "user", content: message });
+    // Persist the user message (with page_context snapshot)
+    await sb.from("zara_messages").insert({
+      conversation_id, role: "user", content: message,
+      page_context: page_context ?? null,
+    });
     await sb.from("zara_conversations").update({ last_message_at: new Date().toISOString() }).eq("id", conversation_id);
 
     // Load history + load system prompt addenda
