@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { toast } from 'sonner';
 import type { CrmContact } from './useCrmContacts';
 import { normalizeCrmContactArrays, normalizeCrmMultiValueList } from '@/lib/crmMultiValue';
+import { logEngagementEvent } from '@/lib/engagementLog';
 
 export function useCrmContact(id: string | undefined) {
   const queryClient = useQueryClient();

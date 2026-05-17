@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useEffect } from 'react';
 import { toast } from 'sonner';
+import { logEngagementEvent } from '@/lib/engagementLog';
 
 export type CrmShowing = {
   id: string;
@@ -77,10 +78,22 @@ export function useCreateShowing() {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (data, vars) => {
       qc.invalidateQueries({ queryKey: ['crm-showings'] });
       qc.invalidateQueries({ queryKey: ['crm-contacts'] });
       qc.invalidateQueries({ queryKey: ['crm-contacts-paginated'] });
+      void logEngagementEvent({
+        contactId: vars.contact_id,
+        eventType: 'booking_created',
+        source: 'crm',
+        metadata: {
+          showing_id: (data as { id?: string } | null)?.id ?? null,
+          event_name: vars.project,
+          unit: vars.unit ?? null,
+          scheduled_at: `${vars.showing_date}T${vars.showing_time}`,
+          assigned_agent: vars.assigned_agent ?? null,
+        },
+      });
       toast.success('Showing booked');
     },
     onError: (err: Error) => toast.error(err.message),

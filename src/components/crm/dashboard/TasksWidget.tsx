@@ -7,6 +7,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { formatDistanceToNow, isPast, isToday } from 'date-fns';
 import { toast } from 'sonner';
+import { logEngagementEvent } from '@/lib/engagementLog';
 
 export function TasksWidget() {
   const navigate = useNavigate();
@@ -28,12 +29,21 @@ export function TasksWidget() {
   });
 
   const completeTask = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from('crm_tasks').update({ status: 'completed' }).eq('id', id);
+    mutationFn: async (vars: { id: string; contact_id: string | null; title: string; due_date: string | null }) => {
+      const { error } = await supabase.from('crm_tasks').update({ status: 'completed' }).eq('id', vars.id);
       if (error) throw error;
+      return vars;
     },
-    onSuccess: () => {
+    onSuccess: (vars) => {
       qc.invalidateQueries({ queryKey: ['crm-dashboard-tasks'] });
+      if (vars.contact_id) {
+        void logEngagementEvent({
+          contactId: vars.contact_id,
+          eventType: 'task_completed',
+          source: 'crm',
+          metadata: { task_id: vars.id, title: vars.title, due_at: vars.due_date },
+        });
+      }
       toast.success('Task completed');
     },
   });
@@ -64,7 +74,7 @@ export function TasksWidget() {
     return (
       <div key={t.id} className="flex items-start gap-2 py-2 px-2 rounded-md hover:bg-muted/40 transition-colors group">
         <button
-          onClick={() => completeTask.mutate(t.id)}
+          onClick={() => completeTask.mutate({ id: t.id, contact_id: contact?.id ?? null, title: t.title, due_date: t.due_date ?? null })}
           className="mt-0.5 shrink-0 w-4 h-4 rounded-full border-2 transition-colors hover:border-primary hover:bg-primary/20"
           style={{ borderColor: priorityColor(t.priority) }}
         />
