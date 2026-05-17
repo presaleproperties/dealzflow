@@ -286,3 +286,44 @@ function TestContactList({ settings, onSendInbound }: { settings: Settings | und
     </div>
   );
 }
+
+/**
+ * "Trained from" chip — shows how many RAG sources Zara consulted while drafting
+ * this reply (chunks + wins + projects). Persisted on zara_suggested_replies.consulted_sources.
+ */
+function TrainedFromChip({ sources }: { sources: any }) {
+  const [open, setOpen] = useState(false);
+  const chunks = sources?.chunks ?? [];
+  const wins = sources?.wins ?? [];
+  const projects = sources?.projects ?? [];
+  const total = chunks.length + wins.length + projects.length;
+  if (!total) return null;
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="inline-flex items-center gap-1 h-5 px-2 rounded-full text-[10.5px] font-medium border border-primary/30 bg-primary/5 text-primary hover:bg-primary/10 transition-colors"
+        title="What Zara consulted while drafting"
+      >
+        Trained from {total} source{total === 1 ? '' : 's'}
+      </button>
+      {open && (
+        <div className="absolute z-20 mt-1 left-0 w-72 rounded-md border border-border bg-popover shadow-md p-2 text-[11px] space-y-1">
+          {chunks.map((c: any, i: number) => (
+            <div key={`k${i}`} className="truncate">
+              <span className="text-muted-foreground">K{i + 1}</span> · {c.title ?? 'Untitled'}
+              {typeof c.similarity === 'number' && <span className="text-muted-foreground tabular-nums"> · {Math.round(c.similarity * 100)}%</span>}
+            </div>
+          ))}
+          {wins.map((w: any, i: number) => (
+            <div key={`w${i}`} className="truncate"><span className="text-muted-foreground">W{i + 1}</span> · {w.profile ?? w.lead_profile ?? '—'}{w.outcome ? ` → ${w.outcome}` : ''}</div>
+          ))}
+          {projects.map((p: any, i: number) => (
+            <div key={`p${i}`} className="truncate"><span className="text-muted-foreground">P{i + 1}</span> · {p.name}{p.city ? ` (${p.city})` : ''}</div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
