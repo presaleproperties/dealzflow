@@ -159,6 +159,7 @@ export const ZARA_TOOLS: ZaraTool[] = [
       properties: { draft_id: { type: "string" } },
       required: ["draft_id"],
     },
+    needs_approval: true,
   },
   {
     name: "send_briefing_summary",
