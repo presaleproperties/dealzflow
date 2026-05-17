@@ -157,8 +157,7 @@ Deno.serve(async (req) => {
 
   for (const p of bySlug.values()) {
     const slug = (p.slug ?? p.project_slug ?? "").trim();
-    const name = (p.name ?? "").trim();
-    if (!slug || !name) { skipped++; continue; }
+    if (!slug) { skipped++; continue; }
 
     // Pull full project for deck/floor plans/description/hero. Tolerate failures.
     let full: any = null;
@@ -168,6 +167,11 @@ Deno.serve(async (req) => {
       errors.push({ q: `get:${slug}`, err: (e as Error).message });
     }
     await sleep(120);
+
+    // Prefer the canonical name from the full record (the summary `p.name`
+    // may be missing in single-slug mode where we seeded only the slug).
+    const name = ((full?.name as string | undefined) ?? p.name ?? "").trim();
+    if (!name) { skipped++; continue; }
 
     // Look up existing row by presale_slug FIRST, then by name_lower.
     const { data: existing } = await supa
