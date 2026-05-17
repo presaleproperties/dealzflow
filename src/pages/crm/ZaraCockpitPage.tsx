@@ -31,7 +31,12 @@ type StoredMsg = {
   created_at: string;
 };
 
-type ToolUiState = { id: string; name: string; status: 'running' | 'done' | 'error'; input?: any; output?: any };
+type ToolUiState = {
+  id: string; name: string;
+  status: 'running' | 'done' | 'error' | 'pending' | 'denied';
+  input?: any; output?: any;
+  pending_id?: string;
+};
 
 type ActionRow = {
   id: string; action: string; tool_name: string | null;
