@@ -268,6 +268,7 @@ export default function ZaraQueuePage() {
                   <div className="flex gap-2 flex-wrap">
                     <Button size="sm" onClick={() => approve(d, d.draft_text)}>Approve &amp; send</Button>
                     <Button size="sm" variant="outline" onClick={() => { setEditingId(d.id); setEditText(d.draft_text); }}>Edit &amp; send</Button>
+                    <Button size="sm" variant="outline" onClick={() => openSaveTemplate(d)}>Save as template</Button>
                     <Button size="sm" variant="ghost" onClick={() => setRejectId(d.id)}>Reject</Button>
                     <Button size="sm" variant="ghost" onClick={() => snooze(d.id)}>Snooze 4h</Button>
                     {isTest && (
