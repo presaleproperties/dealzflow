@@ -1,7 +1,22 @@
-// zara-suggest-reply — drafts a reply using Claude Haiku 4.5 and queues for human approval.
-// Gates: zara_settings.mode != 'off' AND (contact.zara_enabled OR contact.tags has 'zara_test_contact').
+// zara-suggest-reply — drafts a reply with Claude and queues for human approval.
+// Phase 1: heuristic intent classifier → per-intent system prompt → Haiku draft.
+// If guardrails fire (legal/complaint/high-value/low-confidence/self-escalated),
+// auto re-draft with Sonnet for higher quality. Persists escalate, latency,
+// and escalation_model for Phase 2 analytics.
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
-import { coerceUuid, corsHeaders, detectLanguage, evaluateGuardrails, resolveAssignedToUuid, ZARA_SYSTEM_PROMPT } from '../_shared/zara-guardrails.ts';
+import {
+  buildZaraSystemPrompt,
+  coerceUuid,
+  corsHeaders,
+  detectLanguage,
+  evaluateGuardrails,
+  guessIntent,
+  resolveAssignedToUuid,
+  shouldEscalateModel,
+  ZARA_MODEL_DEFAULT,
+  ZARA_MODEL_ESCALATION,
+  type ZaraIntent,
+} from '../_shared/zara-guardrails.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
