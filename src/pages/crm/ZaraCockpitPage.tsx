@@ -448,6 +448,20 @@ export default function ZaraCockpitPage() {
     });
   };
 
+  useEffect(() => {
+    if (ptt.state !== 'recording') return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        ptt.cancel();
+        pttStartYRef.current = null;
+        pttCancelArmedRef.current = false;
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [ptt.state, ptt.cancel]);
+
   const onSend = async () => {
     const text = input.trim();
     if (!text || streaming) return;
