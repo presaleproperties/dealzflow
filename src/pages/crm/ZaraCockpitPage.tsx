@@ -279,6 +279,20 @@ export default function ZaraCockpitPage() {
     }
   };
 
+  const ptt = usePushToTalk({
+    onTranscript: (t) => {
+      setInput((prev) => {
+        const joined = prev ? `${prev.trim()} ${t}` : t;
+        // resize textarea on next tick
+        requestAnimationFrame(() => {
+          const el = inputRef.current;
+          if (el) { el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 200) + 'px'; el.focus(); }
+        });
+        return joined;
+      });
+    },
+  });
+
   const onSend = async () => {
     const text = input.trim();
     if (!text || streaming) return;
