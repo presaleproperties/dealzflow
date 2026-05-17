@@ -52,14 +52,27 @@ export function useAddNote() {
     }) => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error('Not authenticated');
-      const { error } = await (supabase.from('crm_notes' as any) as any).insert({
+      const { data, error } = await (supabase.from('crm_notes' as any) as any).insert({
         contact_id: note.contact_id,
         user_id: session.user.id,
         content: note.content,
         note_type: note.note_type || 'manual',
         is_pinned: note.is_pinned || false,
-      });
+      }).select('id').maybeSingle();
       if (error) throw error;
+      // Skip engagement log for archived/system-only types.
+      if ((note.note_type || 'manual') !== 'import_archive') {
+        void logEngagementEvent({
+          contactId: note.contact_id,
+          eventType: 'note_added',
+          source: 'crm',
+          metadata: {
+            note_id: (data as { id?: string } | null)?.id ?? null,
+            snippet: (note.content || '').slice(0, 200),
+            note_type: note.note_type || 'manual',
+          },
+        });
+      }
     },
     onSuccess: (_, vars) => {
       qc.invalidateQueries({ queryKey: ['crm-notes', vars.contact_id] });
