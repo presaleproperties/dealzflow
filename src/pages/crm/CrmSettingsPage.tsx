@@ -20,6 +20,7 @@ import {
 import DataImportSection from '@/components/crm/settings/DataImportSection';
 import DataManagerSection from '@/components/crm/settings/DataManagerSection';
 import { ZaraModeSection } from '@/components/crm/settings/ZaraModeSection';
+import { ZaraEmailBehaviorSection } from '@/components/crm/settings/ZaraEmailBehaviorSection';
 import EmailSettingsSection from '@/components/crm/settings/EmailSettingsSection';
 import ReplySignatureCard from '@/components/crm/settings/ReplySignatureCard';
 import ProjectsManagerSection from '@/components/crm/settings/ProjectsManagerSection';
