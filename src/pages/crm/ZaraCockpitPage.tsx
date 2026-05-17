@@ -625,6 +625,7 @@ export default function ZaraCockpitPage() {
       setStreaming(false);
       setStreamText('');
       setStreamTools([]);
+      setStreamSources(null);
       abortRef.current = null;
       qc.invalidateQueries({ queryKey: ['zara-messages', convId] });
       qc.invalidateQueries({ queryKey: ['zara-actions-feed'] });
