@@ -37,6 +37,11 @@ export default function ZaraQueuePage() {
   const [rejectReason, setRejectReason] = useState('');
   const [testInboundFor, setTestInboundFor] = useState<string | null>(null);
   const [testInboundText, setTestInboundText] = useState("What's the price?");
+  const [saveTplDraft, setSaveTplDraft] = useState<Draft | null>(null);
+  const [tplTitle, setTplTitle] = useState('');
+  const [tplSubject, setTplSubject] = useState('');
+  const [tplBody, setTplBody] = useState('');
+  const [tplSaving, setTplSaving] = useState(false);
 
   const { data: settings } = useQuery({
     queryKey: ['zara-settings'],
