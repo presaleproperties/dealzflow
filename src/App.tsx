@@ -82,6 +82,7 @@ const ZaraGapsPage = lazy(() => import("./pages/admin/ZaraGapsPage"));
 const ZaraCostPage = lazy(() => import("./pages/admin/ZaraCostPage"));
 const ZaraTrainingPage = lazy(() => import("./pages/admin/ZaraTrainingPage"));
 const ZaraPlaybooksPage = lazy(() => import("./pages/admin/ZaraPlaybooksPage"));
+const ZaraToolsPage = lazy(() => import("./pages/admin/ZaraToolsPage"));
 const CrmTrashPage = lazy(() => import("./pages/crm/CrmTrashPage"));
 const AgentProfilePage = lazy(() => import("./pages/agent/AgentProfilePage"));
 const AgentComposePage = lazy(() => import("./pages/agent/AgentComposePage"));
@@ -309,6 +310,7 @@ const App = () => (
                     <Route path="/admin/zara/cost" element={<AdminRoute><ZaraCostPage /></AdminRoute>} />
                     <Route path="/admin/zara/training" element={<AdminRoute><ZaraTrainingPage /></AdminRoute>} />
                     <Route path="/admin/zara/playbooks" element={<AdminRoute><ZaraPlaybooksPage /></AdminRoute>} />
+                    <Route path="/admin/zara/tools" element={<AdminRoute><ZaraToolsPage /></AdminRoute>} />
                     <Route path="/crm/trash" element={<ProtectedRoute><CrmLayout requireRole={['owner', 'admin']}><CrmTrashPage /></CrmLayout></ProtectedRoute>} />
                     <Route path="/agent/profile" element={<ProtectedRoute><AgentProfilePage /></ProtectedRoute>} />
                     <Route path="/agent/compose" element={<ProtectedRoute><AgentComposePage /></ProtectedRoute>} />

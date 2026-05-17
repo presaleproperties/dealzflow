@@ -7826,6 +7826,34 @@ export type Database = {
         }
         Relationships: []
       }
+      zara_tool_conversion_30d: {
+        Row: {
+          conversion_pct: number | null
+          leads_converted: number | null
+          leads_touched: number | null
+          tool_name: string | null
+        }
+        Relationships: []
+      }
+      zara_tool_daily_30d: {
+        Row: {
+          calls: number | null
+          day: string | null
+          tool_name: string | null
+        }
+        Relationships: []
+      }
+      zara_tool_usage_30d: {
+        Row: {
+          calls: number | null
+          failure_pct: number | null
+          failures: number | null
+          last_used_at: string | null
+          leads_touched: number | null
+          tool_name: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       _backfill_behavior_notes_internal: { Args: never; Returns: Json }
