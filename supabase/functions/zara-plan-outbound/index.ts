@@ -68,7 +68,7 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
   const admin = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
 
-  let opts: { trigger?: string; dry_run?: boolean; limit?: number } = {};
+  let opts: { trigger?: string; dry_run?: boolean; limit?: number; contact_id?: string } = {};
   if (req.method === 'POST') { try { opts = await req.json(); } catch { /* ignore */ } }
   const limit = Math.min(Math.max(opts.limit ?? 25, 1), 100);
 
