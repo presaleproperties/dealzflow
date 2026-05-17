@@ -2,18 +2,20 @@
 // recent approval decisions, training feedback, and lets you review/apply
 // auto-generated prompt evolution suggestions that get appended as system
 // prompt addenda used on the next chat turn.
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Pill } from '@/components/crm/shared/Pill';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import { formatDistanceToNow } from 'date-fns';
 import {
   ArrowLeft, Sparkles, Wrench, ShieldCheck, ShieldAlert, Brain, ThumbsUp,
   ThumbsDown, GraduationCap, CheckCircle2, XCircle, Loader2, Building2,
-  Activity as ActivityIcon,
+  Activity as ActivityIcon, BookOpen, Plus, Trash2, RefreshCw, AlertCircle,
 } from 'lucide-react';
 
 // Mirrors supabase/functions/_shared/zara-tool-defs.ts — kept in sync manually.
