@@ -93,11 +93,11 @@ export async function pickTemplate(
     const match = list.find((t) => re.test(`${t.name ?? ""} ${t.category ?? ""}`));
     if (match) return match;
   }
-  // settings fallback
+  // settings fallback (workspace-wide zara_settings row, id=1)
   try {
-    const { data: cfg } = await sb.from("crm_settings")
-      .select("value").eq("key", "zara.email.fallback_template_id").maybeSingle();
-    const fid = (cfg as any)?.value;
+    const { data: cfg } = await sb.from("zara_settings")
+      .select("email_fallback_template_id").eq("id", 1).maybeSingle();
+    const fid = (cfg as any)?.email_fallback_template_id;
     if (fid) {
       const m = list.find((t) => t.id === fid);
       if (m) return m;
