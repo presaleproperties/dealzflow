@@ -7,6 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { useCrmContacts, LEAD_STATUSES } from '@/hooks/useCrmContacts';
+import { useContactsByPipeline } from '@/hooks/useContactsByPipeline';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { format, subDays, parseISO, startOfMonth, differenceInDays } from 'date-fns';
@@ -14,11 +15,7 @@ import { useCrmAccess } from '@/contexts/CrmAccessContext';
 import { EmailReportTab } from '@/components/crm/reports/EmailReportTab';
 import { SmsReportTab } from '@/components/crm/reports/SmsReportTab';
 import { TopLeadsTab } from '@/components/crm/reports/TopLeadsTab';
-
-const FUNNEL_STAGES = [
-  'New Lead', 'Contacted', 'Nurturing', 'Hot / Engaged',
-  'Showing Booked', 'Offer Made', 'Closed',
-] as const;
+import { contactMatchesSegment } from '@/lib/segmentMatching';
 
 export default function CrmReportsPage() {
   const { role, isLoading: accessLoading } = useCrmAccess();
