@@ -528,7 +528,10 @@ Deno.serve(async (req) => {
                 continue;
               }
               send("tool_start", { id: tu.id, name: tu.name, input: tu.input });
-              const out = await runTool(tu.name, tu.input, ctx);
+              // Attach RAG sources to ctx for draft tools so they persist to zara_suggested_replies.consulted_sources
+              const callCtx = (tu.name === "draft_email" || tu.name === "draft_sms" || tu.name === "draft_whatsapp") && ragSources
+                ? { ...ctx, consulted_sources: ragSources } : ctx;
+              const out = await runTool(tu.name, tu.input, callCtx as any);
               await persistToolResult(conversation_id, tu.id, tu.name, out);
               toolResultsById.set(tu.id, out);
               send("tool_result", { id: tu.id, name: tu.name, output: out });
