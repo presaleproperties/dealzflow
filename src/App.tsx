@@ -263,6 +263,7 @@ const App = () => (
                 <QuietHoursConfirmHost />
                 <BrowserRouter>
                   <ScrollToTop />
+                  <ZaraShortcutMount />
                   <Suspense fallback={<RouteFallback />}>
                   <RouteHydrationGate>
                   <Routes>
