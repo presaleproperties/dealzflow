@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import type { ZaraPageContext } from '@/hooks/useZaraPageContext';
@@ -261,14 +261,33 @@ export function useZaraConversations() {
         .limit(200);
       return (data as Conv[]) ?? [];
     },
+    // Throttle re-renders: while the dock streams, last_message_at thrashes.
+    // Keep prior data visible so the overlay doesn't blank out, and dedupe
+    // refetches inside a short window.
+    staleTime: 15_000,
+    placeholderData: keepPreviousData,
   });
+  // Debounce realtime invalidations so streaming bursts don't refetch on every
+  // assistant token (each token can update last_message_at via triggers).
   useEffect(() => {
+    let pending = false;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    const schedule = () => {
+      if (pending) return;
+      pending = true;
+      timer = setTimeout(() => {
+        pending = false;
+        qc.invalidateQueries({ queryKey: ['zara-conversations'] });
+      }, 1500);
+    };
     const ch = supabase
       .channel('zara-dock-convs')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'zara_conversations' },
-        () => qc.invalidateQueries({ queryKey: ['zara-conversations'] }))
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'zara_conversations' }, schedule)
       .subscribe();
-    return () => { supabase.removeChannel(ch); };
+    return () => {
+      if (timer) clearTimeout(timer);
+      supabase.removeChannel(ch);
+    };
   }, [qc]);
 
   const create = async (): Promise<Conv | null> => {
