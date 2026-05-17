@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { ChevronLeft, AlertCircle } from 'lucide-react';
 import { useUpdateCrmContact } from '@/hooks/useCrmLeadDetail';
 import { LEAD_STATUSES, LEAD_SOURCES, LEAD_TYPES, LEAD_TYPE_LABELS } from '@/hooks/useCrmContacts';
+import { useUnifiedPipelines, useActivePipelineFor } from '@/hooks/useUnifiedPipelines';
 import { useTeamAgents } from '@/hooks/useTeamAgents';
 import { AgentAvatar } from '@/components/crm/AgentAvatar';
 import { CheckboxDropdown } from '@/components/crm/leads/CheckboxDropdown';
