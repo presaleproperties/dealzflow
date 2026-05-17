@@ -17,7 +17,7 @@ import { DealDraftProvider } from "@/contexts/DealDraftContext";
 import { CrmAccessProvider } from "@/contexts/CrmAccessContext";
 import { CrmLayout } from "@/components/crm/CrmLayout";
 import { useNativeShell } from "@/hooks/useNativeShell";
-import { useZaraShortcut } from "@/hooks/useZaraShortcut";
+
 import { useStandaloneMode } from "@/hooks/useStandaloneMode";
 import { useGlobalTapHaptics } from "@/hooks/useGlobalTapHaptics";
 import { ScrollToTop } from "@/components/ScrollToTop";
@@ -42,11 +42,6 @@ import AuthPage from "./pages/AuthPage";
 import DashboardPage from "./pages/DashboardPage";
 import NotFound from "./pages/NotFound";
 import PendingApprovalPage from "./pages/PendingApprovalPage";
-
-function ZaraShortcutMount() {
-  useZaraShortcut();
-  return null;
-}
 
 // Tier 1: preserve the conversationId param when bouncing legacy /crm/chats/:id → /crm/inbox/:id
 function NavigateChatToInbox() {
@@ -271,7 +266,6 @@ const App = () => (
                 <QuietHoursConfirmHost />
                 <BrowserRouter>
                   <ScrollToTop />
-                  <ZaraShortcutMount />
                   <Suspense fallback={<RouteFallback />}>
                   <RouteHydrationGate>
                   <Routes>

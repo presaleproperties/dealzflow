@@ -18,6 +18,7 @@ interface CrmLayoutProps {
 
 export function CrmLayout({ requireRole, children }: CrmLayoutProps) {
   const { pathname } = useLocation();
+  useZaraKeyboard();
   // The chats shell (list pane + thread/empty pane) owns its own scroll on
   // every viewport, so the outer route container must NOT add a second
   // page-level scrollbar. Without this, mousewheel events anywhere on the
@@ -44,6 +45,7 @@ export function CrmLayout({ requireRole, children }: CrmLayoutProps) {
       </div>
       <RightRail />
       <BottomNav />
+      <ZaraDock />
       <SafeAreaPreview />
     </CrmRouteGuard>
   );
