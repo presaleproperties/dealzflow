@@ -493,10 +493,11 @@ async function get_market_context(args: any) {
 
 const REGISTRY: Record<string, (args: any, ctx: Ctx) => Promise<unknown>> = {
   get_lead_context, search_leads, update_lead, confirm_update_lead,
-  draft_email, draft_sms, add_lead_note, add_lead_tag, set_lead_status,
+  draft_email, draft_sms, draft_whatsapp, add_lead_note, add_lead_tag, set_lead_status,
   schedule_follow_up, list_pending_drafts, approve_draft, send_briefing_summary,
   list_projects, project_details, recommend_projects_for_lead, web_research,
   log_training_feedback, show_engagement_score,
+  create_template, update_template,
   // RAG
   search_knowledge, get_winning_pattern, get_project_deep_dive, get_market_context,
 };
