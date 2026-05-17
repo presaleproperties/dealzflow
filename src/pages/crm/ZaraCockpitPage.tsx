@@ -15,6 +15,7 @@ import {
   Building2, Brain,
 } from 'lucide-react';
 import { usePushToTalk } from '@/hooks/usePushToTalk';
+import { MicPermissionDialog } from '@/components/crm/zara/MicPermissionDialog';
 
 type Conv = {
   id: string; title: string; pinned: boolean; archived: boolean;
