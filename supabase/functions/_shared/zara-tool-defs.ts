@@ -327,4 +327,76 @@ export const ZARA_TOOLS: ZaraTool[] = [
       },
     },
   },
+
+  // ── Phase 4 tools (booking, pricing, attachments, smart follow-up, enrichment) ──
+  {
+    name: "book_calendly",
+    description:
+      "Return the assigned agent's Calendly/booking URL for a lead and (optionally) draft an email or SMS with the link. Use when the lead asks to meet, book a tour, or jump on a call. If draft_channel is omitted, only the URL is returned.",
+    input_schema: {
+      type: "object",
+      properties: {
+        contact_id: { type: "string" },
+        draft_channel: { type: "string", enum: ["email", "sms", "whatsapp"], description: "Optional: also create a pending draft with the link" },
+        message: { type: "string", description: "Optional custom blurb to wrap around the link" },
+      },
+      required: ["contact_id"],
+    },
+    needs_approval: true,
+  },
+  {
+    name: "get_pricing",
+    description:
+      "Pull the latest pricing for a project (price range, starting PSF, deposit structure, pricing PDF URL). Checks presale_projects first, then crm_projects. Use BEFORE quoting any number to a lead.",
+    input_schema: {
+      type: "object",
+      properties: {
+        project_slug: { type: "string" },
+        project_id: { type: "string" },
+        project_name: { type: "string", description: "Fuzzy match fallback" },
+      },
+    },
+  },
+  {
+    name: "attach_floorplan",
+    description:
+      "Return the floor-plans URL for a project so it can be attached to a draft. Optionally creates an email draft that includes the link.",
+    input_schema: {
+      type: "object",
+      properties: {
+        project_slug: { type: "string" },
+        project_id: { type: "string" },
+        project_name: { type: "string" },
+        contact_id: { type: "string", description: "If set with draft=true, will create a pending email draft" },
+        draft: { type: "boolean", description: "Default false. When true, also drafts an email with the link." },
+      },
+    },
+    needs_approval: false,
+  },
+  {
+    name: "schedule_follow_up_smart",
+    description:
+      "Schedule a follow-up at an engagement-aware default time (hot=1 day, warm=3 days, cold=7 days) unless due_at is provided. Inserts into crm_tasks and tags the task with the chosen cadence.",
+    input_schema: {
+      type: "object",
+      properties: {
+        contact_id: { type: "string" },
+        note: { type: "string" },
+        due_at: { type: "string", description: "Optional ISO 8601 override" },
+        cadence: { type: "string", enum: ["auto", "hot", "warm", "cold"], description: "Default 'auto' (uses engagement tier)" },
+      },
+      required: ["contact_id"],
+    },
+    needs_approval: true,
+  },
+  {
+    name: "enrich_lead",
+    description:
+      "Pull a 360° dossier on a lead: contact card, all linked identities (emails/phones), engagement score + tier, recent activity, tags, project interests, and Zara's rolling memory facts. Use to brief yourself before any major action.",
+    input_schema: {
+      type: "object",
+      properties: { contact_id: { type: "string" } },
+      required: ["contact_id"],
+    },
+  },
 ];
