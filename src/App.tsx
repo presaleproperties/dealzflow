@@ -105,6 +105,7 @@ const CrmCalendarPage = lazy(() => import("./pages/crm/CrmCalendarPage"));
 const CrmReportsPage = lazy(() => import("./pages/crm/CrmReportsPage"));
 const CrmEngagementReportsPage = lazy(() => import("./pages/crm/CrmEngagementReportsPage"));
 const ZaraQueuePage = lazy(() => import("./pages/crm/ZaraQueuePage"));
+const ZaraCockpitPage = lazy(() => import("./pages/crm/ZaraCockpitPage"));
 const CrmSettingsPage = lazy(() => import("./pages/crm/CrmSettingsPage"));
 const CrmIntegrationsPage = lazy(() => import("./pages/crm/CrmIntegrationsPage"));
 const CrmBehaviorLeadsPage = lazy(() => import("./pages/crm/CrmBehaviorLeadsPage"));
