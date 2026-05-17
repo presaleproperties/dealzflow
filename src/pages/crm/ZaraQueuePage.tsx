@@ -477,3 +477,40 @@ function TrainedFromChip({ sources }: { sources: any }) {
     </div>
   );
 }
+
+function FilterGroup({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="flex items-center gap-1.5">
+      <span className="text-[10.5px] uppercase tracking-wide text-muted-foreground">{label}</span>
+      <div className="flex items-center gap-1">{children}</div>
+    </div>
+  );
+}
+
+function FilterChip({
+  active,
+  onClick,
+  children,
+  title,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+  title?: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      title={title}
+      className={
+        'h-6 px-2 rounded-full text-[10.5px] font-medium border transition-colors ' +
+        (active
+          ? 'border-primary/40 bg-primary/10 text-primary'
+          : 'border-border bg-background text-muted-foreground hover:text-foreground hover:bg-muted')
+      }
+    >
+      {children}
+    </button>
+  );
+}
