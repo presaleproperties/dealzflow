@@ -20,6 +20,7 @@ const HIDDEN_PATTERNS: RegExp[] = [
   /^\/crm\/zara\/about\/?$/,
   /^\/crm\/zara\/train\/?$/,
   /^\/crm\/zara\/training\/?$/,
+  /^\/crm\/zara\/templates\/?$/,
   /^\/crm\/zara\/projects\/[^/]+\/?$/,
 ];
 

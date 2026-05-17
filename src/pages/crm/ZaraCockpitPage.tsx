@@ -12,7 +12,7 @@ import remarkGfm from 'remark-gfm';
 import {
   Plus, Pin, Search, Send, Mic, MicOff, Sparkles, Inbox, ChevronRight,
   Activity as ActivityIcon, ThumbsUp, ThumbsDown, Wrench, Loader2, ChevronDown,
-  Building2, Brain,
+  Building2, Brain, FileText,
 } from 'lucide-react';
 import { usePushToTalk } from '@/hooks/usePushToTalk';
 import { MicPermissionDialog } from '@/components/crm/zara/MicPermissionDialog';
@@ -723,6 +723,10 @@ export default function ZaraCockpitPage() {
           </Link>
           <Link to="/crm/zara/training" className="flex items-center justify-between text-[12px] px-2 py-1.5 rounded-md hover:bg-muted/60 transition-colors">
             <span className="flex items-center gap-1.5"><Brain className="w-3.5 h-3.5" />Self-awareness</span>
+            <ChevronRight className="w-3 h-3 text-muted-foreground" />
+          </Link>
+          <Link to="/crm/zara/templates" className="flex items-center justify-between text-[12px] px-2 py-1.5 rounded-md hover:bg-muted/60 transition-colors">
+            <span className="flex items-center gap-1.5"><FileText className="w-3.5 h-3.5" />Reply templates</span>
             <ChevronRight className="w-3 h-3 text-muted-foreground" />
           </Link>
           <Link to="/crm/settings#zara" className="flex items-center justify-between text-[12px] px-2 py-1.5 rounded-md hover:bg-muted/60 transition-colors">
