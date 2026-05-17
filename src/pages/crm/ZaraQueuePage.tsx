@@ -163,6 +163,51 @@ export default function ZaraQueuePage() {
     setTestInboundFor(null);
   };
 
+  const openSaveTemplate = (d: Draft) => {
+    setSaveTplDraft(d);
+    setTplTitle('');
+    setTplSubject(d.draft_subject ?? '');
+    setTplBody(d.draft_text ?? '');
+  };
+
+  const saveAsTemplate = async () => {
+    if (!saveTplDraft) return;
+    const title = tplTitle.trim();
+    if (!title) { toast.error('Title is required'); return; }
+    if (!tplBody.trim()) { toast.error('Body is empty'); return; }
+    setTplSaving(true);
+    try {
+      const ch = saveTplDraft.channel;
+      const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60) || `tpl-${Date.now()}`;
+      let error: any = null;
+      if (ch === 'email') {
+        ({ error } = await supabase.from('crm_email_templates').insert({
+          name: title,
+          subject: tplSubject || title,
+          body_html: tplBody,
+          slug,
+          category: 'general',
+          source: 'zara',
+        } as any));
+      } else if (ch === 'sms') {
+        ({ error } = await supabase.from('crm_sms_templates').insert({
+          name: title, body: tplBody, channel: 'sms', category: 'general',
+        } as any));
+      } else if (ch === 'whatsapp') {
+        ({ error } = await supabase.from('crm_whatsapp_templates').insert({
+          name: title, body_text: tplBody, category: 'utility', status: 'approved', language: 'en',
+        } as any));
+      } else {
+        error = { message: `Unsupported channel: ${ch}` };
+      }
+      if (error) { toast.error(error.message); return; }
+      toast.success(`Saved as ${ch} template`);
+      setSaveTplDraft(null);
+    } finally {
+      setTplSaving(false);
+    }
+  };
+
   return (
     <div className="flex flex-col h-full min-h-0">
       <div className={`px-4 py-2 text-[12px] font-medium ${banner.cls}`}>{banner.text}</div>
