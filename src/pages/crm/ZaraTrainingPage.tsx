@@ -108,13 +108,13 @@ export default function ZaraTrainingPage() {
   });
 
   // ── Knowledge base (RAG corpus) ───────────────────────────────
-  const { data: kbDocs = [], refetch: refetchKb } = useQuery({
+  const { data: kbDocs = [] } = useQuery({
     queryKey: ['zara-kb-documents'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('zara_knowledge_documents')
-        .select('id,title,source_type,status,total_chunks,total_tokens,error_message,times_retrieved,indexed_at,created_at')
-        .order('created_at', { ascending: false })
+        .select('id,title,source_type,status,total_chunks,total_tokens,error_message,retrieval_count,indexed_at,uploaded_at')
+        .order('uploaded_at', { ascending: false })
         .limit(100);
       if (error) throw error;
       return data ?? [];
