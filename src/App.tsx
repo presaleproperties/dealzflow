@@ -17,7 +17,7 @@ import { DealDraftProvider } from "@/contexts/DealDraftContext";
 import { CrmAccessProvider } from "@/contexts/CrmAccessContext";
 import { CrmLayout } from "@/components/crm/CrmLayout";
 import { useNativeShell } from "@/hooks/useNativeShell";
-import { useZaraShortcut } from "@/hooks/useZaraShortcut";
+
 import { useStandaloneMode } from "@/hooks/useStandaloneMode";
 import { useGlobalTapHaptics } from "@/hooks/useGlobalTapHaptics";
 import { ScrollToTop } from "@/components/ScrollToTop";
@@ -271,7 +271,6 @@ const App = () => (
                 <QuietHoursConfirmHost />
                 <BrowserRouter>
                   <ScrollToTop />
-                  <ZaraShortcutMount />
                   <Suspense fallback={<RouteFallback />}>
                   <RouteHydrationGate>
                   <Routes>
