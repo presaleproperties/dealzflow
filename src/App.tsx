@@ -112,6 +112,8 @@ const CrmReportsPage = lazy(() => import("./pages/crm/CrmReportsPage"));
 const CrmEngagementReportsPage = lazy(() => import("./pages/crm/CrmEngagementReportsPage"));
 const ZaraQueuePage = lazy(() => import("./pages/crm/ZaraQueuePage"));
 const ZaraCockpitPage = lazy(() => import("./pages/crm/ZaraCockpitPage"));
+const ZaraProjectsPage = lazy(() => import("./pages/crm/ZaraProjectsPage"));
+const ZaraCrmTrainingPage = lazy(() => import("./pages/crm/ZaraTrainingPage"));
 const CrmSettingsPage = lazy(() => import("./pages/crm/CrmSettingsPage"));
 const CrmIntegrationsPage = lazy(() => import("./pages/crm/CrmIntegrationsPage"));
 const CrmBehaviorLeadsPage = lazy(() => import("./pages/crm/CrmBehaviorLeadsPage"));
@@ -345,6 +347,9 @@ const App = () => (
                     <Route path="/crm/reports/engagement" element={<ProtectedRoute><CrmLayout><CrmEngagementReportsPage /></CrmLayout></ProtectedRoute>} />
                     <Route path="/crm/zara" element={<ProtectedRoute><CrmLayout><ZaraCockpitPage /></CrmLayout></ProtectedRoute>} />
                     <Route path="/crm/zara/queue" element={<ProtectedRoute><CrmLayout><ZaraQueuePage /></CrmLayout></ProtectedRoute>} />
+                    <Route path="/crm/zara/projects" element={<ProtectedRoute><CrmLayout><ZaraProjectsPage /></CrmLayout></ProtectedRoute>} />
+                    <Route path="/crm/zara/training" element={<ProtectedRoute><CrmLayout><ZaraCrmTrainingPage /></CrmLayout></ProtectedRoute>} />
+                    <Route path="/crm/zara/about" element={<Navigate to="/crm/zara/training" replace />} />
                     <Route path="/crm/settings" element={<ProtectedRoute><CrmLayout><CrmSettingsPage /></CrmLayout></ProtectedRoute>} />
                     <Route path="/crm/integrations" element={<ProtectedRoute><CrmLayout requireRole={['owner', 'admin']}><CrmIntegrationsPage /></CrmLayout></ProtectedRoute>} />
                     <Route path="/crm/behavior-leads" element={<ProtectedRoute><CrmLayout requireRole={['owner', 'admin']}><CrmBehaviorLeadsPage /></CrmLayout></ProtectedRoute>} />
