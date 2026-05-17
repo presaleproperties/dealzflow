@@ -149,13 +149,15 @@ function ToolPill({ tool, onDecide, deciding }: {
 }
 
 function MessageBubble({
-  role, text, tools, onFeedback, messageId,
+  role, text, tools, onFeedback, messageId, onDecide, decidingId,
 }: {
   role: 'user' | 'assistant';
   text: string;
   tools?: ToolUiState[];
   onFeedback?: (rating: 'up' | 'down') => void;
   messageId?: string | null;
+  onDecide?: (pending_id: string, decision: 'approve' | 'deny') => void;
+  decidingId?: string | null;
 }) {
   if (role === 'user') {
     return (
@@ -169,7 +171,14 @@ function MessageBubble({
   return (
     <div className="flex justify-start">
       <div className="max-w-[92%] space-y-1">
-        {tools?.map((t) => <ToolPill key={t.id} tool={t} />)}
+        {tools?.map((t) => (
+          <ToolPill
+            key={t.id}
+            tool={t}
+            onDecide={onDecide}
+            deciding={!!t.pending_id && decidingId === t.pending_id}
+          />
+        ))}
         {text && (
           <div className="rounded-2xl bg-muted/40 border border-border/40 px-4 py-2.5 text-[14px] prose prose-sm prose-neutral dark:prose-invert max-w-none prose-p:my-1.5 prose-ul:my-1.5 prose-ol:my-1.5 prose-headings:mt-3 prose-headings:mb-1">
             <ReactMarkdown remarkPlugins={[remarkGfm]}>{text}</ReactMarkdown>
