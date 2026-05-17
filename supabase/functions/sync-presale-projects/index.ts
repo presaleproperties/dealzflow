@@ -233,19 +233,39 @@ Deno.serve(async (req) => {
       bedrooms_offered: coalesce(existing?.bedrooms_offered, incomingBedrooms),
     };
 
+    // Field-level audit: classify each tracked field as inserted/updated/preserved/unchanged.
+    const fieldAudits = buildFieldAudits(existing ?? null, payload, AUDITED_FIELDS);
+    const pushAudits = (projectId: string | null) => {
+      for (const a of fieldAudits) {
+        auditRows.push({
+          run_id: runId,
+          slug,
+          project_id: projectId,
+          field: a.field,
+          action: a.action,
+          old_value: a.old_value,
+          new_value: a.new_value,
+          actor,
+          mode: singleSlug ? "single" : "full",
+        });
+      }
+    };
+
     if (existing?.id) {
       const { error } = await supa
         .from("crm_projects")
         .update(payload)
         .eq("id", existing.id);
       if (error) { skipped++; errors.push({ q: slug, err: error.message }); }
-      else updated++;
+      else { updated++; pushAudits(existing.id); }
     } else {
       // Try insert; if name_lower collides with an existing manual row,
       // attach the slug instead of failing.
-      const { error: insertErr } = await supa
+      const { data: insertedRow, error: insertErr } = await supa
         .from("crm_projects")
-        .insert(payload);
+        .insert(payload)
+        .select("id")
+        .maybeSingle();
       if (insertErr) {
         const { data: byName } = await supa
           .from("crm_projects")
@@ -259,14 +279,27 @@ Deno.serve(async (req) => {
             .update(payload)
             .eq("id", byName.id);
           if (upErr) { skipped++; errors.push({ q: slug, err: upErr.message }); }
-          else updated++;
+          else { updated++; pushAudits(byName.id); }
         } else {
           skipped++;
           errors.push({ q: slug, err: insertErr.message });
         }
       } else {
         inserted++;
+        pushAudits(insertedRow?.id ?? null);
       }
+    }
+  }
+
+  // Flush audit rows in chunks (best-effort; never blocks the sync result).
+  let auditWritten = 0;
+  if (auditRows.length) {
+    const CHUNK = 500;
+    for (let i = 0; i < auditRows.length; i += CHUNK) {
+      const slice = auditRows.slice(i, i + CHUNK);
+      const { error } = await supa.from("crm_presale_sync_audit").insert(slice);
+      if (error) errors.push({ q: "audit", err: error.message });
+      else auditWritten += slice.length;
     }
   }
 
