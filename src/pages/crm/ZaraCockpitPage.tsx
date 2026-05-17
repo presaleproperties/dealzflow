@@ -778,6 +778,7 @@ export default function ZaraCockpitPage() {
                   role={m.kind}
                   text={m.text}
                   tools={m.tools}
+                  sources={(m as any).sources}
                   messageId={m.kind === 'assistant' ? m.id : null}
                   onFeedback={m.kind === 'assistant' ? (r) => sendFeedback(m.id, r) : undefined}
                   onDecide={decide}
@@ -788,7 +789,7 @@ export default function ZaraCockpitPage() {
 
             {streaming && (
               <div className="group">
-                <MessageBubble role="assistant" text={streamText} tools={streamTools} onDecide={decide} decidingId={decidingId} />
+                <MessageBubble role="assistant" text={streamText} tools={streamTools} sources={streamSources} onDecide={decide} decidingId={decidingId} />
                 {!streamText && streamTools.length === 0 && (
                   <div className="flex items-center gap-2 text-[12px] text-muted-foreground px-2 pt-1">
                     <Loader2 className="w-3 h-3 animate-spin" /> Thinking…
