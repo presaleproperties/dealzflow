@@ -5319,6 +5319,8 @@ export type Database = {
       crm_zara_settings: {
         Row: {
           auto_pause_on_cost: boolean
+          auto_showcase_count: number
+          auto_showcase_triggers: string[]
           autonomous_outbound: boolean
           cold_nudge_days: number
           created_at: string
@@ -5340,6 +5342,8 @@ export type Database = {
         }
         Insert: {
           auto_pause_on_cost?: boolean
+          auto_showcase_count?: number
+          auto_showcase_triggers?: string[]
           autonomous_outbound?: boolean
           cold_nudge_days?: number
           created_at?: string
@@ -5361,6 +5365,8 @@ export type Database = {
         }
         Update: {
           auto_pause_on_cost?: boolean
+          auto_showcase_count?: number
+          auto_showcase_triggers?: string[]
           autonomous_outbound?: boolean
           cold_nudge_days?: number
           created_at?: string
