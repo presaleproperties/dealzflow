@@ -72,6 +72,9 @@ export function RightSidebar({
         onAddShowing={onAddShowing}
       />
 
+      {/* Zara — AI assistant memory & draft toggle */}
+      <ZaraLeadCard contactId={contact.id} />
+
       {/* ③ Engagement (Emails / Behavior) */}
       <EngagementTabs contact={contact} />
 
