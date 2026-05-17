@@ -43,6 +43,7 @@ import type { PickerTemplate } from '@/lib/templatePicker';
 import { uploadSmsMedia } from '@/lib/smsMediaUpload';
 import { useCrmLeadSegments } from '@/hooks/useCrmLeadSegments';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { logEngagementEvent } from '@/lib/engagementLog';
 
 type RecipientTab = 'single' | 'segment' | 'custom';
 
