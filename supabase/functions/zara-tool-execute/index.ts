@@ -241,7 +241,7 @@ async function send_briefing_summary(_args: any, ctx: Ctx) {
     sb.from("crm_contacts").select("id", { count: "exact", head: true }).contains("tags", ["hot"]),
     sb.from("zara_suggested_replies").select("id", { count: "exact", head: true }).eq("status", "pending"),
     sb.from("crm_tasks").select("id", { count: "exact", head: true })
-      .lte("due_at", new Date().toISOString()).eq("status", "open"),
+      .lte("due_date", new Date().toISOString()).eq("status", "pending"),
     sb.from("crm_activity_events").select("id", { count: "exact", head: true }).gte("occurred_at", since),
   ]);
   return ok({
@@ -255,7 +255,7 @@ async function send_briefing_summary(_args: any, ctx: Ctx) {
 
 async function list_projects(args: any) {
   const sb = svc();
-  let q = sb.from("crm_projects").select("name,slug,city,status,key_specs").limit(Math.min(args.limit ?? 25, 100));
+  let q = sb.from("crm_projects").select("name,slug,city,status").limit(Math.min(args.limit ?? 25, 100));
   if (args.city) q = q.ilike("city", `%${args.city}%`);
   const { data, error } = await q;
   if (error) return fail(error.message);
@@ -276,32 +276,34 @@ async function project_details(args: any) {
 
 async function recommend_projects_for_lead(args: any) {
   const sb = svc();
-  const { data: lead } = await sb.from("crm_contacts").select("city,budget_max,bedrooms,tags").eq("id", args.contact_id).maybeSingle();
+  const { data: lead } = await sb.from("crm_contacts").select("city,city_pref,budget_max,bedrooms_preferred,tags").eq("id", args.contact_id).maybeSingle();
   if (!lead) return fail("lead not found");
-  let q = sb.from("crm_projects").select("name,slug,city,status,key_specs").limit(5);
-  if (lead.city) q = q.ilike("city", `%${lead.city}%`);
+  let q = sb.from("crm_projects").select("name,slug,city,status").limit(5);
+  const cityHint = lead.city_pref ?? lead.city;
+  if (cityHint) q = q.ilike("city", `%${cityHint}%`);
   const { data } = await q;
-  return ok({ recommendations: data ?? [], based_on: { city: lead.city, budget_max: lead.budget_max, bedrooms: lead.bedrooms } });
+  return ok({ recommendations: data ?? [], based_on: { city: cityHint, budget_max: lead.budget_max, bedrooms: lead.bedrooms_preferred } });
 }
 
 async function web_research(args: any) {
   const sb = svc();
-  const cacheKey = args.query.toLowerCase().trim();
+  const cacheKey = String(args.query ?? "").toLowerCase().trim();
+  if (!cacheKey) return fail("query required");
   const { data: cached } = await sb.from("zara_research_cache").select("result,cached_at")
     .eq("query", cacheKey).maybeSingle();
   if (cached && Date.now() - new Date(cached.cached_at).getTime() < 24 * 3600 * 1000) {
     return ok({ result: cached.result, cached: true });
   }
-  // Minimal stub — real impl would call a search provider. Cache the placeholder.
-  const result = { summary: `Web research not yet wired for "${args.query}". Returning empty result.`, sources: [] };
+  const result = { summary: `Web research not yet wired for "${args.query}". Returning empty placeholder.`, sources: [] };
   await sb.from("zara_research_cache").upsert({ query: cacheKey, result, cached_at: new Date().toISOString() });
   return ok({ result, cached: false });
 }
 
 async function log_training_feedback(args: any, ctx: Ctx) {
   const sb = svc();
+  const decision = args.rating === "up" ? "good" : args.rating === "down" ? "bad" : args.rating;
   const { error } = await sb.from("zara_training_feedback").insert({
-    user_id: ctx.user_id, message_id: args.message_id, rating: args.rating, note: args.note ?? null,
+    created_by: ctx.user_id, message_id: args.message_id, decision, notes: args.note ?? null,
   });
   if (error) return fail(error.message);
   return ok({ recorded: true });
@@ -309,10 +311,12 @@ async function log_training_feedback(args: any, ctx: Ctx) {
 
 async function show_engagement_score(args: any) {
   const sb = svc();
-  const { data: c } = await sb.from("crm_contacts").select("engagement_score,engagement_tier").eq("id", args.contact_id).maybeSingle();
+  const { data: c } = await sb.from("crm_contacts").select("engagement_score,lead_tier").eq("id", args.contact_id).maybeSingle();
   const { data: events } = await sb.from("crm_activity_events").select("event_type,occurred_at")
     .eq("contact_id", args.contact_id).order("occurred_at", { ascending: false }).limit(5);
-  return ok({ score: c?.engagement_score ?? 0, tier: c?.engagement_tier ?? "cold", recent_events: events ?? [] });
+  const score = c?.engagement_score ?? 0;
+  const tier = c?.lead_tier ?? (score >= 70 ? "hot" : score >= 40 ? "warm" : "cold");
+  return ok({ score, tier, recent_events: events ?? [] });
 }
 
 // ── Dispatch ───────────────────────────────────────────────────────────
