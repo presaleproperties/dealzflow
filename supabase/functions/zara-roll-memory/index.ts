@@ -198,7 +198,7 @@ Deno.serve(async (req) => {
     const sb = createClient(SUPABASE_URL, SERVICE_KEY, { auth: { persistSession: false } });
 
     const [{ data: contact }, { data: prior }] = await Promise.all([
-      sb.from("crm_contacts").select("id, first_name, last_name, tags, project_interest, budget_min, budget_max").eq("id", contact_id).maybeSingle(),
+      sb.from("crm_contacts").select("id, first_name, last_name, tags, project, budget_min, budget_max").eq("id", contact_id).maybeSingle(),
       sb.from("zara_lead_memory").select("summary, facts, turn_count, version").eq("contact_id", contact_id).maybeSingle(),
     ]);
 
