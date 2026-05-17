@@ -551,6 +551,7 @@ export default function ZaraCockpitPage() {
     setStreaming(true);
     setStreamText('');
     setStreamTools([]);
+    setStreamSources(null);
 
     const { data: sess } = await supabase.auth.getSession();
     const token = sess.session?.access_token;
