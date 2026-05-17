@@ -5,7 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
-import { Search, Pencil, Eye, Users, Upload, Loader2, FileText, Map, DollarSign, Trash2 } from 'lucide-react';
+import { Search, Pencil, Eye, Users, Upload, Loader2, FileText, Map, DollarSign, Trash2, RefreshCw } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useCrmProjects, useUpdateCrmProject, type CrmProject } from '@/hooks/useCrmProjects';
 import { toast } from 'sonner';
@@ -204,6 +204,7 @@ interface SheetProps {
 
 function ProjectEditSheet({ project, onClose, onSave, saving }: SheetProps) {
   const [form, setForm] = useState<Partial<CrmProject>>({});
+  const [resyncing, setResyncing] = useState(false);
 
   // Reset when project changes
   useMemo(() => {
@@ -223,12 +224,55 @@ function ProjectEditSheet({ project, onClose, onSave, saving }: SheetProps) {
 
   if (!project) return null;
 
+  async function handleResync() {
+    if (!project?.presale_slug) {
+      toast.error('No Presale slug on this project — re-sync requires a linked Presale record.');
+      return;
+    }
+    setResyncing(true);
+    const t = toast.loading(`Re-syncing ${project.name} from Presale Properties…`);
+    try {
+      const { data, error } = await supabase.functions.invoke('sync-presale-projects', {
+        body: { slug: project.presale_slug },
+      });
+      toast.dismiss(t);
+      if (error) throw error;
+      const updated = (data?.updated ?? 0) + (data?.inserted ?? 0);
+      if (updated > 0) toast.success(`Re-synced — Presale data merged (existing edits preserved).`);
+      else toast.warning(`Nothing returned for slug "${project.presale_slug}".`);
+      // Soft-refresh the open sheet by closing it; user can re-open to see new data.
+      onClose();
+    } catch (e: any) {
+      toast.dismiss(t);
+      toast.error(e?.message || 'Re-sync failed');
+    } finally {
+      setResyncing(false);
+    }
+  }
+
   return (
     <Sheet open={!!project} onOpenChange={(o) => !o && onClose()}>
       <SheetContent className="w-full sm:max-w-md overflow-y-auto">
         <SheetHeader>
           <SheetTitle className="text-base">{project.name}</SheetTitle>
           <p className="text-xs text-muted-foreground">{project.view_count} views · {project.lead_count} interested leads</p>
+          {project.presale_slug && (
+            <div className="pt-2">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleResync}
+                disabled={resyncing}
+                className="h-7 text-[11px]"
+                title={`Re-fetch ${project.presale_slug} from the Presale bridge`}
+              >
+                {resyncing
+                  ? <Loader2 className="h-3 w-3 mr-1.5 animate-spin" />
+                  : <RefreshCw className="h-3 w-3 mr-1.5" />}
+                {resyncing ? 'Re-syncing…' : 'Re-sync from Presale'}
+              </Button>
+            </div>
+          )}
         </SheetHeader>
 
         <div className="mt-5 space-y-4">

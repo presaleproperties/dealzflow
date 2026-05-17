@@ -84,6 +84,17 @@ Deno.serve(async (req) => {
     });
   }
 
+  // ---------- OPTIONAL: single-slug mode (per-project re-sync) ----------
+  // Body: { slug: "eden" } skips the sweep and refreshes just that project.
+  let singleSlug: string | null = null;
+  try {
+    if (req.headers.get("content-type")?.includes("application/json")) {
+      const body = await req.json().catch(() => ({}));
+      const s = typeof body?.slug === "string" ? body.slug.trim() : "";
+      if (s) singleSlug = s;
+    }
+  } catch { /* ignore */ }
+
   // ---------- SWEEP ----------
   const supa = createClient(SUPABASE_URL, SERVICE_ROLE);
   const bySlug = new Map<string, BridgeProject>();
@@ -113,22 +124,29 @@ Deno.serve(async (req) => {
     errors.push({ q: "sitemap", err: (e as Error).message });
   }
 
-  for (const q of SWEEP_QUERIES) {
-    try {
-      const raw = await presaleBridge.searchProjects(q);
-      const arr: BridgeProject[] = Array.isArray(raw)
-        ? (raw as BridgeProject[])
-        : (((raw as { projects?: BridgeProject[] })?.projects) ?? []);
-      for (const p of arr) {
-        const slug = (p.slug ?? p.project_slug ?? "").trim();
-        if (!slug) continue;
-        if (!bySlug.has(slug)) bySlug.set(slug, p);
+  if (singleSlug) {
+    // Single-slug path: seed bySlug with a stub so the existing upsert loop runs once.
+    // The full record is fetched via getProject(slug) inside the loop, so the stub
+    // only needs to carry the slug + a name fallback.
+    bySlug.set(singleSlug, { slug: singleSlug, name: singleSlug });
+  } else {
+    for (const q of SWEEP_QUERIES) {
+      try {
+        const raw = await presaleBridge.searchProjects(q);
+        const arr: BridgeProject[] = Array.isArray(raw)
+          ? (raw as BridgeProject[])
+          : (((raw as { projects?: BridgeProject[] })?.projects) ?? []);
+        for (const p of arr) {
+          const slug = (p.slug ?? p.project_slug ?? "").trim();
+          if (!slug) continue;
+          if (!bySlug.has(slug)) bySlug.set(slug, p);
+        }
+      } catch (e) {
+        errors.push({ q, err: (e as Error).message });
       }
-    } catch (e) {
-      errors.push({ q, err: (e as Error).message });
+      // throttle to be polite to the bridge
+      await sleep(350);
     }
-    // throttle to be polite to the bridge
-    await sleep(350);
   }
 
   // ---------- UPSERT ----------
@@ -139,8 +157,7 @@ Deno.serve(async (req) => {
 
   for (const p of bySlug.values()) {
     const slug = (p.slug ?? p.project_slug ?? "").trim();
-    const name = (p.name ?? "").trim();
-    if (!slug || !name) { skipped++; continue; }
+    if (!slug) { skipped++; continue; }
 
     // Pull full project for deck/floor plans/description/hero. Tolerate failures.
     let full: any = null;
@@ -150,6 +167,11 @@ Deno.serve(async (req) => {
       errors.push({ q: `get:${slug}`, err: (e as Error).message });
     }
     await sleep(120);
+
+    // Prefer the canonical name from the full record (the summary `p.name`
+    // may be missing in single-slug mode where we seeded only the slug).
+    const name = ((full?.name as string | undefined) ?? p.name ?? "").trim();
+    if (!name) { skipped++; continue; }
 
     // Look up existing row by presale_slug FIRST, then by name_lower.
     const { data: existing } = await supa
@@ -242,7 +264,9 @@ Deno.serve(async (req) => {
   return new Response(
     JSON.stringify({
       actor,
-      sweep_queries: SWEEP_QUERIES.length,
+      mode: singleSlug ? "single" : "full",
+      slug: singleSlug,
+      sweep_queries: singleSlug ? 0 : SWEEP_QUERIES.length,
       unique_projects: bySlug.size,
       inserted,
       updated,
@@ -251,4 +275,5 @@ Deno.serve(async (req) => {
     }, null, 2),
     { headers: { ...cors, "Content-Type": "application/json" } },
   );
+
 });
