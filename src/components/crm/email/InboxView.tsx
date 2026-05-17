@@ -208,6 +208,32 @@ export default function InboxView() {
   });
 
   const selectedThread = filteredThreads.find(t => t.id === selectedThreadId) ?? null;
+
+  // Fire-and-forget: log `email_replied` the first time we render an unread
+  // inbound message in a thread. Deduped per session by gmail_message_id.
+  const loggedReplyIds = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    if (!selectedThread?.contact_id || !messagesQuery.data) return;
+    for (const m of messagesQuery.data) {
+      if (m.direction !== 'inbound' || m.is_read) continue;
+      if (loggedReplyIds.current.has(m.gmail_message_id)) continue;
+      loggedReplyIds.current.add(m.gmail_message_id);
+      void logEngagementEvent({
+        contactId: selectedThread.contact_id,
+        eventType: 'email_replied',
+        source: 'email',
+        direction: 'inbound',
+        threadId: selectedThread.id,
+        metadata: {
+          from: m.from_email,
+          subject: m.subject ?? null,
+          snippet: (m.body_text || m.snippet || '').slice(0, 200),
+          gmail_message_id: m.gmail_message_id,
+        },
+        occurredAt: m.internal_date,
+      });
+    }
+  }, [selectedThread?.contact_id, selectedThread?.id, messagesQuery.data]);
   // Lazy-load the contact only when we open the full composer for a reply.
   const { data: replyContact } = useCrmContact(composeOpen ? (selectedThread?.contact_id ?? undefined) : undefined);
   const replySubject = useMemo(() => {
