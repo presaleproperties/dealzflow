@@ -408,19 +408,42 @@ export default function ZaraCockpitPage() {
     }
   };
 
+  const [transcript, setTranscript] = useState<string | null>(null);
+  const transcriptRef = useRef<HTMLTextAreaElement>(null);
+
   const ptt = usePushToTalk({
     onTranscript: (t) => {
-      setInput((prev) => {
-        const joined = prev ? `${prev.trim()} ${t}` : t;
-        // resize textarea on next tick
-        requestAnimationFrame(() => {
-          const el = inputRef.current;
-          if (el) { el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 200) + 'px'; el.focus(); }
-        });
-        return joined;
+      setTranscript((prev) => (prev ? `${prev.trim()} ${t}` : t));
+      requestAnimationFrame(() => {
+        const el = transcriptRef.current;
+        if (el) {
+          el.style.height = 'auto';
+          el.style.height = Math.min(el.scrollHeight, 220) + 'px';
+          el.focus();
+          el.setSelectionRange(el.value.length, el.value.length);
+        }
       });
     },
   });
+
+  const sendTranscript = () => {
+    const text = (transcript ?? '').trim();
+    if (!text) { setTranscript(null); return; }
+    setInput(text);
+    setTranscript(null);
+    setTimeout(() => onSend(), 0);
+  };
+
+  const appendTranscriptToInput = () => {
+    const text = (transcript ?? '').trim();
+    if (!text) { setTranscript(null); return; }
+    setInput((prev) => (prev ? `${prev.trim()} ${text}` : text));
+    setTranscript(null);
+    requestAnimationFrame(() => {
+      const el = inputRef.current;
+      if (el) { el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 200) + 'px'; el.focus(); }
+    });
+  };
 
   const onSend = async () => {
     const text = input.trim();
