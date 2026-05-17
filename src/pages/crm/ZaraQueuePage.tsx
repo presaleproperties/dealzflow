@@ -17,6 +17,8 @@ type Draft = {
   inbound_text: string;
   inbound_at: string;
   draft_text: string;
+  draft_html: string | null;
+  template_id_used: string | null;
   draft_subject: string | null;
   intent: string | null;
   confidence: number | null;
