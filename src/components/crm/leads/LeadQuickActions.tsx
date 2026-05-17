@@ -1,5 +1,7 @@
 import { useState } from 'react';
-import { Mail, CalendarDays, ListTodo, ArrowRightLeft, UserCheck, MessageSquare, Link2, Zap } from 'lucide-react';
+import { Mail, CalendarDays, ListTodo, ArrowRightLeft, UserCheck, MessageSquare, Link2, Zap, Sparkles } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 import { CallButton } from '@/components/crm/dialer/DialerWidget';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
