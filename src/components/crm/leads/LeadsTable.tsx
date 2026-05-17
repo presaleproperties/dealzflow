@@ -152,10 +152,16 @@ function InlineTagsCell({
     // canonical crm_tags library, making it instantly reusable everywhere.
     if (exists) {
       updateContact.mutate({ id: contact.id, updates: { tags: next }, oldValues: { tags } });
+      void logEngagementEvent({
+        contactId: contact.id, eventType: 'tag_removed', source: 'crm', metadata: { tag: value },
+      });
       return;
     }
 
     addTags.mutate({ ids: [contact.id], tags: [value], silent: true });
+    void logEngagementEvent({
+      contactId: contact.id, eventType: 'tag_added', source: 'crm', metadata: { tag: value },
+    });
   };
 
   const trimmed = search.trim();
