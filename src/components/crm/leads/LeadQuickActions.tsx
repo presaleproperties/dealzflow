@@ -17,6 +17,7 @@ import { SendBookingLinkDialog } from './SendBookingLinkDialog';
 import { useOpenChat } from '@/hooks/useOpenChat';
 import { EnrollInAutomationDialog } from '@/components/crm/automations/EnrollInAutomationDialog';
 import { formatContactName } from '@/lib/format';
+import { AskZaraButton } from '@/components/crm/zara/AskZaraButton';
 
 export function LeadQuickActions({ contact }: { contact: CrmContact }) {
   const updateContact = useUpdateCrmContact();
@@ -119,6 +120,7 @@ export function LeadQuickActions({ contact }: { contact: CrmContact }) {
             <Sparkles className="w-3.5 h-3.5" />
             {sendingProjects ? 'Drafting…' : 'Send Project Details'}
           </Button>
+          <AskZaraButton contactId={contact.id} />
         </div>
 
         <div className="space-y-2 pt-1">
