@@ -1,164 +1,102 @@
-# Zara 10x Upgrade Plan
+# Zara 10x — Full Rollout Plan
 
-A coordinated overhaul of Zara across chat UX, agent intelligence, cockpit, and outbound autonomy. Single rolling conversation per agent (persisted), autonomy default = level 3 (suggest + auto-send safe nudges, escalate risky moves).
+Six themed phases, shipped in order. Each phase is independently useful — you'll feel value after every one. I'll build phase 1 immediately after you approve, then check in before each subsequent phase.
 
-## 1. Conversational UI (CUI) Rebuild
+---
 
-**New canonical surface:** `/crm/zara` → full-height chat room (replaces the current cockpit landing). The existing cockpit pages move under a tabbed shell: **Chat · Cockpit · Engagement · Audit · Settings**.
+## Phase 1 — Inline Reply Loop (biggest daily ROI)
 
-- Install AI Elements: `conversation`, `message`, `prompt-input`, `shimmer`, `tool`, `suggestion`, `reasoning`, `code-block`.
-- Streaming responses via AI SDK `useChat` + new edge fn `zara-chat-stream` (replaces non-streaming `zara-chat`).
-- Render `message.parts` (text, tool calls, reasoning, sources).
-- Stop button that toggles from submit while `status === submitted | streaming` (per AI SDK abort pattern).
-- Sonner toasts for 402/429 gateway errors.
-- Empty state: gold/dark editorial intro with 4 suggested prompts pulled from current pipeline state ("Who needs a nudge today?", "Draft a follow-up for {hottest_lead}", "Show me presale_burst leads", "Plan tomorrow's outbound").
+Make Zara draft a reply the moment a lead writes back, right inside the existing inbox thread.
 
-## 2. Slash Commands & Quick Actions
+- New edge fn `zara-draft-reply` — takes `contact_id` + last inbound message, returns `{ subject, html, confidence, reasoning, sources[] }`.
+- Trigger on inbound: `gmail-pull` and `crm-twilio-inbound` enqueue a draft job into new `zara_pending_drafts` table.
+- UI: `<ZaraReplyChip />` mounted at the top of every email thread + SMS thread when a draft exists. Tap to expand → editable composer prefilled, "Send / Edit / Dismiss / Why this?" actions.
+- "Why this?" reveals sources (lead memory facts, project KB rows, prior messages quoted).
+- Auto-send rule: confidence ≥ 0.9 AND topic ∈ {price-list, sqft, completion-date, deposit-structure, brochure-request, generic-thanks} AND autonomy ≥ 4 → auto-send + 60s undo toast.
+- All auto-sends logged to `crm_zara_outbound_audit` with `source='reply'` and `confidence`.
 
-In-prompt command palette (`/`) triggered inside `PromptInputTextarea`:
+**Tables**: `zara_pending_drafts (id, contact_id, channel, inbound_ref, draft jsonb, confidence, status, created_at, expires_at)`.
 
-| Command | Action |
-|---|---|
-| `/lead <name>` | Pin a lead to the conversation (fuzzy search `crm_contacts`) |
-| `/send-projects` | Trigger `zara-send-project-details` for pinned lead |
-| `/draft-reply` | Draft a reply to last inbound email/SMS |
-| `/summarize` | Summarize pinned lead's last 30d activity |
-| `/nudge` | Run planner for pinned lead only |
-| `/plan` | Run autonomous planner now (dry-run preview) |
-| `/audit` | Open today's outbound audit inline |
-| `/mute <days>` | Mute Zara for pinned lead |
-| `/voice` | Toggle voice mode |
+---
 
-Implemented as a `CommandPalette` popover anchored above the textarea; commands compile to a tool call sent through the chat.
+## Phase 2 — Lead Memory & "Zara Remembers" Card
 
-## 3. Per-Lead Context Pinning
+Give Zara real long-term memory per lead so every action gets smarter.
 
-- Pinned-lead chip rendered above the conversation; persists in `crm_team_settings.zara_pin` (per agent).
-- When a lead is pinned, `zara-chat-stream` auto-injects:
-  - `crm_contacts` row (masked PII)
-  - last 20 timeline events (`crm_lead_timeline_v2`)
-  - latest `zara_lead_memory` snapshot
-  - outbound audit summary (last 7d)
-  - recommended projects (`recommend_projects_for_lead`)
-- New "Pin from lead detail" button on `LeadDetailView` → opens Zara chat with that lead pinned.
+- Promote/extend `zara_lead_memory` with typed facts: `budget`, `areas[]`, `bedrooms`, `timeline`, `family`, `objections[]`, `motivation`, `decision_makers`, `competing_projects[]`, `last_confirmed_at` per fact.
+- New edge fn `zara-extract-facts` — runs after every inbound email/SMS/call-note; uses structured `Output.object` schema; merges into memory with provenance + confidence.
+- "Stale fact" decay: facts >60d old flagged `needs_reconfirm`; planner asks naturally before asserting.
+- UI: `<ZaraRemembersCard />` in lead detail (desktop right column + mobile sheet) — bullet list grouped by category, each fact with source link + edit/dismiss.
+- Cross-channel summary: 4-sentence rolling brief regenerated nightly per active lead, stored in `zara_lead_memory.rolling_summary`.
 
-## 4. Voice In / Out
+---
 
-- **Voice in**: push-to-talk button in `PromptInputFooter` using browser `MediaRecorder` → upload to new edge fn `zara-voice-transcribe` (OpenAI Whisper via Lovable AI Gateway audio compat or Gemini audio).
-- **Voice out**: TTS toggle; when on, assistant responses stream to `zara-voice-tts` edge fn (Gemini TTS) and play via `<audio>` with waveform indicator.
-- Mobile haptic on record start/stop. Auto-disable in quiet hours.
+## Phase 3 — Voice (mobile unlock)
 
-## 5. Smarter Agent Loop
+PWA-native push-to-talk for briefings + after-showing notes.
 
-New shared `zara-agent` module (`supabase/functions/_shared/zara-agent.ts`) used by both `zara-chat-stream` and `zara-plan-outbound`:
+- Edge fns: `zara-voice-transcribe` (ElevenLabs Scribe v2 batch), `zara-voice-tts` (Lovable AI Gemini TTS).
+- `<VoiceFAB />` in mobile bottom-nav `+` sheet → "Ask Zara" (transcribe → chat) and "Note a showing" (transcribe → `zara-extract-facts` → memory update + timeline event).
+- `useScribe` realtime hook for live caption while recording.
+- TTS-back for briefing replies, opt-in per agent, suppressed during quiet hours.
+- Mobile haptic on record start/stop (already wired via `triggerHaptic`).
 
-- AI SDK `streamText` with `stopWhen: stepCountIs(50)`.
-- Tool registry (typed via Zod):
-  - `lookup_lead`, `search_leads`, `lead_timeline`, `lead_memory_read/write`
-  - `recommend_projects_for_lead`, `project_details`, `list_projects`
-  - `draft_email`, `draft_sms`, `send_email` (needsApproval at level ≤3), `send_sms` (needsApproval)
-  - `send_project_details` (auto-approved on `presale_burst` at level ≥3)
-  - `schedule_nudge`, `mute_lead`, `assign_lead`, `set_lead_status`
-  - `run_planner` (admin-only), `read_outbound_audit`
-- Per-call autonomy check from `zara_settings.mode` + new `zara_settings.autonomy_level` (1–5).
-- All tool calls log to `crm_zara_outbound_audit` with `rule_evaluation.source = 'chat' | 'planner' | 'reply'`.
+---
 
-**Planner improvements:**
-- On `presale_burst` + `initial_outreach` triggers, auto-call `send_project_details` (3 best projects) instead of short nudge — when autonomy ≥3 and lead has no project email in last 14d.
-- Reply-aware: if `zara-reply` ran in last 6h, planner defers nudges by 24h.
-- A/B subject lines: planner stores `subject_variant` in audit; weekly digest surfaces winners.
+## Phase 4 — Proactive Coaching
 
-## 6. Cockpit & Observability Upgrades
+Zara stops waiting to be asked.
 
-- **Live activity rail** (right-hand drawer on `/crm/zara`): realtime `crm_engagement_events` + `crm_zara_outbound_audit` feed, color-coded by decision.
-- **Kill-switch banner**: one-click pause Zara workspace-wide (writes `zara_settings.mode='sandbox'`), with countdown to resume.
-- **Per-lead drill-down**: from any audit row → opens chat with lead pinned and prefills `/summarize`.
-- **Today's plan**: top card on cockpit showing next 10 scheduled outbounds with approve/skip buttons.
+- New edge fn `zara-daily-standup` (cron 7am Pacific per agent timezone) — pushes "Today's plan" web-push notification: 3 most urgent leads + 1 deal-at-risk + 1 opportunity.
+- New `<TodaysPlanCard />` on `/crm/zara` cockpit + lock-screen-friendly push payload.
+- Deal-at-risk detector edge fn `zara-risk-scan` (hourly): scores leads on no-reply-after-hot-signal, last-touch decay, opened-but-didn't-reply patterns. Writes to `zara_risk_alerts` table.
+- Weekly self-review email Sunday 6pm: win rate, A/B subject winners, where humans overrode Zara, suggested setting tweaks with one-click apply.
 
-## 7. Database Changes
+---
 
-```sql
--- New columns
-alter table public.zara_settings
-  add column if not exists autonomy_level int not null default 3 check (autonomy_level between 1 and 5),
-  add column if not exists voice_enabled boolean not null default false;
+## Phase 5 — Trust & Safety Guardrails
 
--- New table for chat history (single rolling per agent)
-create table public.zara_chat_messages (
-  id uuid primary key default gen_random_uuid(),
-  agent_user_id uuid not null,
-  role text not null check (role in ('user','assistant','system','tool')),
-  parts jsonb not null,
-  pinned_contact_id uuid references crm_contacts(id) on delete set null,
-  created_at timestamptz not null default now()
-);
-alter table public.zara_chat_messages enable row level security;
-create policy "own chat" on public.zara_chat_messages
-  for all using (auth.uid() = agent_user_id) with check (auth.uid() = agent_user_id);
-create index on public.zara_chat_messages (agent_user_id, created_at desc);
+Real-money safety net so autonomous sends never embarrass an agent.
 
--- Pinned lead per agent (singleton via settings jsonb already exists)
--- Stored in crm_team_settings.zara_pin = { contact_id, pinned_at }
+- `zara_never_quote` config (admin UI): regex/topic list — anything matching → defer to human draft, never auto-send (default: price, commission, legal terms unless sourced from `crm_projects` with timestamp ≤ 30d).
+- Tone-mirror: extract per-lead style features (avg length, formality, emoji use, punctuation density) → injected into draft system prompt.
+- Universal 60-sec undo on every auto-send (toast + push action) — actually retracts via Gmail draft delete / Twilio message redaction where possible, else "follow-up correction" auto-send.
+- Auto-mute keywords: "stop", "unsubscribe", "remove me", "not interested", "wrong number" → sets `do_not_contact=true` + tags + notifies assigned agent.
+- New `<KillSwitchBanner />` (workspace-wide pause from any page).
+
+---
+
+## Phase 6 — Workflow Integration
+
+Zara respects the rest of the agent's world.
+
+- Calendar-aware planner: query `crm_showings` + Google Calendar before scheduling nudges. Suppress 2h before showing, prompt 24h after no-show.
+- Deal-stage switch: when `crm_deals` row created for a lead, planner switches mode to `transaction_support` — different prompts, different cadence (deposit reminders, doc chase, completion countdown).
+- Handoff brief: when `crm_contacts.assigned_to` changes, `zara-handoff-brief` edge fn writes a 3-line summary to a timeline note and pushes to new assignee.
+- "Ask Zara about this lead" button on `LeadQuickActions` → opens `/crm/zara` with that lead pinned (uses existing `useZaraPin`).
+
+---
+
+## Technical foundations (built alongside phase 1)
+
+- **Shared agent runner**: `supabase/functions/_shared/zara-agent.ts` — single AI SDK `streamText` + tool registry used by reply/planner/extract/chat. Honors `zara_settings.autonomy_level` per call.
+- **Lovable AI Gateway helper**: `supabase/functions/_shared/zara-gateway.ts` (if not already present).
+- **Audit schema additions**: `crm_zara_outbound_audit` gains `source`, `confidence`, `undo_token`, `undone_at`.
+- **English-only constraint** preserved everywhere (per `mem://constraints/zara-english-only`).
+- **Notification routing rule** respected — drafts/alerts only to assigned agent via `crm_recipients_for_contact` RPC.
+- **No new top-level nav** — everything lives inside existing CRM inbox, lead detail, and `/crm/zara` cockpit.
+
+---
+
+## Rollout sequencing
+
+```text
+Phase 1  ─ Inline reply loop          [SHIP FIRST — felt within a day]
+Phase 2  ─ Lead memory + Remembers     [foundation for phases 3-6]
+Phase 3  ─ Voice (PWA push-to-talk)
+Phase 4  ─ Proactive coaching          [standup + risk scan + weekly review]
+Phase 5  ─ Guardrails (undo, never-quote, auto-mute, kill switch)
+Phase 6  ─ Workflow (calendar, deal-stage, handoffs, "Ask Zara")
 ```
 
-## 8. Files to Create / Edit
-
-**New edge functions**
-- `supabase/functions/zara-chat-stream/index.ts` — streaming chat w/ tools
-- `supabase/functions/zara-voice-transcribe/index.ts`
-- `supabase/functions/zara-voice-tts/index.ts`
-- `supabase/functions/_shared/zara-agent.ts` — shared tool registry + runner
-- `supabase/functions/_shared/zara-gateway.ts` — Lovable AI Gateway provider helper
-
-**Edge function edits**
-- `zara-plan-outbound` — use shared agent, honor autonomy_level, auto project-showcase on burst
-- `zara-reply` — record reply-recency for planner deferral
-- `zara-send-project-details` — accept `source: 'chat'|'planner'` for audit
-
-**New pages / components**
-- `src/pages/crm/ZaraChatPage.tsx` — main chat surface
-- `src/components/crm/zara/ZaraConversation.tsx`
-- `src/components/crm/zara/ZaraPromptInput.tsx` — with slash palette + voice
-- `src/components/crm/zara/SlashCommandPalette.tsx`
-- `src/components/crm/zara/PinnedLeadChip.tsx`
-- `src/components/crm/zara/LiveActivityRail.tsx`
-- `src/components/crm/zara/TodaysPlanCard.tsx`
-- `src/components/crm/zara/KillSwitchBanner.tsx`
-- `src/components/crm/zara/VoiceRecorder.tsx`
-- `src/components/crm/zara/ZaraToolCard.tsx` — per-tool renderers (lead card, projects, audit row)
-- `src/hooks/useZaraChat.ts` — wraps `useChat` + persistence
-- `src/hooks/useZaraPin.ts`
-
-**Page edits**
-- `src/App.tsx` — `/crm/zara` → `ZaraChatPage`, cockpit moves to `/crm/zara/cockpit`
-- `src/pages/crm/ZaraCockpitPage.tsx` — re-skin under tabbed shell, add KillSwitch + TodaysPlan
-- `src/pages/crm/ZaraOutboundAuditPage.tsx` — add "Open in chat" action
-- `src/pages/crm/ZaraEngagementStatusPage.tsx` — add pin-to-chat button
-- `src/components/crm/LeadQuickActions.tsx` — "Ask Zara about this lead" button
-
-**Install**
-- AI Elements: `bun x ai-elements@latest add conversation message prompt-input shimmer tool suggestion reasoning code-block`
-- `ai`, `@ai-sdk/openai-compatible`, `@ai-sdk/react`, `zod` (likely already present)
-
-## 9. Acceptance Checks
-
-- New `/crm/zara` streams responses; stop button cancels mid-stream and persists partial message.
-- `/lead jane` pins Jane; subsequent messages auto-include her context; tool calls render as collapsible cards with domain-specific renderers.
-- Voice push-to-talk transcribes within 3s and submits as a user message; TTS plays assistant reply.
-- Autonomy level 3 + `presale_burst` lead → planner auto-sends 3-project showcase, logs to audit with `decision='auto_sent_project_showcase'`.
-- Kill switch toggles `zara_settings.mode='sandbox'` and the next planner run logs `decision='blocked_sandbox'` for every lead.
-- Single rolling conversation persists across reloads; new "Clear conversation" button wipes `zara_chat_messages` for the agent.
-- All tool calls (chat, planner, reply) appear in `/crm/zara/audit` with `source` tag.
-
-## 10. Rollout Order (single PR sequence)
-
-1. DB migration (autonomy_level, voice_enabled, zara_chat_messages)
-2. Shared agent module + gateway helper
-3. `zara-chat-stream` edge fn + AI Elements install
-4. ZaraChatPage + conversation + prompt input + persistence
-5. Slash palette + pin chip + tool cards
-6. Voice transcribe/TTS edge fns + recorder UI
-7. Planner upgrades (autonomy, project-burst auto-send, reply-defer)
-8. Cockpit re-skin: tabbed shell + kill switch + today's plan + live rail
-9. Lead detail "Ask Zara" entry point
-10. QA pass + memory update
+Approve and I'll start building Phase 1 immediately, then check in before each next phase.
