@@ -370,7 +370,7 @@ async function list_projects(args: any) {
   let bridge_hits: any[] = [];
   if (qStr && (data?.length ?? 0) < 3) {
     try {
-      const { presaleBridge } = await import("../_shared/presale-bridge.ts");
+      
       const raw = await presaleBridge.searchProjects(qStr);
       const arr: any[] = Array.isArray(raw) ? raw : (raw as any)?.projects ?? [];
       const localSlugs = new Set((data ?? []).map((p: any) => p.slug));
@@ -411,7 +411,7 @@ async function project_details(args: any) {
   // Bridge fallback by slug — Presale is source of truth.
   if (args.slug) {
     try {
-      const { presaleBridge } = await import("../_shared/presale-bridge.ts");
+      
       const bp = await presaleBridge.getProject(args.slug);
       if (bp && (bp as any).slug) return ok({ project: bp, source: "presale-bridge" });
     } catch (e) {
