@@ -14,6 +14,7 @@ import { useZaraDock } from '@/stores/useZaraDock';
 import { useZaraPageContext } from '@/hooks/useZaraPageContext';
 import { useZaraDockChat, useZaraConversations, type Conv } from '@/hooks/useZaraDockChat';
 import { getChipsForSurface } from '@/lib/zaraDockChips';
+import { ZaraQueuedEmailsPanel } from '@/components/crm/leads/ZaraQueuedEmailsPanel';
 
 const HIDDEN_PATTERNS: RegExp[] = [
   /^\/crm\/zara\/?$/, // cockpit
