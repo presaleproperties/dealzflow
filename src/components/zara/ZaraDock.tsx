@@ -470,6 +470,19 @@ export function ZaraDock() {
     return null;
   };
 
+  // Clear chat — archive the current convo (preserves audit trail) and start a fresh one.
+  const clearChat = async () => {
+    if (streaming) { stop(); }
+    const current = convs.find((c) => c.id === conversationId);
+    if (current && !current.archived && rendered.length > 0) {
+      await archive(current);
+    }
+    setConversationId(null);
+    setShowHistory(false);
+    setInput('');
+    setTimeout(() => inputRef.current?.focus(), 60);
+  };
+
   const onSend = async (textOverride?: string) => {
     const text = (textOverride ?? input).trim();
     if (!text || streaming) return;
