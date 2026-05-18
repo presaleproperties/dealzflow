@@ -67,6 +67,19 @@ Deno.serve(async (req) => {
           },
         });
         if (error) return json({ error: error.message }, 502);
+        await admin.from('crm_engagement_events').insert({
+          contact_id: action.contactId,
+          event_type: 'zara_handoff',
+          source: 'zara',
+          actor_id: user.id,
+          occurred_at: new Date().toISOString(),
+          metadata: {
+            channel,
+            intent: action.kind === 'custom' ? 'engage_custom' : 'follow_up_now',
+            prompt: (action as any).prompt ?? null,
+            draft_id: (data as any)?.draftId ?? (data as any)?.id ?? null,
+          },
+        });
         return json({ ok: true, draft: data });
       }
 
@@ -111,6 +124,18 @@ Deno.serve(async (req) => {
           .select('summary, facts, last_rolled_at')
           .eq('contact_id', action.contactId)
           .maybeSingle();
+        await admin.from('crm_engagement_events').insert({
+          contact_id: action.contactId,
+          event_type: 'zara_handoff',
+          source: 'zara',
+          actor_id: user.id,
+          occurred_at: new Date().toISOString(),
+          metadata: {
+            intent: 'summarize_lead',
+            summary_preview: (memory as any)?.summary?.slice(0, 240) ?? null,
+            rolled_at: (memory as any)?.last_rolled_at ?? null,
+          },
+        });
         return json({ ok: true, memory });
       }
     }
