@@ -69,19 +69,59 @@ function renderPersonalNoteBlock(note: string | null | undefined): string {
 }
 
 /** Inject the personal-note block into the rendered email HTML.
- *  Strategy: place it just inside <body>, before the first <table> (the
- *  bridge always wraps the project card in a <table>). Falls back to
- *  prepending into <body>, then to prepending the whole document. */
+ *  Placement contract: after the project hero + body copy, immediately
+ *  before the first CTA-bearing table (View Project Details / Call Now /
+ *  Brochure / Floor Plans / Pricing / Calendly / Book). Falls back to the
+ *  legacy "before first table" behavior if no CTA table is found. */
+const CTA_HREF_RE = /(?:^tel:|presaleproperties\.com\/projects?\/|calendly\.com|\/(brochure|floor[-_ ]?plan|pricing|book)|\.pdf(?:$|\?))/i;
+const CTA_LABEL_RE = /(view\s+project\s+details?|call\s+now|view\s+brochure|view\s+floor\s*plans?|view\s+pricing|book\s+(a\s+)?(call|tour|meeting)|schedule)/i;
+
+function findFirstCtaTableIdx(html: string): number {
+  const lower = html.toLowerCase();
+  let cursor = 0;
+  while (cursor < lower.length) {
+    const tOpen = lower.indexOf("<table", cursor);
+    if (tOpen < 0) return -1;
+    // Find matching </table> respecting nesting.
+    let depth = 0;
+    let i = tOpen;
+    let end = -1;
+    while (i < lower.length) {
+      const nextOpen = lower.indexOf("<table", i + 1);
+      const nextClose = lower.indexOf("</table>", i + 1);
+      if (nextClose < 0) break;
+      if (nextOpen >= 0 && nextOpen < nextClose) { depth++; i = nextOpen; }
+      else {
+        if (depth === 0) { end = nextClose + "</table>".length; break; }
+        depth--; i = nextClose;
+      }
+    }
+    if (end < 0) return -1;
+    const block = html.slice(tOpen, end);
+    const aRe = /<a\s[^>]*href\s*=\s*["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi;
+    let m: RegExpExecArray | null;
+    while ((m = aRe.exec(block)) !== null) {
+      const href = m[1];
+      const label = m[2].replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
+      if (CTA_HREF_RE.test(href) || CTA_LABEL_RE.test(label)) return tOpen;
+    }
+    cursor = end;
+  }
+  return -1;
+}
+
 function injectPersonalNote(html: string, noteHtml: string): string {
   if (!noteHtml) return html;
-  // Try: first <table> inside body
+  const ctaIdx = findFirstCtaTableIdx(html);
+  if (ctaIdx > 0) {
+    return html.slice(0, ctaIdx) + noteHtml + html.slice(ctaIdx);
+  }
+  // Fallback: before first table inside <body> (legacy behavior).
   const bodyOpen = html.search(/<body[^>]*>/i);
   if (bodyOpen >= 0) {
     const afterBodyOpen = html.indexOf(">", bodyOpen) + 1;
     const tableIdx = html.toLowerCase().indexOf("<table", afterBodyOpen);
-    if (tableIdx > 0) {
-      return html.slice(0, tableIdx) + noteHtml + html.slice(tableIdx);
-    }
+    if (tableIdx > 0) return html.slice(0, tableIdx) + noteHtml + html.slice(tableIdx);
     return html.slice(0, afterBodyOpen) + noteHtml + html.slice(afterBodyOpen);
   }
   return noteHtml + html;
