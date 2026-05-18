@@ -1,14 +1,12 @@
 /**
- * ZaraSection — single, consolidated Zara surface for the lead detail right rail.
+ * ZaraSection — calm whisper card for the lead detail right rail.
  *
- * Replaces the previous trio (ZaraEngagePanel + ZaraRemembersCard + ZaraLeadCard)
- * which stacked three borders, three "Sparkles · Zara" headers, two memory
- * summaries, two refresh/summarize buttons, and two channel selectors.
+ * Apple Intelligence visual language: glass, no borders, soft halo, content
+ * floats. Collapsed by default — shows one line of memory + the primary
+ * suggestion. Expand to access actions, ask box, quotes, autonomy toggle.
  *
- * Layout: one bordered tile, three quiet sub-sections separated by hairlines:
- *   1. Memory       — urgency · summary · compact facts
- *   2. Act          — 4 quick actions + channel switcher
- *   3. Ask / More   — composer; "More" collapses quotes + train-on-win + per-lead toggle
+ * Reuses all underlying state + actions from the previous bordered version,
+ * only the chrome changes.
  */
 import { useEffect, useState } from 'react';
 import {
@@ -19,7 +17,6 @@ import { formatDistanceToNow } from 'date-fns';
 import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
 import { useZaraLeadMemory, isMemoryStale, type ZaraLeadFacts } from '@/hooks/useZaraLeadMemory';
@@ -72,14 +69,6 @@ function buildRows(f: ZaraLeadFacts): { label: string; value: string }[] {
   if (f.last_objection) rows.push({ label: 'Objection', value: f.last_objection });
   return rows;
 }
-function urgencyTone(signal?: string | null): { dot: string; label: string } | null {
-  if (!signal) return null;
-  const s = signal.toLowerCase();
-  if (s.startsWith('hot'))  return { dot: 'bg-red-500',         label: signal };
-  if (s.startsWith('warm')) return { dot: 'bg-amber-400',       label: signal };
-  if (s.startsWith('cold')) return { dot: 'bg-sky-400',         label: signal };
-  return { dot: 'bg-muted-foreground', label: signal };
-}
 
 /* ---------- component ---------- */
 
@@ -88,15 +77,15 @@ export function ZaraSection({ contact }: { contact: CrmContact }) {
   const contactId = contact.id;
   const { data: memory } = useZaraLeadMemory(contactId);
 
-  const [enabled, setEnabled]       = useState(false);
-  const [channel, setChannel]       = useState<Channel>(contact.email ? 'email' : 'sms');
-  const [busy, setBusy]             = useState<ActionKind | null>(null);
-  const [prompt, setPrompt]         = useState('');
-  const [scheduleHours, setSched]   = useState(24);
-  const [showShowing, setShowing]   = useState(false);
-  const [showTrain, setShowTrain]   = useState(false);
+  const [enabled, setEnabled]     = useState(false);
+  const [channel, setChannel]     = useState<Channel>(contact.email ? 'email' : 'sms');
+  const [busy, setBusy]           = useState<ActionKind | null>(null);
+  const [prompt, setPrompt]       = useState('');
+  const [scheduleHours, setSched] = useState(24);
+  const [showShowing, setShowing] = useState(false);
+  const [showTrain, setShowTrain] = useState(false);
   const [showQuotes, setShowQuotes] = useState(false);
-  const [moreOpen, setMoreOpen]     = useState(false);
+  const [expanded, setExpanded]   = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -110,7 +99,6 @@ export function ZaraSection({ contact }: { contact: CrmContact }) {
 
   const facts   = memory?.facts || {};
   const rows    = buildRows(facts);
-  const urgency = urgencyTone(facts.urgency_signal);
   const quotes  = facts.key_quotes ?? [];
   const stale   = memory ? isMemoryStale(memory.refreshed_at) : false;
 
@@ -163,246 +151,229 @@ export function ZaraSection({ contact }: { contact: CrmContact }) {
     ? formatDistanceToNow(new Date(memory.refreshed_at), { addSuffix: true })
     : null;
 
+  // The single-line whisper: prefer memory.summary, fall back to a soft prompt.
+  const whisper = memory?.summary?.trim() || 'I haven\'t met them yet — refresh to pull what we know.';
+
   return (
     <>
-      <div
-        className="rounded-xl border border-primary/25 bg-card/80 overflow-hidden"
-        style={{ boxShadow: '0 1px 0 hsl(var(--primary) / 0.04) inset, 0 8px 24px -18px hsl(var(--primary) / 0.3)' }}
-      >
-        {/* ── header ── */}
-        <div className="flex items-center justify-between gap-3 px-3 py-2.5 border-b border-primary/15 bg-gradient-to-b from-primary/[0.05] to-transparent">
-          <div className="flex items-center gap-2 min-w-0">
-            <span className="w-6 h-6 rounded-md bg-primary/15 border border-primary/30 flex items-center justify-center shrink-0">
-              <Sparkles className="w-3.5 h-3.5 text-primary" />
-            </span>
-            <div className="min-w-0">
-              <div className="text-[12.5px] font-semibold tracking-tight leading-tight">Zara</div>
-              {refreshedLabel && (
-                <div
-                  className="text-[10px] text-muted-foreground leading-tight tabular-nums"
-                  title={`Refreshed ${new Date(memory!.refreshed_at).toLocaleString()} · ${memory!.turn_count} turns`}
-                >
-                  refreshed {refreshedLabel}
-                </div>
-              )}
-            </div>
+      <div className="zara-whisper">
+        {/* Eyebrow row */}
+        <div className="flex items-center justify-between gap-3 mb-2">
+          <div className="flex items-center gap-2">
+            <span className="zara-eyebrow">Zara</span>
+            {refreshedLabel && (
+              <span
+                className="text-[10.5px] text-muted-foreground/80 tabular-nums"
+                title={`Refreshed ${new Date(memory!.refreshed_at).toLocaleString()} · ${memory!.turn_count} turns`}
+              >
+                · {refreshedLabel}
+              </span>
+            )}
           </div>
+          <button
+            type="button"
+            onClick={() => setExpanded((v) => !v)}
+            className="text-[10.5px] text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
+          >
+            {expanded ? 'Less' : 'More'}
+            <ChevronDown className={cn('w-3 h-3 transition-transform', expanded && 'rotate-180')} />
+          </button>
         </div>
 
-        {/* ── retrieval intelligence (playbook + founder lens) ── */}
-        <ZaraContextStrip contactId={contactId} />
+        {/* The single whisper line */}
+        <p className="text-[13px] leading-relaxed text-foreground/90">{whisper}</p>
 
-        {/* ── 1. Memory ── */}
-        {(memory?.summary || rows.length > 0 || urgency) && (
-          <div className="px-3 pt-2.5 pb-2.5">
-            {urgency && (
-              <div className="flex items-center gap-1.5 mb-1.5">
-                <span className={cn('w-1.5 h-1.5 rounded-full', urgency.dot)} />
-                <span className="text-[11px] text-foreground/80 leading-tight">{urgency.label}</span>
-              </div>
-            )}
-            {memory?.summary && (
-              <p className="text-[12.5px] leading-snug text-foreground/85">{memory.summary}</p>
-            )}
+        {/* Two-button primary lane — always visible, no chrome */}
+        <div className="mt-3 flex items-center gap-1 -mx-2">
+          <button
+            type="button"
+            onClick={() => run('follow_up_now')}
+            disabled={busy !== null}
+            className="zara-quiet-action disabled:opacity-50"
+          >
+            {busy === 'follow_up_now'
+              ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              : <Send className="w-3.5 h-3.5" />}
+            Follow up
+          </button>
+          <button
+            type="button"
+            onClick={() => run('summarize_lead')}
+            disabled={busy !== null}
+            className="zara-quiet-action disabled:opacity-50"
+          >
+            {busy === 'summarize_lead'
+              ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              : <RefreshCw className="w-3.5 h-3.5" />}
+            Refresh
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowing(true)}
+            className="zara-quiet-action"
+          >
+            <CalendarDays className="w-3.5 h-3.5" />
+            Showing
+          </button>
+        </div>
+
+        {stale && !expanded && (
+          <div className="mt-2 flex items-center gap-1.5 text-[10.5px] text-amber-600 dark:text-amber-400">
+            <AlertCircle className="w-3 h-3" />
+            <span>Memory hasn't refreshed in 60+ days.</span>
+          </div>
+        )}
+
+        {/* ── Expanded surface ── */}
+        {expanded && (
+          <div className="mt-4 space-y-4 animate-fade-in">
+            {/* Retrieval intelligence (playbook + founder lens) — no border */}
+            <ZaraContextStrip contactId={contactId} className="!bg-transparent !border-0 px-0" />
+
+            {/* Facts grid */}
             {rows.length > 0 && (
-              <dl className="mt-2 space-y-0.5">
+              <dl className="space-y-1">
                 {rows.map((r) => (
-                  <div key={r.label} className="grid grid-cols-[68px_1fr] gap-2 items-baseline">
+                  <div key={r.label} className="grid grid-cols-[72px_1fr] gap-2 items-baseline">
                     <dt className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">{r.label}</dt>
-                    <dd className="text-[11.5px] text-foreground/90 leading-snug">{r.value}</dd>
+                    <dd className="text-[12px] text-foreground/90 leading-snug">{r.value}</dd>
                   </div>
                 ))}
               </dl>
             )}
-            {stale && (
-              <div className="mt-2 flex items-center gap-1.5 text-[10.5px] text-amber-600 dark:text-amber-400">
-                <AlertCircle className="w-3 h-3" />
-                <span>Memory hasn't refreshed in 60+ days.</span>
+
+            {/* Schedule + channel row */}
+            <div className="flex flex-wrap items-center justify-between gap-3 text-[10.5px]">
+              <div className="flex items-center gap-1.5">
+                <span className="uppercase tracking-wider text-muted-foreground">Channel</span>
+                {(['email', 'sms', 'whatsapp'] as const).map((c) => {
+                  const isEnabled = c === 'email' ? !!contact.email : !!contact.phone;
+                  return (
+                    <button
+                      key={c}
+                      onClick={() => isEnabled && setChannel(c)}
+                      disabled={!isEnabled}
+                      className={cn(
+                        'px-2 py-0.5 rounded-full transition-colors',
+                        channel === c
+                          ? 'bg-primary/15 text-primary'
+                          : 'text-muted-foreground hover:text-foreground disabled:opacity-30',
+                      )}
+                    >
+                      {c === 'whatsapp' ? 'wa' : c}
+                    </button>
+                  );
+                })}
               </div>
-            )}
-          </div>
-        )}
-
-        {/* ── 2. Act ── */}
-        <div className="px-3 py-2.5 border-t border-border/40 space-y-2">
-          <div className="grid grid-cols-2 gap-1.5">
-            <Button
-              size="sm"
-              onClick={() => run('follow_up_now')}
-              disabled={busy !== null}
-              className="h-8 text-[11.5px] gap-1.5 justify-start bg-primary text-primary-foreground hover:bg-primary/90"
-            >
-              {busy === 'follow_up_now' ? <Loader2 className="w-3 h-3 animate-spin" /> : <Send className="w-3 h-3" />}
-              Follow up
-            </Button>
-            <Button
-              size="sm" variant="outline"
-              onClick={() => run('schedule_followup', { in_hours: scheduleHours })}
-              disabled={busy !== null}
-              className="h-8 text-[11.5px] gap-1.5 justify-start"
-            >
-              {busy === 'schedule_followup' ? <Loader2 className="w-3 h-3 animate-spin" /> : <Clock className="w-3 h-3 text-primary" />}
-              In {scheduleHours}h
-            </Button>
-            <Button
-              size="sm" variant="outline"
-              onClick={() => run('summarize_lead')}
-              disabled={busy !== null}
-              className="h-8 text-[11.5px] gap-1.5 justify-start"
-            >
-              {busy === 'summarize_lead' ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3 text-primary" />}
-              Summarize
-            </Button>
-            <Button
-              size="sm" variant="outline"
-              onClick={() => setShowing(true)}
-              className="h-8 text-[11.5px] gap-1.5 justify-start"
-            >
-              <CalendarDays className="w-3 h-3 text-primary" />
-              Showing
-            </Button>
-          </div>
-
-          {/* compact meta row: channel + schedule presets */}
-          <div className="flex items-center justify-between gap-2 text-[10px]">
-            <div className="flex items-center gap-1">
-              <span className="uppercase tracking-wider text-muted-foreground mr-0.5">Ch</span>
-              {(['email', 'sms', 'whatsapp'] as const).map((c) => {
-                const isEnabled = c === 'email' ? !!contact.email : !!contact.phone;
-                return (
+              <div className="flex items-center gap-1.5">
+                <span className="uppercase tracking-wider text-muted-foreground">Schedule</span>
+                {SCHEDULE_PRESETS.map((p) => (
                   <button
-                    key={c}
-                    onClick={() => isEnabled && setChannel(c)}
-                    disabled={!isEnabled}
+                    key={p.v}
+                    onClick={() => setSched(p.v)}
                     className={cn(
-                      'px-1.5 py-0.5 rounded border transition-colors uppercase tracking-wider',
-                      channel === c
-                        ? 'bg-primary text-primary-foreground border-primary'
-                        : 'bg-card border-border text-muted-foreground hover:border-primary/40 disabled:opacity-40',
+                      'px-2 py-0.5 rounded-full transition-colors',
+                      scheduleHours === p.v
+                        ? 'bg-primary/15 text-primary'
+                        : 'text-muted-foreground hover:text-foreground',
                     )}
                   >
-                    {c === 'whatsapp' ? 'wa' : c}
-                  </button>
-                );
-              })}
-            </div>
-            <div className="flex items-center gap-1">
-              <span className="uppercase tracking-wider text-muted-foreground mr-0.5">In</span>
-              {SCHEDULE_PRESETS.map((p) => (
-                <button
-                  key={p.v}
-                  onClick={() => setSched(p.v)}
-                  className={cn(
-                    'px-1.5 py-0.5 rounded border transition-colors',
-                    scheduleHours === p.v
-                      ? 'bg-primary text-primary-foreground border-primary'
-                      : 'bg-card border-border text-muted-foreground hover:border-primary/40',
-                  )}
-                >
-                  {p.l}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* ── 3. Ask ── */}
-        <div className="px-3 py-2.5 border-t border-border/40">
-          <div className="rounded-lg border border-border bg-card focus-within:border-primary/60 focus-within:ring-2 focus-within:ring-primary/15 transition p-1.5">
-            <textarea
-              value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
-              onKeyDown={(e) => {
-                if ((e.metaKey || e.ctrlKey) && e.key === 'Enter' && prompt.trim()) {
-                  e.preventDefault();
-                  run('custom', { prompt: prompt.trim() });
-                }
-              }}
-              rows={2}
-              placeholder="Tell Zara what to do…"
-              className="w-full resize-none bg-transparent outline-none text-[12px] px-1.5 py-1 min-h-[40px]"
-            />
-            <div className="flex items-center justify-between gap-2 pt-0.5">
-              <div className="flex gap-1 overflow-x-auto pb-0.5">
-                {QUICK_PROMPTS.map((q) => (
-                  <button
-                    key={q}
-                    onClick={() => setPrompt(q)}
-                    className="shrink-0 text-[10px] px-1.5 py-0.5 rounded-full border border-border bg-background hover:bg-muted/60 hover:border-primary/40 whitespace-nowrap text-muted-foreground"
-                  >
-                    {q.length > 28 ? q.slice(0, 28) + '…' : q}
+                    {p.l}
                   </button>
                 ))}
-              </div>
-              <Button
-                size="sm"
-                onClick={() => prompt.trim() && run('custom', { prompt: prompt.trim() })}
-                disabled={!prompt.trim() || busy !== null}
-                className="h-7 px-2 text-[11px] gap-1 bg-primary text-primary-foreground hover:bg-primary/90 shrink-0"
-              >
-                {busy === 'custom' ? <Loader2 className="w-3 h-3 animate-spin" /> : <Send className="w-3 h-3" />}
-                Ask
-              </Button>
-            </div>
-          </div>
-        </div>
-
-        {/* ── More ── */}
-        {(quotes.length > 0 || true) && (
-          <div className="border-t border-border/40">
-            <button
-              type="button"
-              onClick={() => setMoreOpen((v) => !v)}
-              className="w-full px-3 py-2 flex items-center justify-between text-[10.5px] uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <span>More</span>
-              <ChevronDown className={cn('w-3 h-3 transition-transform', moreOpen && 'rotate-180')} />
-            </button>
-            {moreOpen && (
-              <div className="px-3 pb-3 pt-0 space-y-2.5">
-                {/* per-lead enable */}
-                <div className="flex items-center justify-between gap-2">
-                  <div className="min-w-0">
-                    <div className="text-[11.5px] font-medium">Let Zara reply autonomously</div>
-                    <div className="text-[10px] text-muted-foreground leading-snug">Off by default. Enable only after you trust the tone on this lead.</div>
-                  </div>
-                  <Switch checked={enabled} onCheckedChange={toggle} />
-                </div>
-
-                {/* quotes */}
-                {quotes.length > 0 && (
-                  <div>
-                    <button
-                      type="button"
-                      onClick={() => setShowQuotes((v) => !v)}
-                      className="flex items-center justify-between w-full text-[10.5px] uppercase tracking-wider text-muted-foreground hover:text-foreground"
-                    >
-                      <span>Why we know · {quotes.length}</span>
-                      <ChevronDown className={cn('w-3 h-3 transition-transform', showQuotes && 'rotate-180')} />
-                    </button>
-                    {showQuotes && (
-                      <ul className="pt-1.5 space-y-1.5">
-                        {quotes.map((q, i) => (
-                          <li key={i} className="text-[11px] italic text-foreground/70 leading-snug border-l-2 border-primary/40 pl-2">
-                            "{q}"
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                  </div>
-                )}
-
-                {/* train on win */}
-                <Button
-                  size="sm" variant="ghost"
-                  onClick={() => setShowTrain(true)}
-                  className="w-full h-8 text-[11.5px] gap-1.5 border border-dashed border-border hover:border-primary/40 hover:bg-primary/5"
+                <button
+                  type="button"
+                  onClick={() => run('schedule_followup', { in_hours: scheduleHours })}
+                  disabled={busy !== null}
+                  className="zara-quiet-action !py-0.5"
                 >
-                  <Trophy className="w-3 h-3 text-primary" />
-                  Train Zara on this win
-                </Button>
+                  {busy === 'schedule_followup'
+                    ? <Loader2 className="w-3 h-3 animate-spin" />
+                    : <Clock className="w-3 h-3" />}
+                  Schedule
+                </button>
+              </div>
+            </div>
+
+            {/* Ask box — no border, just a faint base */}
+            <div className="rounded-2xl bg-foreground/[0.03] p-2">
+              <textarea
+                value={prompt}
+                onChange={(e) => setPrompt(e.target.value)}
+                onKeyDown={(e) => {
+                  if ((e.metaKey || e.ctrlKey) && e.key === 'Enter' && prompt.trim()) {
+                    e.preventDefault();
+                    run('custom', { prompt: prompt.trim() });
+                  }
+                }}
+                rows={2}
+                placeholder="Tell Zara what to do…"
+                className="w-full resize-none bg-transparent outline-none text-[12.5px] px-1.5 py-1 min-h-[40px]"
+              />
+              <div className="flex items-center justify-between gap-2 pt-1">
+                <div className="flex gap-1 overflow-x-auto pb-0.5 -mx-0.5 px-0.5">
+                  {QUICK_PROMPTS.map((q) => (
+                    <button
+                      key={q}
+                      onClick={() => setPrompt(q)}
+                      className="shrink-0 text-[10.5px] px-2 py-0.5 rounded-full text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors whitespace-nowrap"
+                    >
+                      {q.length > 28 ? q.slice(0, 28) + '…' : q}
+                    </button>
+                  ))}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => prompt.trim() && run('custom', { prompt: prompt.trim() })}
+                  disabled={!prompt.trim() || busy !== null}
+                  className="zara-quiet-action !py-1 disabled:opacity-40"
+                >
+                  {busy === 'custom' ? <Loader2 className="w-3 h-3 animate-spin" /> : <Send className="w-3 h-3" />}
+                  Ask
+                </button>
+              </div>
+            </div>
+
+            {/* Quotes (collapsed by default) */}
+            {quotes.length > 0 && (
+              <div>
+                <button
+                  type="button"
+                  onClick={() => setShowQuotes((v) => !v)}
+                  className="flex items-center justify-between w-full text-[10.5px] uppercase tracking-wider text-muted-foreground hover:text-foreground"
+                >
+                  <span>Why we know · {quotes.length}</span>
+                  <ChevronDown className={cn('w-3 h-3 transition-transform', showQuotes && 'rotate-180')} />
+                </button>
+                {showQuotes && (
+                  <ul className="pt-2 space-y-1.5">
+                    {quotes.map((q, i) => (
+                      <li key={i} className="text-[11.5px] italic text-foreground/70 leading-snug border-l-2 border-primary/30 pl-2">
+                        "{q}"
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
             )}
+
+            {/* Trust controls */}
+            <div className="flex items-center justify-between gap-3 pt-2 border-t border-foreground/5">
+              <div className="min-w-0">
+                <div className="text-[11.5px] font-medium">Let Zara reply autonomously</div>
+                <div className="text-[10px] text-muted-foreground leading-snug">Off by default. Enable only after you trust the tone on this lead.</div>
+              </div>
+              <Switch checked={enabled} onCheckedChange={toggle} />
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setShowTrain(true)}
+              className="zara-quiet-action w-full justify-center !py-1.5"
+            >
+              <Trophy className="w-3.5 h-3.5" />
+              Train Zara on this win
+            </button>
           </div>
         )}
       </div>
