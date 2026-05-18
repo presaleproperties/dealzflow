@@ -4,7 +4,7 @@ import { ReactNode } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, Inbox, Activity, AlertTriangle, BarChart3,
-  Banknote, GraduationCap, Workflow, Settings, ArrowLeft, Sparkles, Wrench,
+  Banknote, GraduationCap, Workflow, Settings, ArrowLeft, Sparkles, Wrench, Zap,
 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Header } from '@/components/layout/Header';
@@ -16,6 +16,7 @@ const NAV = [
   { to: '/admin/zara/drafts',     label: 'Drafts',           icon: Inbox },
   { to: '/admin/zara/jobs',       label: 'Jobs',             icon: Activity },
   { to: '/admin/zara/tools',      label: 'Tools',            icon: Wrench },
+  { to: '/admin/zara/triggers',   label: 'Trigger Map',      icon: Zap },
   { to: '/admin/zara/behavior',   label: 'Behavior',         icon: BarChart3 },
   { to: '/admin/zara/gaps',       label: 'Gaps',             icon: AlertTriangle },
   { to: '/admin/zara/cost',       label: 'Models & Cost',    icon: Banknote },
