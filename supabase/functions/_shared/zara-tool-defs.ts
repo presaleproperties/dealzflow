@@ -218,10 +218,16 @@ export const ZARA_TOOLS: ZaraTool[] = [
   {
     name: "list_projects",
     description:
-      "List crm_projects with optional city filter. Returns name, slug, city, status, key_specs.",
+      "List/search crm_projects (synced from PresaleProperties.com — source of truth). Supports name/slug search via `q`, optional city/status filter, and offset+limit pagination (default 50, max 500). Returns { projects, total, offset, limit, has_more }. If the local sync is missing a freshly-launched project (e.g. searching by name returns <3 hits), the tool transparently falls back to the Presale bridge so Zara never misses a project. To page through everything, increment `offset` by `limit` until `has_more` is false.",
     input_schema: {
       type: "object",
-      properties: { city: { type: "string" }, limit: { type: "number" } },
+      properties: {
+        q: { type: "string", description: "Free-text name/slug search (case-insensitive). Example: 'eden by zentera'." },
+        city: { type: "string" },
+        status: { type: "string", description: "Filter by status (e.g. 'active', 'sold_out')." },
+        limit: { type: "number", description: "Page size (1–500, default 50)." },
+        offset: { type: "number", description: "Skip N rows for pagination." },
+      },
     },
   },
   {
