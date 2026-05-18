@@ -7321,6 +7321,264 @@ export type Database = {
         }
         Relationships: []
       }
+      zara_founder_conversations: {
+        Row: {
+          analysis: Json | null
+          analyzed_at: string | null
+          channel: string
+          created_at: string
+          created_by: string | null
+          emotional_state: string | null
+          id: string
+          lead_persona: string | null
+          notes: string | null
+          outcome: string | null
+          tags: string[]
+          title: string
+          transcript: string
+        }
+        Insert: {
+          analysis?: Json | null
+          analyzed_at?: string | null
+          channel: string
+          created_at?: string
+          created_by?: string | null
+          emotional_state?: string | null
+          id?: string
+          lead_persona?: string | null
+          notes?: string | null
+          outcome?: string | null
+          tags?: string[]
+          title: string
+          transcript: string
+        }
+        Update: {
+          analysis?: Json | null
+          analyzed_at?: string | null
+          channel?: string
+          created_at?: string
+          created_by?: string | null
+          emotional_state?: string | null
+          id?: string
+          lead_persona?: string | null
+          notes?: string | null
+          outcome?: string | null
+          tags?: string[]
+          title?: string
+          transcript?: string
+        }
+        Relationships: []
+      }
+      zara_founder_lessons: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          detail: string | null
+          id: string
+          module_id: string | null
+          promoted_principle_id: string | null
+          source_id: string | null
+          source_kind: string
+          summary: string
+          tags: string[]
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          detail?: string | null
+          id?: string
+          module_id?: string | null
+          promoted_principle_id?: string | null
+          source_id?: string | null
+          source_kind: string
+          summary: string
+          tags?: string[]
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          detail?: string | null
+          id?: string
+          module_id?: string | null
+          promoted_principle_id?: string | null
+          source_id?: string | null
+          source_kind?: string
+          summary?: string
+          tags?: string[]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "zara_founder_lessons_module_id_fkey"
+            columns: ["module_id"]
+            isOneToOne: false
+            referencedRelation: "zara_founder_modules"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "zara_founder_lessons_promoted_principle_id_fkey"
+            columns: ["promoted_principle_id"]
+            isOneToOne: false
+            referencedRelation: "zara_founder_principles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      zara_founder_modules: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          slug: string
+          sort_order: number
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          slug: string
+          sort_order?: number
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          slug?: string
+          sort_order?: number
+        }
+        Relationships: []
+      }
+      zara_founder_principles: {
+        Row: {
+          active: boolean
+          body: string
+          created_at: string
+          created_by: string | null
+          examples: string[]
+          id: string
+          module_id: string
+          source_id: string | null
+          source_kind: string | null
+          tags: string[]
+          title: string
+          updated_at: string
+          weight: number
+        }
+        Insert: {
+          active?: boolean
+          body: string
+          created_at?: string
+          created_by?: string | null
+          examples?: string[]
+          id?: string
+          module_id: string
+          source_id?: string | null
+          source_kind?: string | null
+          tags?: string[]
+          title: string
+          updated_at?: string
+          weight?: number
+        }
+        Update: {
+          active?: boolean
+          body?: string
+          created_at?: string
+          created_by?: string | null
+          examples?: string[]
+          id?: string
+          module_id?: string
+          source_id?: string | null
+          source_kind?: string | null
+          tags?: string[]
+          title?: string
+          updated_at?: string
+          weight?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "zara_founder_principles_module_id_fkey"
+            columns: ["module_id"]
+            isOneToOne: false
+            referencedRelation: "zara_founder_modules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      zara_founder_teach_messages: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          meta: Json
+          role: string
+          session_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          meta?: Json
+          role: string
+          session_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          meta?: Json
+          role?: string
+          session_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "zara_founder_teach_messages_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "zara_founder_teach_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      zara_founder_teach_sessions: {
+        Row: {
+          created_at: string
+          focus_module_id: string | null
+          id: string
+          last_message_at: string
+          message_count: number
+          owner_user_id: string
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          focus_module_id?: string | null
+          id?: string
+          last_message_at?: string
+          message_count?: number
+          owner_user_id: string
+          title: string
+        }
+        Update: {
+          created_at?: string
+          focus_module_id?: string | null
+          id?: string
+          last_message_at?: string
+          message_count?: number
+          owner_user_id?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "zara_founder_teach_sessions_focus_module_id_fkey"
+            columns: ["focus_module_id"]
+            isOneToOne: false
+            referencedRelation: "zara_founder_modules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       zara_handoff_briefs: {
         Row: {
           brief: Json
@@ -9349,6 +9607,20 @@ export type Database = {
       zara_enqueue_project_embeddings: {
         Args: { _force?: boolean }
         Returns: number
+      }
+      zara_founder_retrieve: {
+        Args: { _limit?: number; _module_slug?: string; _query: string }
+        Returns: {
+          body: string
+          examples: string[]
+          id: string
+          module_name: string
+          module_slug: string
+          score: number
+          tags: string[]
+          title: string
+          weight: number
+        }[]
       }
       zara_match_knowledge_chunks: {
         Args: {
