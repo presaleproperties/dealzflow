@@ -799,8 +799,9 @@ export default function ZaraCockpitPage() {
         <ZaraKillSwitch />
         <PinnedLeadChip />
 
-        <div ref={scrollerRef} className="flex-1 min-h-0 overflow-y-auto px-5 py-6">
+        <div ref={scrollerRef} className="flex-1 min-h-0 overflow-y-auto px-3 sm:px-5 py-4 sm:py-6">
           <div className="max-w-2xl mx-auto space-y-4">
+
             {rendered.length === 0 && !streaming && (
               <>
                 <div className="text-center py-10">
