@@ -936,7 +936,7 @@ export default function ZaraCockpitPage() {
                 rows={1}
                 placeholder={streaming ? 'Zara is replying…' : 'Ask Zara anything…'}
                 disabled={streaming}
-                className="flex-1 resize-none bg-transparent outline-none text-[14px] px-2 py-1.5 min-h-[28px] max-h-[200px] disabled:opacity-60"
+                className="flex-1 resize-none bg-transparent outline-none text-[16px] sm:text-[14px] px-2 py-1.5 min-h-[28px] max-h-[200px] disabled:opacity-60"
               />
               <div className="relative">
                 {ptt.state === 'recording' && (
