@@ -76,6 +76,11 @@ export function RightSidebar({
       {/* Zara — unified memory + actions + composer */}
       <ZaraSection contact={contact} />
 
+      {/* Lead Intelligence — extracted from agent notes (highest-priority signal) */}
+      <ZaraLeadIntelligenceCard contactId={contact.id} />
+
+
+
 
       {/* ③ Engagement (Emails / Behavior) */}
       <EngagementTabs contact={contact} />
