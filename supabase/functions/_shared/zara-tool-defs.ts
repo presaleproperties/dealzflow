@@ -388,6 +388,7 @@ export const ZARA_TOOLS: ZaraTool[] = [
       required: ["project_slug"],
     },
     needs_approval: false,
+  },
   {
     name: "schedule_follow_up_smart",
     description:
