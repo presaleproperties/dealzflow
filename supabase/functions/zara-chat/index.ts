@@ -10,8 +10,105 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { ZARA_TOOLS } from "../_shared/zara-tool-defs.ts";
+import { extractLookupPlaceholders } from "../_shared/zara-guardrails.ts";
 
 const NEEDS_APPROVAL = new Set(ZARA_TOOLS.filter((t) => t.needs_approval).map((t) => t.name));
+const DRAFT_TOOLS = new Set(["draft_email", "draft_sms", "draft_whatsapp"]);
+
+// After a draft tool runs, scan the persisted draft for unresolved {LOOKUP: topic}
+// placeholders. For each one, call lookup_topic; if it returns verified data, rewrite
+// the draft body+subject inline. If none can be resolved, leave them — execute-send
+// will refuse and surface the gap to the agent.
+async function autoResolveLookupsInDraft(
+  draftId: string,
+  ctx: ToolCtx,
+  runTool: (name: string, input: any, ctx: any) => Promise<any>,
+): Promise<{ resolved: string[]; unresolved: string[] } | null> {
+  if (!draftId) return null;
+  const sb = svc();
+  const { data: draft } = await sb.from("zara_suggested_replies")
+    .select("id, contact_id, draft_text, draft_subject, draft_html")
+    .eq("id", draftId).maybeSingle();
+  if (!draft) return null;
+
+  const phs = [
+    ...extractLookupPlaceholders(draft.draft_text),
+    ...extractLookupPlaceholders(draft.draft_subject),
+  ];
+  if (!phs.length) return null;
+  const topics = Array.from(new Set(phs.map((p) => p.topic)));
+
+  // Try to grab a project_slug from the contact for lookup_topic context.
+  let projectSlug: string | null = null;
+  if (draft.contact_id) {
+    const { data: c } = await sb.from("crm_contacts")
+      .select("project, projects").eq("id", draft.contact_id).maybeSingle();
+    projectSlug = (c as any)?.project
+      ?? (Array.isArray((c as any)?.projects) ? (c as any).projects[0] : null)
+      ?? null;
+  }
+
+  const resolved: string[] = [];
+  const unresolved: string[] = [];
+  let nextText = draft.draft_text ?? "";
+  let nextSubject = draft.draft_subject ?? "";
+  let nextHtml = (draft as any).draft_html ?? "";
+
+  for (const topic of topics) {
+    let out: any = null;
+    try {
+      out = await runTool("lookup_topic", { topic, project_slug: projectSlug, contact_id: draft.contact_id }, ctx);
+    } catch (e) {
+      console.warn("[autoResolveLookups] lookup_topic threw", topic, e);
+    }
+    if (out?.ok && out?.data?.status === "verified") {
+      const replacement = summariseVerified(topic, out.data.data);
+      if (replacement) {
+        const re = new RegExp(`\\{\\s*LOOKUP\\s*:\\s*${topic}\\s*\\}`, "gi");
+        nextText = nextText.replace(re, replacement);
+        nextSubject = nextSubject.replace(re, replacement);
+        nextHtml = nextHtml.replace(re, replacement);
+        resolved.push(topic);
+        continue;
+      }
+    }
+    unresolved.push(topic);
+  }
+
+  if (resolved.length) {
+    await sb.from("zara_suggested_replies").update({
+      draft_text: nextText,
+      draft_subject: nextSubject,
+      draft_html: nextHtml || null,
+    }).eq("id", draftId);
+  }
+  return { resolved, unresolved };
+}
+
+function summariseVerified(topic: string, data: any): string | null {
+  if (!data) return null;
+  try {
+    switch (topic) {
+      case "pricing": {
+        const lo = data.price_range_low, hi = data.price_range_high;
+        if (lo && hi) return `from $${Number(lo).toLocaleString()} to $${Number(hi).toLocaleString()}`;
+        if (lo) return `starting around $${Number(lo).toLocaleString()}`;
+        if (data.pricing_url) return `(latest pricing on file)`;
+        return null;
+      }
+      case "deposit_structure": return String(data.deposit_structure ?? "").slice(0, 220) || null;
+      case "incentives": return Array.isArray(data.incentives) ? data.incentives.slice(0, 3).join(", ") : null;
+      case "availability": return String(data.status ?? "") || null;
+      case "unit_count": return data.unit_count != null ? `${data.unit_count} units` : null;
+      case "unit_types": return Array.isArray(data.unit_types) ? data.unit_types.join(", ") : null;
+      case "completion_date": return String(data?.project?.completion_date ?? data.completion_year ?? "") || null;
+      case "assignment_rules": return String(data?.project?.assignment_rules ?? "").slice(0, 220) || null;
+      case "brochure": return data?.project?.brochure_url ?? null;
+      case "floor_plans": return data.count ? `${data.count} floor plan${data.count === 1 ? "" : "s"} on file` : null;
+      default: return null;
+    }
+  } catch { return null; }
+}
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -799,6 +896,23 @@ Deno.serve(async (req) => {
               const callCtx = (tu.name === "draft_email" || tu.name === "draft_sms" || tu.name === "draft_whatsapp") && ragSources
                 ? { ...ctx, consulted_sources: ragSources } : ctx;
               const out = await runTool(tu.name, tu.input, callCtx as any);
+
+              // Auto-resolve {LOOKUP: topic} placeholders left in any draft.
+              // Fires for draft_email / draft_sms / draft_whatsapp only.
+              let lookupReport: { resolved: string[]; unresolved: string[] } | null = null;
+              if (DRAFT_TOOLS.has(tu.name) && (out as any)?.ok && (out as any)?.data?.draft_id) {
+                try {
+                  lookupReport = await autoResolveLookupsInDraft(
+                    (out as any).data.draft_id,
+                    callCtx as any,
+                    runTool,
+                  );
+                } catch (e) {
+                  console.warn("[zara-chat] auto-resolve lookups failed", e);
+                }
+                if (lookupReport) (out as any).lookup_resolution = lookupReport;
+              }
+
               await persistToolResult(conversation_id, tu.id, tu.name, out);
               toolResultsById.set(tu.id, out);
               send("tool_result", { id: tu.id, name: tu.name, output: out });

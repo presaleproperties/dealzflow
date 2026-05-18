@@ -19,11 +19,10 @@ const PRESALE_SITE_TOKEN = Deno.env.get("PRESALE_SITE_TOKEN") ?? "";
 const FUNCTIONS_BASE = `${SUPABASE_URL}/functions/v1`;
 
 const ANTHROPIC_MODEL = "claude-haiku-4-5-20251001";
-const MAX_TOOL_TURNS = 6;
+const MAX_TOOL_TURNS = 8;
 
 // Public-mode tool allowlist. Everything else from the 30+ tool set is stripped
-// before we hand the tool list to Claude (we never rely on the approval flow
-// to keep public visitors safe — they cannot approve anything anyway).
+// before we hand the tool list to Claude.
 const PUBLIC_TOOL_ALLOWLIST = new Set<string>([
   "get_lead_context",
   "list_projects",
@@ -39,6 +38,7 @@ const PUBLIC_TOOL_ALLOWLIST = new Set<string>([
   "escalate_to_human",
   "get_floor_plans",
   "send_brochure",
+  "lookup_topic",
 ]);
 
 // Tools that count toward the outbound-send rate limit (10/hr).

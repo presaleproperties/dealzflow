@@ -1,6 +1,6 @@
 // zara-execute-send — finalizes an approved draft. Sandbox gate refuses real leads.
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
-import { corsHeaders, levenshtein } from '../_shared/zara-guardrails.ts';
+import { corsHeaders, levenshtein, extractLookupPlaceholders } from '../_shared/zara-guardrails.ts';
 import { applyNeverQuote, getSendWindow, hygiene, preflightQA } from '../_shared/zara-email-enhance.ts';
 import { renderBrandedEmail } from '../_shared/zara-email-render.ts';
 
@@ -24,6 +24,23 @@ Deno.serve(async (req) => {
     const { data: draft } = await admin.from('zara_suggested_replies').select('*').eq('id', draftId).maybeSingle();
     if (!draft) return json({ error: 'draft_not_found' }, 404);
     if (draft.status !== 'pending') return json({ error: 'draft_not_pending', current_status: draft.status }, 409);
+
+    // ── Block any send that still contains unresolved {LOOKUP: topic} placeholders.
+    // Zara writes these when she lacks verified data; the auto-resolver in zara-chat
+    // is supposed to rewrite them before approval. If anything slips through, refuse.
+    const unresolved = [
+      ...extractLookupPlaceholders(finalText),
+      ...extractLookupPlaceholders(draft.draft_subject),
+    ];
+    if (unresolved.length > 0) {
+      const topics = Array.from(new Set(unresolved.map((u) => u.topic)));
+      console.warn('[zara-execute-send] blocked unresolved LOOKUP', { draftId, topics });
+      return json({
+        error: 'unresolved_lookup',
+        message: `Draft still contains unresolved placeholders: ${topics.join(', ')}. Pull verified data via lookup_topic and rewrite the draft before sending.`,
+        unresolved_topics: topics,
+      }, 422);
+    }
 
     const { data: contact } = await admin.from('crm_contacts').select('*').eq('id', draft.contact_id).maybeSingle();
     if (!contact) return json({ error: 'contact_not_found' }, 404);
