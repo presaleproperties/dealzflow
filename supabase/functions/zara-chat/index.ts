@@ -173,12 +173,40 @@ function sseEvent(event: string, data: unknown) {
   return `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
 }
 
+const HISTORY_WINDOW = 80;
+
 async function loadHistory(convId: string) {
   const sb = svc();
+  // Load the most recent N turns (ordered chronologically).
   const { data } = await sb.from("zara_messages")
-    .select("role,content,tool_calls,tool_call_id,tool_result,tool_name")
-    .eq("conversation_id", convId).order("created_at", { ascending: true }).limit(40);
-  return data ?? [];
+    .select("role,content,tool_calls,tool_call_id,tool_result,tool_name,created_at")
+    .eq("conversation_id", convId).order("created_at", { ascending: false }).limit(HISTORY_WINDOW);
+  return (data ?? []).reverse();
+}
+
+// Build a rolling summary of any history older than HISTORY_WINDOW so longer
+// conversations don't lose context. Uses the stored snippet column as a cheap
+// signal — no extra LLM call. If nothing older exists, returns "".
+async function buildRollingSummaryBlock(convId: string): Promise<string> {
+  const sb = svc();
+  const { count } = await sb.from("zara_messages")
+    .select("id", { count: "exact", head: true })
+    .eq("conversation_id", convId);
+  const total = count ?? 0;
+  if (total <= HISTORY_WINDOW) return "";
+  const olderCount = total - HISTORY_WINDOW;
+  const { data: older } = await sb.from("zara_messages")
+    .select("role, content, created_at")
+    .eq("conversation_id", convId)
+    .in("role", ["user", "assistant"])
+    .order("created_at", { ascending: true })
+    .limit(Math.min(olderCount, 60));
+  const lines = (older ?? [])
+    .filter((r: any) => typeof r.content === "string" && r.content.trim().length > 0)
+    .map((r: any) => `${r.role === "user" ? "U" : "Z"}: ${stripMarkdown(r.content).slice(0, 160)}`)
+    .slice(-20);
+  if (!lines.length) return "";
+  return `<rolling_summary>\nThe ${olderCount} earlier message(s) in this thread are summarised below. Use them silently for continuity; do not recap them back.\n${lines.join("\n")}\n</rolling_summary>`;
 }
 
 // Convert our persisted messages to Anthropic format.
@@ -808,7 +836,9 @@ Deno.serve(async (req) => {
     // and <lead_memory> go after retrieval so the model can use them to
     // resolve pronouns and ground every draft.
     const currentViewBlock = await buildCurrentViewBlock(page_context);
+    const rollingSummaryBlock = await buildRollingSummaryBlock(conversation_id);
     const systemParts = [SYSTEM_PROMPT_BASE];
+    if (rollingSummaryBlock) systemParts.push(rollingSummaryBlock);
     if (ragBlock) systemParts.push(ragBlock);
     if (leadMemoryBlock) systemParts.push(leadMemoryBlock);
     if (currentViewBlock) systemParts.push(currentViewBlock);

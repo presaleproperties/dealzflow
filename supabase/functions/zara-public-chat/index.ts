@@ -15,11 +15,31 @@ import { ZARA_TOOLS } from "../_shared/zara-tool-defs.ts";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY")!;
+const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
 const PRESALE_SITE_TOKEN = Deno.env.get("PRESALE_SITE_TOKEN") ?? "";
 const FUNCTIONS_BASE = `${SUPABASE_URL}/functions/v1`;
 
 const ANTHROPIC_MODEL = "claude-haiku-4-5-20251001";
 const MAX_TOOL_TURNS = 8;
+const HISTORY_WINDOW = 80;
+
+// RAG thresholds — mirror zara-chat so the two surfaces ground in the same brain.
+const RAG_CHUNK_THRESHOLD = 0.5;
+const RAG_CHUNK_COUNT = 4;
+const RAG_WIN_THRESHOLD = 0.55;
+const RAG_WIN_COUNT = 2;
+const RAG_PROJECT_THRESHOLD = 0.55;
+const RAG_PROJECT_COUNT = 2;
+
+// Tools that require a captured contact (email or phone on file) BEFORE running.
+// If the visitor has not handed over identity yet, we refuse the tool and tell
+// Claude to ask for email via capture_lead first.
+const REQUIRES_CAPTURE = new Set<string>([
+  "send_brochure",
+  "attach_floorplan",
+  "get_floor_plans",
+  "book_calendly",
+]);
 
 // Public-mode tool allowlist. Everything else from the 30+ tool set is stripped
 // before we hand the tool list to Claude.
@@ -146,9 +166,95 @@ async function getOrCreateConversation(presale_user_id: string, contact_id: stri
 async function loadHistory(convId: string) {
   const sb = svc();
   const { data } = await sb.from("zara_messages")
-    .select("role,content,tool_calls,tool_call_id,tool_result,tool_name")
-    .eq("conversation_id", convId).order("created_at", { ascending: true }).limit(30);
-  return data ?? [];
+    .select("role,content,tool_calls,tool_call_id,tool_result,tool_name,created_at")
+    .eq("conversation_id", convId).order("created_at", { ascending: false }).limit(HISTORY_WINDOW);
+  return (data ?? []).reverse();
+}
+
+// ── Brain parity: RAG retrieval (same shape as zara-chat) ────────────
+async function embedQuery(text: string): Promise<number[] | null> {
+  if (!OPENAI_API_KEY) return null;
+  try {
+    const r = await fetch("https://api.openai.com/v1/embeddings", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${OPENAI_API_KEY}` },
+      body: JSON.stringify({ model: "text-embedding-3-small", input: text.slice(0, 8000) }),
+    });
+    if (!r.ok) return null;
+    const j = await r.json();
+    return j?.data?.[0]?.embedding ?? null;
+  } catch { return null; }
+}
+
+async function retrieveContext(userText: string) {
+  const empty = { block: "", sources: { chunks: [], wins: [], projects: [], market: [], principles: [] } };
+  const emb = await embedQuery(userText);
+  if (!emb) return empty;
+  const sb = svc();
+  const [chunkRes, winRes, projRes, marketRes, principlesRes] = await Promise.all([
+    sb.rpc("zara_match_knowledge_chunks", { query_embedding: emb as any, match_threshold: RAG_CHUNK_THRESHOLD, match_count: RAG_CHUNK_COUNT }),
+    sb.rpc("zara_match_winning_conversations", { query_embedding: emb as any, match_threshold: RAG_WIN_THRESHOLD, match_count: RAG_WIN_COUNT }),
+    sb.rpc("zara_match_project_deep_dives", { query_embedding: emb as any, match_threshold: RAG_PROJECT_THRESHOLD, match_count: RAG_PROJECT_COUNT }),
+    sb.from("market_intel").select("id,week_of,headline,summary").order("week_of", { ascending: false }).limit(2),
+    sb.rpc("zara_founder_retrieve", { _query: userText, _module_slug: null, _limit: 4 }).then((r: any) => r, () => ({ data: [] })),
+  ]);
+  const chunks = (chunkRes.data ?? []) as any[];
+  const wins = (winRes.data ?? []) as any[];
+  const projects = (projRes.data ?? []) as any[];
+  const market = (marketRes.data ?? []) as any[];
+  const principles = (principlesRes.data ?? []) as any[];
+  if (!chunks.length && !wins.length && !projects.length && !market.length && !principles.length) return empty;
+
+  const parts: string[] = ["<retrieved_context>"];
+  parts.push("Grounding from Uzair's playbooks and project notes. Use silently — never quote source ids back to the visitor.");
+  if (chunks.length) { parts.push("\n## Playbook\n"); chunks.forEach((c, i) => parts.push(`[K${i+1}] ${String(c.content).slice(0, 700)}`)); }
+  if (wins.length) { parts.push("\n## Past wins\n"); wins.forEach((w, i) => parts.push(`[W${i+1}] ${w.lead_profile ?? "?"} — turning: ${w.turning_message ?? "?"}`)); }
+  if (projects.length) { parts.push("\n## Project deep-dives\n"); projects.forEach((p, i) => parts.push(`[P${i+1}] ${p.name}${p.city ? ` (${p.city})` : ""} — ${String(p.uzair_pitch ?? "").slice(0, 300)}`)); }
+  if (market.length) { parts.push("\n## Market\n"); market.forEach((m, i) => parts.push(`[M${i+1}] ${m.week_of}: ${m.headline ?? ""}`)); }
+  if (principles.length) { parts.push("\n## Founder principles\n"); principles.forEach((p: any, i) => parts.push(`[F${i+1}] ${p.title ?? ""} — ${String(p.body ?? "").slice(0, 280)}`)); }
+  parts.push("</retrieved_context>");
+
+  return {
+    block: parts.join("\n"),
+    sources: {
+      chunks: chunks.map((c) => ({ id: c.id, document_id: c.document_id, similarity: c.similarity })),
+      wins: wins.map((w) => ({ id: w.id, similarity: w.similarity })),
+      projects: projects.map((p) => ({ id: p.id, name: p.name, similarity: p.similarity })),
+      market: market.map((m) => ({ id: m.id, week_of: m.week_of })),
+      principles: principles.map((p: any) => ({ id: p.id, title: p.title })),
+    },
+  };
+}
+
+async function buildLeadMemoryBlock(contactId: string): Promise<string> {
+  const sb = svc();
+  const [contactRes, memRes] = await Promise.all([
+    sb.from("crm_contacts")
+      .select("id, first_name, last_name, email, phone, status, language_preference, city, tags, project, projects")
+      .eq("id", contactId).maybeSingle(),
+    sb.from("zara_lead_memory")
+      .select("summary, relationship_stage, last_topics, continuity_openers")
+      .eq("contact_id", contactId).maybeSingle(),
+  ]);
+  const c: any = contactRes.data; if (!c) return "";
+  const m: any = memRes.data ?? {};
+  const name = [c.first_name, c.last_name].filter(Boolean).join(" ").trim() || c.email || "Visitor";
+  const lines = ["<lead_memory>"];
+  lines.push("This visitor is already a known CRM contact. Use silently for continuity. Never recap CRM internals.");
+  lines.push(`Name: ${name}`);
+  if (c.language_preference) lines.push(`Language: ${c.language_preference}`);
+  if (c.city) lines.push(`City: ${c.city}`);
+  if (Array.isArray(c.tags) && c.tags.length) lines.push(`Tags: ${c.tags.slice(0, 6).join(", ")}`);
+  const projs = [...(c.project ? [c.project] : []), ...(Array.isArray(c.projects) ? c.projects : [])].filter((v, i, a) => v && a.indexOf(v) === i).slice(0, 3);
+  if (projs.length) lines.push(`Projects of interest: ${projs.join(" · ")}`);
+  if (m.relationship_stage) lines.push(`Relationship stage: ${m.relationship_stage}`);
+  if (Array.isArray(m.last_topics) && m.last_topics.length) lines.push(`Last topics: ${m.last_topics.slice(0, 4).join(" · ")}`);
+  if (Array.isArray(m.continuity_openers) && m.continuity_openers.length) {
+    lines.push(`Possible openers: ${m.continuity_openers.slice(0, 2).map((s: string) => `"${s}"`).join(" / ")}`);
+  }
+  if (m.summary) lines.push(`Summary: ${String(m.summary).slice(0, 400)}`);
+  lines.push("</lead_memory>");
+  return lines.join("\n");
 }
 
 function toAnthropicMessages(rows: any[]) {
@@ -330,9 +436,21 @@ Deno.serve(async (req) => {
     });
     await sb.from("zara_conversations").update({ last_message_at: new Date().toISOString() }).eq("id", conversation_id);
 
-    // Build system
-    const cv = await buildCurrentViewBlock(page_context, ident.contact_id);
-    const system = [SYSTEM_PROMPT_BASE, SYSTEM_PROMPT_PUBLIC, cv].filter(Boolean).join("\n\n");
+    // Build system — same brain as zara-chat: RAG + lead memory + current view.
+    const [cv, rag, leadMemoryBlock] = await Promise.all([
+      buildCurrentViewBlock(page_context, ident.contact_id),
+      retrieveContext(latestUserMsg),
+      ident.contact_id ? buildLeadMemoryBlock(ident.contact_id) : Promise.resolve(""),
+    ]);
+    const systemParts = [SYSTEM_PROMPT_BASE, SYSTEM_PROMPT_PUBLIC];
+    if (rag.block) systemParts.push(rag.block);
+    if (leadMemoryBlock) systemParts.push(leadMemoryBlock);
+    if (cv) systemParts.push(cv);
+    const system = systemParts.join("\n\n");
+    const ragSources = rag.sources;
+
+    // Capture state — for gating PII/file-sharing tools.
+    const hasCapturedIdentity = !!(ident.contact_id || known_email || known_phone);
 
     // Tool list: allowlisted only, approval-required tools stripped.
     const tools = ZARA_TOOLS
@@ -348,6 +466,11 @@ Deno.serve(async (req) => {
         const send = (event: string, data: unknown) => controller.enqueue(enc.encode(sse(event, data)));
         const abort = new AbortController();
         try {
+          // Surface RAG grounding to the client (parity with zara-chat).
+          if (ragSources && (ragSources.chunks.length || ragSources.wins.length || ragSources.projects.length || ragSources.principles.length)) {
+            send("sources", ragSources);
+          }
+
           let turn = 0;
           let lastAssistantId: string | null = null;
           while (turn < MAX_TOOL_TURNS) {
@@ -359,14 +482,20 @@ Deno.serve(async (req) => {
             if (text) assistantContent.push({ type: "text", text });
             for (const tu of toolUses) assistantContent.push({ type: "tool_use", id: tu.id, name: tu.name, input: tu.input });
 
-            const { data: ins } = await sb.from("zara_messages").insert({
+            // Persist consulted_sources on the first turn so learning loops can
+            // see which retrieval shaped this public reply (parity with zara-chat).
+            const persistPayload: any = {
               conversation_id, role: "assistant",
               content: text || null,
               tool_calls: toolUses.length ? toolUses : null,
               input_tokens: usage?.input_tokens ?? null,
               output_tokens: usage?.output_tokens ?? null,
               model: ANTHROPIC_MODEL,
-            }).select("id").single();
+            };
+            if (turn === 1 && ragSources) {
+              persistPayload.metadata = { consulted_sources: ragSources, surface: "public_site" };
+            }
+            const { data: ins } = await sb.from("zara_messages").insert(persistPayload).select("id").single();
             lastAssistantId = ins?.id ?? null;
             messages.push({ role: "assistant", content: assistantContent });
 
@@ -381,6 +510,18 @@ Deno.serve(async (req) => {
                 const blocked = { ok: false, error: "tool_not_available_in_public_mode" };
                 send("tool_result", { id: tu.id, name: tu.name, output: blocked });
                 toolResults.push({ type: "tool_result", tool_use_id: tu.id, content: JSON.stringify(blocked) });
+                continue;
+              }
+              // Lead-capture gate: never share PDFs, calendars, or escalate
+              // before we have at least an email/phone on file.
+              if (REQUIRES_CAPTURE.has(tu.name) && !hasCapturedIdentity) {
+                const out = {
+                  ok: false,
+                  error: "requires_lead_capture",
+                  message: "Before sharing this, ask the visitor for their name and email naturally. Once they give it, call capture_lead first, then retry this tool.",
+                };
+                send("tool_result", { id: tu.id, name: tu.name, output: out });
+                toolResults.push({ type: "tool_result", tool_use_id: tu.id, content: JSON.stringify(out) });
                 continue;
               }
               // Send-side rate limit for outbound tools
