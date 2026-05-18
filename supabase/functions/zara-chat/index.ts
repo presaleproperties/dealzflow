@@ -546,24 +546,26 @@ async function resolveLeadFromMessage(message: string, historyText: string): Pro
 
 async function buildLeadMemoryBlock(contactId: string): Promise<{ block: string; payload: any } | null> {
   const sb = svc();
-  const [contactRes, memRes, projRes, activityRes] = await Promise.all([
+  const [contactRes, memRes, activityRes] = await Promise.all([
     sb.from("crm_contacts")
-      .select("id, first_name, last_name, email, phone, status, lead_type, contact_type, language_preference, city, tags, last_touch_at, engagement_score, assigned_to")
+      .select("id, first_name, last_name, email, phone, status, lead_type, contact_type, language_preference, city, tags, last_touch_at, engagement_score, assigned_to, project, projects")
       .eq("id", contactId).maybeSingle(),
     sb.from("zara_lead_memory")
       .select("summary, signals, facts, relationship_stage, last_topics, continuity_openers, refreshed_at")
       .eq("contact_id", contactId).maybeSingle(),
-    sb.from("crm_contact_projects")
-      .select("project_name, interest_level, last_activity_at")
-      .eq("contact_id", contactId).order("last_activity_at", { ascending: false, nullsFirst: false }).limit(3),
-    sb.from("crm_activities")
-      .select("activity_type, occurred_at, description")
-      .eq("contact_id", contactId).order("occurred_at", { ascending: false }).limit(1),
+    sb.from("crm_activity_events")
+      .select("type, occurred_at, project_slug, metadata")
+      .eq("contact_id", contactId).order("occurred_at", { ascending: false }).limit(3),
   ]);
   const c: any = contactRes.data; if (!c) return null;
   const m: any = memRes.data ?? {};
-  const projects = (projRes.data ?? []) as any[];
-  const lastAct = (activityRes.data ?? [])[0] as any;
+  const recentActs = (activityRes.data ?? []) as any[];
+  const lastAct = recentActs[0];
+  const topProjects = [
+    ...(c.project ? [c.project] : []),
+    ...(Array.isArray(c.projects) ? c.projects : []),
+    ...recentActs.map((a) => a.project_slug).filter(Boolean),
+  ].filter((v, i, arr) => v && arr.indexOf(v) === i).slice(0, 3);
   const name = [c.first_name, c.last_name].filter(Boolean).join(" ").trim() || c.email || "Unknown";
 
   const lines: string[] = [];
