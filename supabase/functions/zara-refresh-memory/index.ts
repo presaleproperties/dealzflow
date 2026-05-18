@@ -14,7 +14,7 @@ async function summarize(contactRow: any, events: any[]): Promise<string> {
   const lines = events
     .map((e) => `- [${e.occurred_at}] ${e.event_type} (${e.source}${e.direction ? '/' + e.direction : ''}) ${JSON.stringify(e.metadata ?? {}).slice(0, 160)}`)
     .join('\n');
-  const prompt = `Summarize this lead for Zara, the AI assistant, in 3-5 sentences. Focus on what they've asked, what they want, their language, and any hot signals. No fluff.
+  const prompt = `Summarize this lead for Zara (the relationship manager on Uzair's team at The Presale Properties Group) in 3-5 sentences. Focus on what they've asked, what they want, their language, where they are in the buying journey, and any hot signals (appointment-ready, asking about pricing/incentives/recommendations, comparing projects). No fluff.
 
 LEAD: ${name}, tags=${(contactRow.tags ?? []).join(',')}, budget=${contactRow.budget_min ?? '?'}-${contactRow.budget_max ?? '?'}, project=${contactRow.project_interest ?? '?'}
 
