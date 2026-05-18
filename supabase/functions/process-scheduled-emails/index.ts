@@ -107,17 +107,11 @@ Deno.serve(async (req) => {
         .in("status", ["pending", "processing"]);
       if (lockErr) continue;
 
-      // Apply unified brand shell (idempotent — skipped for project templates
-      // and any already-branded HTML), then add tracking pixel + click rewriter
-      // so queued/scheduled sends carry the same instrumentation as immediate.
+      // No brand shell — send queued HTML as-is (composer body + signature).
+      // Only add tracking pixel + link rewriter for open/click instrumentation.
       const trackingId = crypto.randomUUID();
       const rawHtml = row.body_html ?? "";
-      let shelled = rawHtml;
-      if (!isAlreadyBranded(rawHtml)) {
-        const brand = await getBrandSettings(supabase, row.created_by);
-        shelled = wrapInBrandShell(rawHtml, { brandLogoUrl: brand.logoUrl, brandLogoAlt: brand.logoAlt });
-      }
-      const linked = rewriteLinks(shelled, trackingId);
+      const linked = rewriteLinks(rawHtml, trackingId);
       const trackedHtml = injectTrackingPixel(linked, trackingId);
       const enrichedRow = { ...row, body_html: trackedHtml };
 
