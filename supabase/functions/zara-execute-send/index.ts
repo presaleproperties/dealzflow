@@ -4,6 +4,7 @@ import { corsHeaders, levenshtein } from '../_shared/zara-guardrails.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+const ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY') ?? Deno.env.get('VITE_SUPABASE_PUBLISHABLE_KEY') ?? '';
 const META_TOKEN = Deno.env.get('META_WHATSAPP_TOKEN');
 const META_PHONE_ID = Deno.env.get('META_WHATSAPP_PHONE_NUMBER_ID');
 
@@ -14,6 +15,7 @@ Deno.serve(async (req) => {
 
   try {
     const admin = createClient(SUPABASE_URL, SERVICE_KEY);
+    const authHeader = req.headers.get('authorization') ?? '';
     const { draftId, finalText, decidedBy, decidedVia } = await req.json();
     if (!draftId || !finalText || !decidedVia) return json({ error: 'draftId, finalText, decidedVia required' }, 400);
 
@@ -45,6 +47,35 @@ Deno.serve(async (req) => {
 
     const edit_distance = levenshtein(draft.draft_text, finalText);
     const newStatus = edit_distance === 0 ? 'approved' : 'edited_approved';
+    let emailQueued = false;
+    let emailQueueId: string | null = null;
+
+    const queueEmail = async (to: string, subject: string, html: string, reason: string) => {
+      const senderUserId = decidedBy ?? draft.assigned_to ?? null;
+      if (!senderUserId) throw new Error(`email_sender_missing; original=${reason}`);
+      const { data: queued, error: queueErr } = await admin
+        .from('crm_email_schedule')
+        .insert({
+          contact_id: draft.contact_id,
+          template_id: (draft as any).template_id_used ?? null,
+          to_emails: [to],
+          subject,
+          body_html: html,
+          send_at: new Date().toISOString(),
+          status: 'pending',
+          created_by: senderUserId,
+        })
+        .select('id')
+        .single();
+      if (queueErr) throw new Error(`email_queue_failed: ${queueErr.message}; original=${reason}`);
+      emailQueued = true;
+      emailQueueId = queued?.id ?? null;
+      fetch(`${SUPABASE_URL}/functions/v1/process-scheduled-emails`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${SERVICE_KEY}` },
+        body: JSON.stringify({ source: 'zara-execute-send', draftId }),
+      }).catch((e) => console.warn('[zara-execute-send] email queue kick failed', e));
+    };
 
     // Channel switch
     let sendOk = true;
@@ -81,16 +112,28 @@ Deno.serve(async (req) => {
             : `<p style="font-family:Inter,system-ui,sans-serif;white-space:pre-wrap;">${
                 finalText.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
               }</p>`;
-        const { error } = await admin.functions.invoke('bridge-send-email', {
-          body: {
-            to,
-            subject: draft.draft_subject ?? '(no subject)',
-            html,
-            contact_id: draft.contact_id,
-            template_id: (draft as any).template_id_used ?? null,
-          },
-        });
-        if (error) throw error;
+        const subject = draft.draft_subject ?? '(no subject)';
+        const sendBody = { to, subject, html, contact_id: draft.contact_id, template_id: (draft as any).template_id_used ?? null };
+        const canTryImmediate = authHeader.toLowerCase().startsWith('bearer ') && !authHeader.includes(SERVICE_KEY);
+        if (!canTryImmediate) {
+          await queueEmail(to, subject, html, 'missing_user_auth');
+        } else {
+          const res = await fetch(`${SUPABASE_URL}/functions/v1/bridge-send-email`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: authHeader, apikey: ANON_KEY },
+            body: JSON.stringify(sendBody),
+          });
+          const text = await res.text();
+          if (!res.ok) {
+            let detail = text;
+            try {
+              const parsed = JSON.parse(text);
+              detail = parsed?.detail ?? parsed?.error ?? text;
+            } catch { /* keep raw text */ }
+            console.error('[zara-execute-send] bridge-send-email failed; queueing fallback', { status: res.status, detail });
+            await queueEmail(to, subject, html, `bridge_send_failed_${res.status}: ${String(detail).slice(0, 300)}`);
+          }
+        }
       }
     } catch (e) {
       sendOk = false;
@@ -111,7 +154,7 @@ Deno.serve(async (req) => {
 
     if (!sendOk) {
       await admin.from('zara_suggested_replies').update({ status: 'pending' }).eq('id', draftId);
-      return json({ error: 'send_failed', detail: sendErr }, 502);
+      return json({ ok: false, error: 'send_failed', detail: sendErr, fallback: true }, 200);
     }
 
     // Update draft + log engagement event.
@@ -121,8 +164,8 @@ Deno.serve(async (req) => {
     await admin
       .from('zara_suggested_replies')
       .update({
-        status: 'sent',
-        sent_at,
+        status: emailQueued ? newStatus : 'sent',
+        sent_at: emailQueued ? null : sent_at,
         approved_by: decidedBy ?? null,
         approved_at: sent_at,
         approval_method: decidedVia,
@@ -135,27 +178,29 @@ Deno.serve(async (req) => {
       .from('crm_engagement_events')
       .insert({
         contact_id: draft.contact_id,
-        event_type: `${draft.channel}_sent`,
+        event_type: emailQueued ? `${draft.channel}_queued` : `${draft.channel}_sent`,
         source: 'zara',
         actor_id: decidedBy ?? null,
         direction: 'outbound',
-        metadata: { draft_id: draftId, intent: draft.intent, edit_distance, zara_assisted: true },
+        metadata: { draft_id: draftId, intent: draft.intent, edit_distance, zara_assisted: true, queued: emailQueued, queue_id: emailQueueId },
       })
       .then(() => {});
 
     // Roll per-lead memory with the actual sent text (fire-and-forget).
-    fetch(`${SUPABASE_URL}/functions/v1/zara-roll-memory`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${SERVICE_KEY}` },
-      body: JSON.stringify({
-        contact_id: draft.contact_id,
-        inbound_text: draft.inbound_text ?? null,
-        outbound_text: finalText,
-        kind: 'send',
-      }),
-    }).catch((e) => console.warn('[zara-execute-send] roll-memory kick failed', e));
+    if (!emailQueued) {
+      fetch(`${SUPABASE_URL}/functions/v1/zara-roll-memory`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${SERVICE_KEY}` },
+        body: JSON.stringify({
+          contact_id: draft.contact_id,
+          inbound_text: draft.inbound_text ?? null,
+          outbound_text: finalText,
+          kind: 'send',
+        }),
+      }).catch((e) => console.warn('[zara-execute-send] roll-memory kick failed', e));
+    }
 
-    return json({ ok: true, status: newStatus, edit_distance, sent_at });
+    return json({ ok: true, status: emailQueued ? newStatus : 'sent', queued: emailQueued, queue_id: emailQueueId, edit_distance, sent_at: emailQueued ? null : sent_at });
   } catch (e) {
     console.error('[zara-execute-send]', e);
     return json({ error: String((e as Error).message) }, 500);
