@@ -64,7 +64,7 @@ export function useZaraLeadMemory(contactId: string | undefined) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('zara_lead_memory')
-        .select('contact_id, summary, facts, refreshed_at, turn_count, version')
+        .select('contact_id, summary, facts, refreshed_at, turn_count, version, continuity_openers, relationship_stage, last_topics, continuity_refreshed_at')
         .eq('contact_id', contactId!)
         .maybeSingle();
       if (error && error.code !== 'PGRST116') throw error;
