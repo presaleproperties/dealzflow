@@ -113,6 +113,7 @@ const CrmNeedsReviewPage = lazy(() => import("./pages/crm/CrmNeedsReviewPage"));
 const ZaraCockpitPage = lazy(() => import("./pages/crm/ZaraCockpitPage"));
 const ZaraProjectsPage = lazy(() => import("./pages/crm/ZaraProjectsPage"));
 const ZaraCrmTrainingPage = lazy(() => import("./pages/crm/ZaraTrainingPage"));
+const ZaraTrainingChatPage = lazy(() => import("./pages/crm/ZaraTrainingChatPage"));
 const ZaraTemplatesPage = lazy(() => import("./pages/crm/ZaraTemplatesPage"));
 const ZaraEngagementStatusPage = lazy(() => import("./pages/crm/ZaraEngagementStatusPage"));
 const ZaraOutboundAuditPage = lazy(() => import("./pages/crm/ZaraOutboundAuditPage"));
@@ -354,6 +355,8 @@ const App = () => (
                     <Route path="/crm/zara/queue" element={<ProtectedRoute><CrmLayout><ZaraQueuePage /></CrmLayout></ProtectedRoute>} />
                     <Route path="/crm/zara/projects" element={<ProtectedRoute><CrmLayout><ZaraProjectsPage /></CrmLayout></ProtectedRoute>} />
                     <Route path="/crm/zara/training" element={<ProtectedRoute><CrmLayout><ZaraCrmTrainingPage /></CrmLayout></ProtectedRoute>} />
+                    <Route path="/crm/zara/training-chat" element={<ProtectedRoute><CrmLayout><ZaraTrainingChatPage /></CrmLayout></ProtectedRoute>} />
+                    <Route path="/crm/zara/training-chat/:sessionId" element={<ProtectedRoute><CrmLayout><ZaraTrainingChatPage /></CrmLayout></ProtectedRoute>} />
                     <Route path="/crm/zara/templates" element={<ProtectedRoute><CrmLayout><ZaraTemplatesPage /></CrmLayout></ProtectedRoute>} />
                     <Route path="/crm/zara/engagement" element={<ProtectedRoute><CrmLayout><ZaraEngagementStatusPage /></CrmLayout></ProtectedRoute>} />
                     <Route path="/crm/zara/audit" element={<ProtectedRoute><CrmLayout><ZaraOutboundAuditPage /></CrmLayout></ProtectedRoute>} />
