@@ -98,7 +98,7 @@ Deno.serve(async (req) => {
   const { data: projRow } = await admin
     .from("crm_projects")
     .select("slug, presale_slug, brochure_url, brochure_filename, floor_plans_url, floor_plans_filename, pricing_url, pricing_filename")
-    .eq("slug", projectSlug)
+    .or(`slug.eq.${projectSlug},presale_slug.eq.${projectSlug}`)
     .maybeSingle();
 
   const assets: Record<AssetKind, Asset> = {
@@ -122,7 +122,7 @@ Deno.serve(async (req) => {
   //   first_brochure_url        + brochure_files[]   + pitch_deck_url
   //   first_floorplan_url       + floorplan_files[]
   //   first_pricing_sheet_url   + pricing_sheets[]
-  const presaleSlug = projRow?.presale_slug ?? null;
+  const presaleSlug = projRow?.presale_slug ?? projRow?.slug ?? projectSlug;
   const needsPresale = presaleSlug && (!assets.brochure.url || !assets.floor_plans.url || !assets.pricing.url);
 
   if (needsPresale) {
