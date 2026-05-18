@@ -579,18 +579,19 @@ export default function ZaraCockpitPage() {
 
   // Approve / deny pending tool call
   const [decidingId, setDecidingId] = useState<string | null>(null);
-  const decide = async (pending_id: string, decision: 'approve' | 'deny') => {
+  const decide = async (pending_id: string, decision: 'approve' | 'deny', overrides?: MessageOverrides) => {
     setDecidingId(pending_id);
     try {
       const { data: u } = await supabase.auth.getSession();
+      const hasOverrides = overrides && Object.keys(overrides).length > 0;
       const resp = await fetch(`${SUPABASE_URL}/functions/v1/zara-tool-approve`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${u.session?.access_token ?? ''}` },
-        body: JSON.stringify({ pending_id, decision }),
+        body: JSON.stringify({ pending_id, decision, overrides: hasOverrides ? overrides : undefined }),
       });
       const json = await resp.json();
       if (!resp.ok) throw new Error(json.error || 'Decision failed');
-      toast.success(decision === 'approve' ? 'Action approved and executed' : 'Action denied');
+      toast.success(decision === 'approve' ? (hasOverrides ? 'Edited draft sent' : 'Action approved and executed') : 'Action denied');
       qc.invalidateQueries({ queryKey: ['zara-pending-tool-calls', activeId] });
       qc.invalidateQueries({ queryKey: ['zara-messages', activeId] });
       qc.invalidateQueries({ queryKey: ['zara-actions-feed'] });
