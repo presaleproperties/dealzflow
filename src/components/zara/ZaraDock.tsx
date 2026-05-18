@@ -458,40 +458,44 @@ export function ZaraDock() {
 
   return (
     <>
-      {/* Launcher (closed state) */}
+      {/* Launcher (closed state) — glassy halo pill, Apple-Intelligence feel */}
       {!open && (
-        <button
-          onClick={() => setOpen(true)}
-          title="Talk to Zara (Cmd/Ctrl+J)"
-          className="fixed bottom-6 right-6 z-40 w-14 h-14 md:w-14 md:h-14 rounded-full bg-primary text-primary-foreground shadow-lg hover:shadow-xl transition-all flex items-center justify-center"
-          style={{ width: 56, height: 56, bottom: 'max(24px, env(safe-area-inset-bottom))', right: 24 }}
+        <div
+          className="fixed z-40 zara-halo"
+          style={{ bottom: 'max(24px, env(safe-area-inset-bottom))', right: 24, borderRadius: 9999 }}
         >
-          <Sparkles className="w-6 h-6" />
-          {pendingCount > 0 && (
-            <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] rounded-full bg-destructive text-destructive-foreground text-[10px] font-semibold flex items-center justify-center px-1">
-              {pendingCount}
-            </span>
-          )}
-        </button>
+          <button
+            onClick={() => setOpen(true)}
+            title="Talk to Zara (Cmd/Ctrl+J)"
+            className="zara-launcher !relative !top-0 !right-0 !bottom-0"
+            style={{ position: 'relative' }}
+          >
+            <Sparkles className="w-5 h-5" />
+            {pendingCount > 0 && (
+              <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-[16px] rounded-full bg-destructive text-destructive-foreground text-[9.5px] font-semibold flex items-center justify-center px-1">
+                {pendingCount}
+              </span>
+            )}
+          </button>
+        </div>
       )}
 
-      {/* Open panel */}
+      {/* Open panel — glass slide-over, no hard border */}
       {open && (
         <div
-          className="fixed inset-y-0 right-0 z-40 w-full md:w-[400px] bg-background border-l border-border shadow-2xl flex flex-col"
-          style={{ top: 0 }}
+          className="fixed inset-y-0 right-0 z-40 w-full md:w-[400px] zara-glass-strong flex flex-col animate-slide-in-right"
+          style={{ top: 0, borderRadius: 0 }}
         >
           {/* Header */}
-          <header className="h-12 px-3 border-b border-border flex items-center justify-between shrink-0">
+          <header className="h-12 px-3 flex items-center justify-between shrink-0">
             <div className="flex items-center gap-2 min-w-0">
-              <span className="w-2 h-2 rounded-full bg-primary" />
-              <span className="text-[13px] font-semibold tracking-tight">Zara</span>
+              <span className="zara-eyebrow">Zara</span>
               <Pill size="sm" tone={modePill.tone}>{modePill.label}</Pill>
             </div>
             <div className="flex items-center gap-0.5">
-              <button onClick={() => navigate('/crm/zara')} className="p-2 rounded hover:bg-muted/60" title="Open full cockpit"><Maximize2 className="w-4 h-4" /></button>
-              <button onClick={() => setShowHistory(true)} className="p-2 rounded hover:bg-muted/60" title="Conversations (/)"><History className="w-4 h-4" /></button>
-              <button onClick={() => setOpen(false)} className="p-2 rounded hover:bg-muted/60" title="Close (Esc)"><X className="w-4 h-4" /></button>
+              <button onClick={() => navigate('/crm/zara')} className="p-2 rounded-full hover:bg-foreground/5" title="Open full cockpit"><Maximize2 className="w-4 h-4" /></button>
+              <button onClick={() => setShowHistory(true)} className="p-2 rounded-full hover:bg-foreground/5" title="Conversations (/)"><History className="w-4 h-4" /></button>
+              <button onClick={() => setOpen(false)} className="p-2 rounded-full hover:bg-foreground/5" title="Close (Esc)"><X className="w-4 h-4" /></button>
             </div>
           </header>
 
