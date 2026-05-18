@@ -12,8 +12,10 @@ import remarkGfm from 'remark-gfm';
 import {
   Plus, Pin, Search, Send, Mic, MicOff, Sparkles, Inbox, ChevronRight,
   Activity as ActivityIcon, ThumbsUp, ThumbsDown, Wrench, Loader2, ChevronDown,
-  Building2, Brain, FileText,
+  Building2, Brain, FileText, Menu,
 } from 'lucide-react';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { useKeyboardInset } from '@/hooks/useKeyboardInset';
 import { usePushToTalk } from '@/hooks/usePushToTalk';
 import { MicPermissionDialog } from '@/components/crm/zara/MicPermissionDialog';
 import { useZaraPin } from '@/hooks/useZaraPin';
@@ -22,6 +24,7 @@ import { SlashCommandPalette } from '@/components/crm/zara/SlashCommandPalette';
 import { ZaraKillSwitch } from '@/components/crm/zara/ZaraKillSwitch';
 import { AutonomyControl } from '@/components/crm/zara/AutonomyControl';
 import { DynamicSuggestions } from '@/components/crm/zara/DynamicSuggestions';
+
 
 type Conv = {
   id: string; title: string; pinned: boolean; archived: boolean;
@@ -675,18 +678,20 @@ export default function ZaraCockpitPage() {
     return out;
   }, [messages, pendingByUseId]);
 
-  return (
-    <div className="flex flex-1 min-h-0 h-full -mx-4 -my-4 bg-background">
-      {/* LEFT — Conversations rail */}
-      <aside className="w-[240px] shrink-0 border-r border-border/60 flex flex-col min-h-0">
+  // Mobile rail drawer
+  const [railOpen, setRailOpen] = useState(false);
+  useKeyboardInset(true);
+
+  const railContent = (
+    <>
         <div className="p-3 border-b border-border/60 space-y-2">
-          <Button className="w-full bg-primary text-primary-foreground hover:bg-primary/90" size="sm" onClick={() => newConv.mutate()}>
+          <Button className="w-full bg-primary text-primary-foreground hover:bg-primary/90" size="sm" onClick={() => { newConv.mutate(); setRailOpen(false); }}>
             <Plus className="w-3.5 h-3.5 mr-1.5" />
             New conversation
           </Button>
           <div className="relative">
             <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
-            <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search" className="h-8 pl-7 text-[12px]" />
+            <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search" className="h-9 pl-7 text-[14px] sm:text-[12px] sm:h-8" />
           </div>
         </div>
         <div className="flex-1 min-h-0 overflow-y-auto p-1.5 space-y-0.5">
@@ -698,14 +703,14 @@ export default function ZaraCockpitPage() {
           {filteredConvs.map((c) => (
             <button
               key={c.id}
-              onClick={() => setActiveId(c.id)}
+              onClick={() => { setActiveId(c.id); setRailOpen(false); }}
               onContextMenu={(e) => {
                 e.preventDefault();
                 const choice = window.prompt('Action: pin | archive', 'pin');
                 if (choice === 'pin') togglePin(c);
                 else if (choice === 'archive') archive(c);
               }}
-              className={`w-full text-left px-2.5 py-2 rounded-md transition-colors ${
+              className={`w-full text-left px-2.5 py-2.5 sm:py-2 rounded-md transition-colors ${
                 activeId === c.id ? 'bg-primary/10 text-foreground' : 'hover:bg-muted/60 text-foreground/90'
               }`}
             >
@@ -722,55 +727,81 @@ export default function ZaraCockpitPage() {
           ))}
         </div>
         <div className="p-2.5 border-t border-border/60 space-y-1.5">
-          <Link to="/crm/zara/queue" className="flex items-center justify-between text-[12px] px-2 py-1.5 rounded-md hover:bg-muted/60 transition-colors">
+          <Link to="/crm/zara/queue" onClick={() => setRailOpen(false)} className="flex items-center justify-between text-[12px] px-2 py-2 sm:py-1.5 rounded-md hover:bg-muted/60 transition-colors">
             <span className="flex items-center gap-1.5"><Inbox className="w-3.5 h-3.5" />Approval queue</span>
             <span className="flex items-center gap-1">
               {pendingCount > 0 && <Pill size="sm" tone="warning">{pendingCount}</Pill>}
               <ChevronRight className="w-3 h-3 text-muted-foreground" />
             </span>
           </Link>
-          <Link to="/crm/zara/projects" className="flex items-center justify-between text-[12px] px-2 py-1.5 rounded-md hover:bg-muted/60 transition-colors">
+          <Link to="/crm/zara/projects" onClick={() => setRailOpen(false)} className="flex items-center justify-between text-[12px] px-2 py-2 sm:py-1.5 rounded-md hover:bg-muted/60 transition-colors">
             <span className="flex items-center gap-1.5"><Building2 className="w-3.5 h-3.5" />Project catalog</span>
             <ChevronRight className="w-3 h-3 text-muted-foreground" />
           </Link>
-          <Link to="/crm/zara/training" className="flex items-center justify-between text-[12px] px-2 py-1.5 rounded-md hover:bg-muted/60 transition-colors">
+          <Link to="/crm/zara/training" onClick={() => setRailOpen(false)} className="flex items-center justify-between text-[12px] px-2 py-2 sm:py-1.5 rounded-md hover:bg-muted/60 transition-colors">
             <span className="flex items-center gap-1.5"><Brain className="w-3.5 h-3.5" />Self-awareness</span>
             <ChevronRight className="w-3 h-3 text-muted-foreground" />
           </Link>
-          <Link to="/crm/zara/engagement" className="flex items-center justify-between text-[12px] px-2 py-1.5 rounded-md hover:bg-muted/60 transition-colors">
+          <Link to="/crm/zara/engagement" onClick={() => setRailOpen(false)} className="flex items-center justify-between text-[12px] px-2 py-2 sm:py-1.5 rounded-md hover:bg-muted/60 transition-colors">
             <span className="flex items-center gap-1.5"><ActivityIcon className="w-3.5 h-3.5" />Engagement status</span>
             <ChevronRight className="w-3 h-3 text-muted-foreground" />
           </Link>
-          <Link to="/crm/zara/audit" className="flex items-center justify-between text-[12px] px-2 py-1.5 rounded-md hover:bg-muted/60 transition-colors">
+          <Link to="/crm/zara/audit" onClick={() => setRailOpen(false)} className="flex items-center justify-between text-[12px] px-2 py-2 sm:py-1.5 rounded-md hover:bg-muted/60 transition-colors">
             <span className="flex items-center gap-1.5"><FileText className="w-3.5 h-3.5" />Outbound audit</span>
             <ChevronRight className="w-3 h-3 text-muted-foreground" />
           </Link>
-          <Link to="/crm/settings#zara" className="flex items-center justify-between text-[12px] px-2 py-1.5 rounded-md hover:bg-muted/60 transition-colors">
+          <Link to="/crm/settings#zara" onClick={() => setRailOpen(false)} className="flex items-center justify-between text-[12px] px-2 py-2 sm:py-1.5 rounded-md hover:bg-muted/60 transition-colors">
             <span>Mode</span>
             <Pill size="sm" tone={modePill.tone}>{modePill.label}</Pill>
           </Link>
         </div>
+    </>
+  );
+
+  return (
+    <div className="flex flex-1 min-h-0 h-full -mx-4 -my-4 bg-background">
+      {/* LEFT — Conversations rail (desktop) */}
+      <aside className="hidden md:flex w-[240px] shrink-0 border-r border-border/60 flex-col min-h-0">
+        {railContent}
       </aside>
+
+      {/* Mobile rail drawer */}
+      <Sheet open={railOpen} onOpenChange={setRailOpen}>
+        <SheetContent side="left" className="w-[280px] p-0 flex flex-col">
+          {railContent}
+        </SheetContent>
+      </Sheet>
 
       {/* CENTER — Chat */}
       <section className="flex-1 min-w-0 flex flex-col">
-        <header className="px-5 py-3 border-b border-border/60 flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <Sparkles className="w-4 h-4 text-primary" />
-            <h1 className="text-[15px] font-semibold tracking-tight">Zara</h1>
+        <header className="px-3 sm:px-5 py-3 border-b border-border/60 flex items-center justify-between gap-2 sm:gap-3"
+          style={{ paddingTop: 'calc(12px + env(safe-area-inset-top))' }}>
+          <div className="flex items-center gap-2 min-w-0">
+            <button
+              type="button"
+              onClick={() => setRailOpen(true)}
+              className="md:hidden p-2 -ml-2 rounded-md hover:bg-muted/60 min-w-[44px] min-h-[44px] flex items-center justify-center"
+              aria-label="Open conversations"
+            >
+              <Menu className="w-5 h-5" />
+            </button>
+            <Sparkles className="w-4 h-4 text-primary shrink-0" />
+            <h1 className="text-[15px] font-semibold tracking-tight truncate">Zara</h1>
             <Pill size="sm" tone={modePill.tone}>{modePill.label}</Pill>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             <AutonomyControl />
             <span className="text-[11px] text-muted-foreground hidden lg:inline">Cmd/Ctrl+J · type / for commands</span>
           </div>
+
         </header>
 
         <ZaraKillSwitch />
         <PinnedLeadChip />
 
-        <div ref={scrollerRef} className="flex-1 min-h-0 overflow-y-auto px-5 py-6">
+        <div ref={scrollerRef} className="flex-1 min-h-0 overflow-y-auto px-3 sm:px-5 py-4 sm:py-6">
           <div className="max-w-2xl mx-auto space-y-4">
+
             {rendered.length === 0 && !streaming && (
               <>
                 <div className="text-center py-10">
@@ -817,8 +848,12 @@ export default function ZaraCockpitPage() {
           </div>
         </div>
 
-        <div className="border-t border-border/60 px-5 py-3">
+        <div
+          className="border-t border-border/60 px-3 sm:px-5 py-3"
+          style={{ paddingBottom: 'calc(12px + env(safe-area-inset-bottom) + var(--keyboard-inset-bottom, 0px))' }}
+        >
           <div className="max-w-2xl mx-auto">
+
             {transcript !== null && (
               <div className="mb-2 rounded-2xl border border-primary/40 bg-primary/5 p-3 animate-in fade-in slide-in-from-bottom-1">
                 <div className="flex items-center justify-between mb-1.5">
@@ -901,7 +936,7 @@ export default function ZaraCockpitPage() {
                 rows={1}
                 placeholder={streaming ? 'Zara is replying…' : 'Ask Zara anything…'}
                 disabled={streaming}
-                className="flex-1 resize-none bg-transparent outline-none text-[14px] px-2 py-1.5 min-h-[28px] max-h-[200px] disabled:opacity-60"
+                className="flex-1 resize-none bg-transparent outline-none text-[16px] sm:text-[14px] px-2 py-1.5 min-h-[28px] max-h-[200px] disabled:opacity-60"
               />
               <div className="relative">
                 {ptt.state === 'recording' && (

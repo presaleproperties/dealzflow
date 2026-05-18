@@ -18,6 +18,7 @@ import {
   Plus, Send, Sparkles, MessageSquare, Bookmark, ThumbsDown, CheckCircle2,
   XCircle, AlertCircle, Loader2, Wand2, Trash2, Library, HelpCircle,
 } from "lucide-react";
+import { useKeyboardInset } from "@/hooks/useKeyboardInset";
 
 // ─────────────────────────────────────────────────────────
 type Session = {
@@ -89,6 +90,8 @@ export default function ZaraTrainingChatPage() {
   const [pendingFeedbackFor, setPendingFeedbackFor] = useState<{ messageId: string; kind: string; saveAs?: "winning" | "bad" } | null>(null);
   const [feedbackNote, setFeedbackNote] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
+  useKeyboardInset(true);
+
 
   useEffect(() => {
     setActiveSessionId(routeSessionId ?? null);
@@ -366,13 +369,16 @@ export default function ZaraTrainingChatPage() {
         </div>
 
         {/* COMPOSER */}
-        <div className="border-t border-border/40 p-3">
+        <div
+          className="border-t border-border/40 p-3"
+          style={{ paddingBottom: 'calc(12px + env(safe-area-inset-bottom) + var(--keyboard-inset-bottom, 0px))' }}
+        >
           <div className="max-w-3xl mx-auto flex gap-2">
             <Textarea
               value={composer}
               onChange={(e) => setComposer(e.target.value)}
               placeholder={activeSessionId ? "Reply to Zara… (Enter to send, Shift+Enter for newline)" : "Type to start a new session, or pick a scenario drill →"}
-              className="min-h-[60px] resize-none"
+              className="min-h-[60px] resize-none text-[16px] sm:text-[14px]"
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
                   e.preventDefault();
@@ -384,7 +390,7 @@ export default function ZaraTrainingChatPage() {
               size="sm"
               onClick={() => composer.trim() && sendMut.mutate({ message: composer.trim() })}
               disabled={!composer.trim() || sendMut.isPending}
-              className="self-end"
+              className="self-end min-h-[44px] min-w-[44px]"
             >
               <Send className="h-4 w-4" />
             </Button>

@@ -203,19 +203,19 @@ export default function ZaraQueuePage() {
     <div className="flex flex-col h-full min-h-0">
       <div className={`px-4 py-2 text-[12px] font-medium ${banner.cls}`}>{banner.text}</div>
 
-      <div className="flex items-center justify-between px-4 py-3 border-b border-border gap-3 flex-wrap">
-        <div>
-          <h1 className="text-lg font-bold">Zara queue</h1>
-          <p className="text-xs text-muted-foreground">
+      <div className="flex items-center justify-between px-3 sm:px-4 py-3 border-b border-border gap-3 flex-wrap">
+        <div className="min-w-0">
+          <h1 className="text-base sm:text-lg font-bold">Zara queue</h1>
+          <p className="text-[11px] sm:text-xs text-muted-foreground">
             {pending.length} shown · {pendingAll.length} pending · {drafts.length} total
           </p>
         </div>
         <div className="flex gap-2">
-          <Button size="sm" variant="outline" onClick={seedTestContacts}>Seed test contacts</Button>
+          <Button size="sm" variant="outline" onClick={seedTestContacts} className="min-h-[36px]">Seed test contacts</Button>
         </div>
       </div>
 
-      <div className="flex items-center gap-3 flex-wrap px-4 py-2 border-b border-border text-[11px]">
+      <div className="flex items-center gap-3 flex-nowrap overflow-x-auto px-3 sm:px-4 py-2 border-b border-border text-[11px] scrollbar-thin">
         <FilterGroup label="Channel">
           {(['all','email','sms','whatsapp'] as const).map((v) => (
             <FilterChip key={v} active={fChannel === v} onClick={() => setFChannel(v)}>{v}</FilterChip>
@@ -253,7 +253,7 @@ export default function ZaraQueuePage() {
         )}
       </div>
 
-      <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-3">
+      <div className="flex-1 min-h-0 overflow-y-auto p-3 sm:p-4 space-y-3" style={{ paddingBottom: 'calc(16px + env(safe-area-inset-bottom) + var(--bottom-nav-pad, 0px))' }}>
         {pending.length === 0 ? (
           <div className="text-center text-muted-foreground py-16 text-sm">Zara is watching. No drafts pending.</div>
         ) : (
@@ -285,12 +285,12 @@ export default function ZaraQueuePage() {
                       title={`zara-draft-${d.id}`}
                       sandbox=""
                       srcDoc={d.draft_html}
-                      className="w-full"
-                      style={{ height: 420, border: 0, background: 'white' }}
+                      className="w-full h-[320px] sm:h-[380px] md:h-[420px]"
+                      style={{ border: 0, background: 'white' }}
                     />
                     <div className="flex items-center justify-between gap-2 px-3 py-1.5 border-t border-border bg-muted/30 text-[11px] text-muted-foreground">
                       <span>Presale-rendered HTML preview</span>
-                      <button onClick={() => togglePlain(d.id)} className="underline hover:text-foreground">Show plain text</button>
+                      <button onClick={() => togglePlain(d.id)} className="underline hover:text-foreground min-h-[32px]">Show plain text</button>
                     </div>
                   </div>
                 ) : (

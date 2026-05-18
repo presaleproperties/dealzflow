@@ -251,8 +251,8 @@ export function ZaraDraftCard({ tool, channel, decide, onChip }: Props) {
             title="Email preview"
             srcDoc={draft!.draft_html!}
             sandbox=""
-            className="w-full rounded-md bg-white shadow-sm"
-            style={{ height: 560, border: 0 }}
+            className="w-full rounded-md bg-white shadow-sm h-[380px] sm:h-[480px] md:h-[560px]"
+            style={{ border: 0 }}
           />
         </div>
 
