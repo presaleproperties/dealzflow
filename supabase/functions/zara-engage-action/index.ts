@@ -67,6 +67,19 @@ Deno.serve(async (req) => {
           },
         });
         if (error) return json({ error: error.message }, 502);
+        await admin.from('crm_engagement_events').insert({
+          contact_id: action.contactId,
+          event_type: 'zara_handoff',
+          source: 'zara',
+          actor_id: user.id,
+          occurred_at: new Date().toISOString(),
+          metadata: {
+            channel,
+            intent: action.kind === 'custom' ? 'engage_custom' : 'follow_up_now',
+            prompt: (action as any).prompt ?? null,
+            draft_id: (data as any)?.draftId ?? (data as any)?.id ?? null,
+          },
+        });
         return json({ ok: true, draft: data });
       }
 
