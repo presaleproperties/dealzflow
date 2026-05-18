@@ -6,7 +6,7 @@
 // Bulk callers fan out (one call per contact_id) — no batching here.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { escapeHtml, htmlToPlain } from "../_shared/zara-email-render.ts";
+import { htmlToPlain } from "../_shared/zara-email-render.ts";
 import { coerceUuid, resolveAssignedToUuid } from "../_shared/zara-guardrails.ts";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -99,44 +99,8 @@ Deno.serve(async (req) => {
   // ── Per-contact zara_enabled gate (does NOT block — drafting is opt-in regardless) ──
   // We allow drafting because this is an explicit agent action ("Send Project Details" button click).
 
-  // ── Build email ──────────────────────────────────────────────────────
+  // ── Build Presale auto-template payload ──────────────────────────────
   const firstName = (contact as any).first_name || "there";
-  const intro =
-    `Hi ${escapeHtml(firstName)} — I pulled a few projects that fit what you've told me so far` +
-    (cityHint ? ` in ${escapeHtml(String(cityHint))}` : "") +
-    (bMax > 0 ? ` around your budget` : "") +
-    `. Have a quick look at the three below and reply with the project name on any you'd like more on — I'll send deposit structures and comparable sold prices.`;
-
-  const fmtMoney = (n: any) => {
-    const v = Number(n);
-    if (!Number.isFinite(v) || v <= 0) return "";
-    if (v >= 1_000_000) return `$${(v / 1_000_000).toFixed(v % 1_000_000 === 0 ? 0 : 2)}M`;
-    if (v >= 1000) return `$${Math.round(v / 1000)}k`;
-    return `$${v}`;
-  };
-
-  const cards_html = top.map((p) => {
-    const meta = [p.city, p.developer, p.property_type].filter(Boolean).map(escapeHtml).join(" · ");
-    const priceRange = (p.price_from || p.price_to)
-      ? `${fmtMoney(p.price_from)}${p.price_from && p.price_to ? "–" : ""}${fmtMoney(p.price_to)}`
-      : "";
-    const ctaUrl = p.marketing_url || p.website_url || p.brochure_url || "https://presaleproperties.com";
-    const hero = `<div style="background:#14181F;color:#D7A542;padding:36px 16px;text-align:center;border-radius:8px;margin-bottom:14px;font-weight:700;letter-spacing:0.04em;font-size:18px;">${escapeHtml(p.name)}</div>`;
-    const whyFits = whyForLead(p, contact);
-    return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #eee;border-radius:10px;padding:16px;margin:0 0 16px 0;background:#fff;">
-<tr><td>
-${hero}
-<div style="color:#14181F;font-size:18px;font-weight:700;margin-bottom:4px;">${escapeHtml(p.name)}</div>
-${meta ? `<div style="color:#888;font-size:13px;margin-bottom:6px;">${meta}</div>` : ""}
-${priceRange ? `<div style="color:#14181F;font-size:16px;margin-bottom:10px;">${escapeHtml(priceRange)}</div>` : ""}
-<div style="color:#444;font-size:14px;line-height:1.55;margin-bottom:14px;">${escapeHtml(whyFits)}</div>
-<a href="${escapeHtml(ctaUrl)}" style="display:inline-block;background:#D7A542;color:#14181F;text-decoration:none;padding:11px 18px;border-radius:8px;font-weight:600;font-size:13px;">View Floor Plans</a>
-</td></tr></table>`;
-  }).join("");
-
-  const closing =
-    `Worth me sending the deposit structures and comparable sold prices on any of these? Reply with the project name and I'll have it back in your inbox today.`;
-
   // ── Render via Presale auto-templates (same branded template used by
   //    "Send Project Details" in the Lead Detail page). Presale owns the
   //    layout and agent signature; Zara never uses local CRM templates here.
@@ -281,20 +245,3 @@ ${priceRange ? `<div style="color:#14181F;font-size:16px;margin-bottom:10px;">${
 
   return reply({ ok: true, draft_id: ins.id, project_count: top.length, template_id: templateId });
 });
-
-function whyForLead(p: any, c: any): string {
-  const bits: string[] = [];
-  const cityHint = c.city_pref || c.city;
-  if (cityHint && p.city && String(p.city).toLowerCase().includes(String(cityHint).toLowerCase())) {
-    bits.push(`Right in ${p.city}`);
-  } else if (p.city) {
-    bits.push(`${p.city} location`);
-  }
-  const bMax = Number(c.budget_max ?? 0);
-  if (bMax > 0 && p.price_from && bMax >= p.price_from && bMax <= (p.price_to ?? p.price_from) * 1.15) {
-    bits.push(`fits your budget`);
-  }
-  if (p.developer) bits.push(`built by ${p.developer}`);
-  if (bits.length === 0) bits.push(`a strong fit for what you're looking for`);
-  return bits.join(" · ") + ".";
-}
