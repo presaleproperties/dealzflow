@@ -604,18 +604,6 @@ export function ZaraDock() {
                   </button>
                 )}
               </div>
-              <div className="mt-1.5 flex gap-1 overflow-x-auto pb-0.5 -mx-0.5 px-0.5 scrollbar-thin">
-                {chips.map((c) => (
-                  <button
-                    key={c.label}
-                    onClick={() => onChip(c.prompt, !!c.needsContact)}
-                    className="shrink-0 text-[11px] px-2.5 py-1 rounded-full text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors whitespace-nowrap"
-                  >
-                    {c.label}
-                  </button>
-                ))}
-              </div>
-              <div className="mt-1 text-center text-[10px] text-muted-foreground/70">⌘⏎ send · ⌘K new · Esc close</div>
             </div>
           </div>
         </div>
