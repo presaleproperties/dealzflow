@@ -259,6 +259,12 @@ async function retrieveContext(userText: string) {
       parts.push(`[M${i + 1}] ${m.week_of}: ${m.headline ?? ""}\n${m.summary ?? ""}`);
     });
   }
+  if (principles.length) {
+    parts.push("\n## Uzair's founder principles (apply these in tone, framing, and decisions)\n");
+    principles.forEach((p, i) => {
+      parts.push(`[F${i + 1}] ${p.title ?? ""} — ${String(p.body ?? "").slice(0, 400)}`);
+    });
+  }
   parts.push("</retrieved_context>");
 
   return {
@@ -268,6 +274,7 @@ async function retrieveContext(userText: string) {
       wins: wins.map((w) => ({ id: w.id, profile: w.lead_profile, similarity: w.similarity })),
       projects: projects.map((p) => ({ id: p.id, name: p.name, city: p.city, similarity: p.similarity })),
       market: market.map((m) => ({ id: m.id, week_of: m.week_of, headline: m.headline })),
+      principles: principles.map((p: any) => ({ id: p.id, title: p.title, module: p.module_slug })),
     },
   };
 }
