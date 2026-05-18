@@ -512,7 +512,7 @@ export function ZaraDock() {
             <div ref={scrollerRef} className="flex-1 min-h-0 overflow-y-auto px-3 py-3 space-y-2.5">
               {rendered.length === 0 && !streaming && (
                 <div className="text-center py-10 px-2">
-                  <div className="w-12 h-12 mx-auto mb-3 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/30 flex items-center justify-center shadow-sm">
+                  <div className="w-12 h-12 mx-auto mb-3 rounded-2xl zara-halo zara-glass flex items-center justify-center">
                     <Sparkles className="w-5 h-5 text-primary" />
                   </div>
                   <div className="text-[14px] font-semibold tracking-tight">Ask Zara about {pageContext.label.toLowerCase()}</div>
@@ -520,7 +520,7 @@ export function ZaraDock() {
                     She sees the page you're on — leads, projects, calendar, all of it.
                   </p>
                   {pageContext.contact_id && (
-                    <div className="mt-3 inline-flex items-center gap-1.5 text-[10.5px] px-2 py-1 rounded-full border border-primary/30 bg-primary/5 text-primary">
+                    <div className="mt-3 inline-flex items-center gap-1.5 text-[10.5px] px-2.5 py-1 rounded-full bg-primary/10 text-primary">
                       <span className="w-1.5 h-1.5 rounded-full bg-primary" />
                       Pinned to this lead
                     </div>
