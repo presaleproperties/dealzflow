@@ -837,12 +837,19 @@ Deno.serve(async (req) => {
     // resolve pronouns and ground every draft.
     const currentViewBlock = await buildCurrentViewBlock(page_context);
     const rollingSummaryBlock = await buildRollingSummaryBlock(conversation_id);
+    // Learned preferences from past approvals — tone rules, phrasing swaps,
+    // CTA verdicts, timing patterns. Compact block, soft-default semantics.
+    const { buildLearnedPreferencesBlock } = await import("../_shared/zara-learned-brief.ts");
+    const learnedPreferencesBlock = await buildLearnedPreferencesBlock(svc() as any).catch(() => "");
+
     const systemParts = [SYSTEM_PROMPT_BASE];
+    if (learnedPreferencesBlock) systemParts.push(learnedPreferencesBlock);
     if (rollingSummaryBlock) systemParts.push(rollingSummaryBlock);
     if (ragBlock) systemParts.push(ragBlock);
     if (leadMemoryBlock) systemParts.push(leadMemoryBlock);
     if (currentViewBlock) systemParts.push(currentViewBlock);
     for (const a of (addenda ?? [])) systemParts.push((a as any).addendum);
+
     if (reply_mode === "action") {
       systemParts.push(
         `ACTION-ONLY MODE (strict):
