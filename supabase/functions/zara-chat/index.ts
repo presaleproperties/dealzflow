@@ -673,11 +673,35 @@ Deno.serve(async (req) => {
       ragSources = r.sources;
     }
 
+    // ── Lead auto-resolution + memory ────────────────────────────────────
+    // Priority: explicit page_context.contact_id > resolver hit from message
+    let activeContactId: string | null = pinnedContactId;
+    let resolvedPayload: any = null;
+    let candidatesPayload: any[] = [];
+    if (!activeContactId) {
+      const historyText = history.slice(-6).map((r: any) => typeof r.content === "string" ? r.content : "").join("\n");
+      const { resolved, candidates } = await resolveLeadFromMessage(message, historyText);
+      if (resolved) {
+        activeContactId = resolved.contact_id;
+        resolvedPayload = resolved;
+      } else if (candidates.length > 1) {
+        candidatesPayload = candidates;
+      }
+    }
+    let leadMemoryBlock = "";
+    let leadMemoryPayload: any = null;
+    if (activeContactId) {
+      const lm = await buildLeadMemoryBlock(activeContactId);
+      if (lm) { leadMemoryBlock = lm.block; leadMemoryPayload = lm.payload; }
+    }
+
     // System assembly: <retrieved_context> goes BEFORE addenda; <current_view>
-    // goes after retrieval so the model can use it to resolve pronouns.
+    // and <lead_memory> go after retrieval so the model can use them to
+    // resolve pronouns and ground every draft.
     const currentViewBlock = await buildCurrentViewBlock(page_context);
     const systemParts = [SYSTEM_PROMPT_BASE];
     if (ragBlock) systemParts.push(ragBlock);
+    if (leadMemoryBlock) systemParts.push(leadMemoryBlock);
     if (currentViewBlock) systemParts.push(currentViewBlock);
     for (const a of (addenda ?? [])) systemParts.push((a as any).addendum);
     if (reply_mode === "action") {
