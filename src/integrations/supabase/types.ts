@@ -5072,6 +5072,8 @@ export type Database = {
           draft_metadata: Json
           id: string
           is_training_example: boolean
+          original_body: string | null
+          original_subject: string | null
           reasoning: string | null
           reject_reason: string | null
           scheduled_for: string
@@ -5095,6 +5097,8 @@ export type Database = {
           draft_metadata?: Json
           id?: string
           is_training_example?: boolean
+          original_body?: string | null
+          original_subject?: string | null
           reasoning?: string | null
           reject_reason?: string | null
           scheduled_for?: string
@@ -5118,6 +5122,8 @@ export type Database = {
           draft_metadata?: Json
           id?: string
           is_training_example?: boolean
+          original_body?: string | null
+          original_subject?: string | null
           reasoning?: string | null
           reject_reason?: string | null
           scheduled_for?: string
@@ -7204,6 +7210,39 @@ export type Database = {
         }
         Relationships: []
       }
+      zara_cta_preferences: {
+        Row: {
+          context: string | null
+          created_at: string
+          cta_text: string
+          evidence_count: number
+          id: string
+          last_seen_at: string
+          source_diff_ids: string[] | null
+          stance: string
+        }
+        Insert: {
+          context?: string | null
+          created_at?: string
+          cta_text: string
+          evidence_count?: number
+          id?: string
+          last_seen_at?: string
+          source_diff_ids?: string[] | null
+          stance?: string
+        }
+        Update: {
+          context?: string | null
+          created_at?: string
+          cta_text?: string
+          evidence_count?: number
+          id?: string
+          last_seen_at?: string
+          source_diff_ids?: string[] | null
+          stance?: string
+        }
+        Relationships: []
+      }
       zara_embed_queue: {
         Row: {
           attempts: number
@@ -7822,6 +7861,104 @@ export type Database = {
         }
         Relationships: []
       }
+      zara_rewrite_diffs: {
+        Row: {
+          analysis: Json | null
+          channel: string | null
+          contact_id: string | null
+          created_at: string
+          draft_id: string | null
+          edit_distance: number | null
+          feedback_labels: string[] | null
+          final_body: string | null
+          final_subject: string | null
+          id: string
+          notes: string | null
+          original_body: string | null
+          original_subject: string | null
+          reviewed_by: string | null
+          trigger_kind: string | null
+          was_approved: boolean | null
+        }
+        Insert: {
+          analysis?: Json | null
+          channel?: string | null
+          contact_id?: string | null
+          created_at?: string
+          draft_id?: string | null
+          edit_distance?: number | null
+          feedback_labels?: string[] | null
+          final_body?: string | null
+          final_subject?: string | null
+          id?: string
+          notes?: string | null
+          original_body?: string | null
+          original_subject?: string | null
+          reviewed_by?: string | null
+          trigger_kind?: string | null
+          was_approved?: boolean | null
+        }
+        Update: {
+          analysis?: Json | null
+          channel?: string | null
+          contact_id?: string | null
+          created_at?: string
+          draft_id?: string | null
+          edit_distance?: number | null
+          feedback_labels?: string[] | null
+          final_body?: string | null
+          final_subject?: string | null
+          id?: string
+          notes?: string | null
+          original_body?: string | null
+          original_subject?: string | null
+          reviewed_by?: string | null
+          trigger_kind?: string | null
+          was_approved?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "zara_rewrite_diffs_draft_id_fkey"
+            columns: ["draft_id"]
+            isOneToOne: false
+            referencedRelation: "crm_zara_drafts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      zara_rewrite_patterns: {
+        Row: {
+          after_phrase: string
+          before_phrase: string
+          context: string | null
+          created_at: string
+          evidence_count: number
+          id: string
+          last_seen_at: string
+          source_diff_ids: string[] | null
+        }
+        Insert: {
+          after_phrase: string
+          before_phrase: string
+          context?: string | null
+          created_at?: string
+          evidence_count?: number
+          id?: string
+          last_seen_at?: string
+          source_diff_ids?: string[] | null
+        }
+        Update: {
+          after_phrase?: string
+          before_phrase?: string
+          context?: string | null
+          created_at?: string
+          evidence_count?: number
+          id?: string
+          last_seen_at?: string
+          source_diff_ids?: string[] | null
+        }
+        Relationships: []
+      }
       zara_settings: {
         Row: {
           autonomy_level: number
@@ -7896,6 +8033,39 @@ export type Database = {
             referencedColumns: ["user_id"]
           },
         ]
+      }
+      zara_style_memory: {
+        Row: {
+          category: string
+          created_at: string
+          evidence_count: number
+          id: string
+          last_seen_at: string
+          observation: string
+          source_diff_ids: string[] | null
+          weight: number
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          evidence_count?: number
+          id?: string
+          last_seen_at?: string
+          observation: string
+          source_diff_ids?: string[] | null
+          weight?: number
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          evidence_count?: number
+          id?: string
+          last_seen_at?: string
+          observation?: string
+          source_diff_ids?: string[] | null
+          weight?: number
+        }
+        Relationships: []
       }
       zara_style_rules: {
         Row: {
@@ -8150,6 +8320,39 @@ export type Database = {
           name?: string
           prompt_text?: string
           version?: string
+        }
+        Relationships: []
+      }
+      zara_tone_preferences: {
+        Row: {
+          created_at: string
+          dimension: string
+          evidence_count: number
+          id: string
+          last_seen_at: string
+          rule: string
+          source_diff_ids: string[] | null
+          weight: number
+        }
+        Insert: {
+          created_at?: string
+          dimension: string
+          evidence_count?: number
+          id?: string
+          last_seen_at?: string
+          rule: string
+          source_diff_ids?: string[] | null
+          weight?: number
+        }
+        Update: {
+          created_at?: string
+          dimension?: string
+          evidence_count?: number
+          id?: string
+          last_seen_at?: string
+          rule?: string
+          source_diff_ids?: string[] | null
+          weight?: number
         }
         Relationships: []
       }
