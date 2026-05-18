@@ -70,8 +70,23 @@ function urgencyTone(signal?: string | null): { dot: string; label: string } | n
 }
 
 export function ZaraRemembersCard({ contactId }: Props) {
+  const qc = useQueryClient();
   const { data: memory, isLoading } = useZaraLeadMemory(contactId);
   const [showQuotes, setShowQuotes] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+
+  async function refreshContinuity() {
+    setRefreshing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('zara-build-continuity', { body: { contact_id: contactId } });
+      if (error) throw error;
+      if ((data as any)?.ok) toast.success('Zara updated her memory of this lead');
+      else toast.warning((data as any)?.error ?? 'No new context found');
+      qc.invalidateQueries({ queryKey: ['zara-lead-memory', contactId] });
+    } catch (e: any) {
+      toast.error(e?.message ?? 'Refresh failed');
+    } finally { setRefreshing(false); }
+  }
 
   if (isLoading || !memory) return null;
 
@@ -79,9 +94,11 @@ export function ZaraRemembersCard({ contactId }: Props) {
   const rows = buildRows(facts);
   const urgency = urgencyTone(facts.urgency_signal);
   const quotes = facts.key_quotes ?? [];
+  const openers = memory.continuity_openers ?? [];
+  const stage = memory.relationship_stage ?? null;
   const stale = isMemoryStale(memory.refreshed_at);
 
-  if (rows.length === 0 && !memory.summary) return null;
+  if (rows.length === 0 && !memory.summary && openers.length === 0) return null;
 
   return (
     <div
