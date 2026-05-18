@@ -585,8 +585,8 @@ async function buildLeadMemoryBlock(contactId: string): Promise<{ block: string;
   if (Array.isArray(m.continuity_openers) && m.continuity_openers.length) {
     lines.push(`Possible openers: ${m.continuity_openers.slice(0, 2).map((s: string) => `"${s}"`).join(" / ")}`);
   }
-  if (projects.length) lines.push(`Top projects of interest: ${projects.map((p) => `${p.project_name}${p.interest_level ? ` (${p.interest_level})` : ""}`).join(" · ")}`);
-  if (lastAct) lines.push(`Last activity: ${lastAct.activity_type} @ ${lastAct.occurred_at}${lastAct.description ? ` — ${String(lastAct.description).slice(0, 120)}` : ""}`);
+  if (topProjects.length) lines.push(`Top projects of interest: ${topProjects.join(" · ")}`);
+  if (lastAct) lines.push(`Last activity: ${lastAct.type} @ ${lastAct.occurred_at}${lastAct.project_slug ? ` · ${lastAct.project_slug}` : ""}`);
   if (m.summary) lines.push(`Summary: ${String(m.summary).slice(0, 600)}`);
   lines.push("</lead_memory>");
 
@@ -603,7 +603,7 @@ async function buildLeadMemoryBlock(contactId: string): Promise<{ block: string;
       summary: m.summary ?? null,
       last_topics: m.last_topics ?? [],
       continuity_openers: m.continuity_openers ?? [],
-      top_projects: projects.map((p) => ({ name: p.project_name, interest: p.interest_level })),
+      top_projects: topProjects,
       tags: c.tags ?? [],
     },
   };
