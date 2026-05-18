@@ -285,12 +285,12 @@ export default function ZaraQueuePage() {
                       title={`zara-draft-${d.id}`}
                       sandbox=""
                       srcDoc={d.draft_html}
-                      className="w-full"
-                      style={{ height: 420, border: 0, background: 'white' }}
+                      className="w-full h-[320px] sm:h-[380px] md:h-[420px]"
+                      style={{ border: 0, background: 'white' }}
                     />
                     <div className="flex items-center justify-between gap-2 px-3 py-1.5 border-t border-border bg-muted/30 text-[11px] text-muted-foreground">
                       <span>Presale-rendered HTML preview</span>
-                      <button onClick={() => togglePlain(d.id)} className="underline hover:text-foreground">Show plain text</button>
+                      <button onClick={() => togglePlain(d.id)} className="underline hover:text-foreground min-h-[32px]">Show plain text</button>
                     </div>
                   </div>
                 ) : (
