@@ -408,7 +408,7 @@ export function SendProjectDialog({ contact, open, onOpenChange }: Props) {
       kind === 'brochure'    ? { brochure_url: url, brochure_filename: file.name } :
       kind === 'floor_plans' ? { floor_plans_url: url, floor_plans_filename: file.name } :
                                { pricing_url: url, pricing_filename: file.name };
-    const { error: updErr } = await supabase.from('crm_projects').update(patch).eq('slug', projectSlug);
+    const { error: updErr } = await supabase.from('crm_projects').update(patch).eq('id', selectedProject?.id ?? '');
     setUploadingKind(null);
     if (updErr) {
       toast({ title: 'Saved file but project update failed', description: updErr.message, variant: 'destructive' });
@@ -447,6 +447,8 @@ export function SendProjectDialog({ contact, open, onOpenChange }: Props) {
         cta_overrides: {
           project_details_url: projectDetailsUrlOverride.trim() || null,
         },
+        subject_override: subjectOverride || null,
+        personal_note: personalNote || null,
       },
     });
     setSending(false);
