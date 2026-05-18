@@ -68,14 +68,14 @@ export const ZARA_TOOLS: ZaraTool[] = [
   {
     name: "draft_email",
     description:
-      "Draft an email to a lead. The body you pass is the COPY only — the executor wraps it in the branded HTML scaffold (matching a row from crm_email_templates by intent → category, with token interpolation and the actor agent's signature appended). Pass `purpose` as the intent: greeting | first_touch | follow_up | reactivation | neighborhood | project_info | newsletter | market_update | project_match | send_project_details. Always include a clear intent so the right scaffold is picked. SMS/WhatsApp drafts stay plain text; this one becomes HTML.",
+      "Draft an email to a lead. The body you pass is COPY only — the executor sends it to Presale Properties auto-templates for the final branded render and agent signature. Never create, save, update, or select CRM email templates. Pass `purpose` as the intent: greeting | first_touch | follow_up | reactivation | neighborhood | project_info | newsletter | market_update | project_match | send_project_details. SMS/WhatsApp drafts stay plain text; email becomes Presale-rendered HTML.",
     input_schema: {
       type: "object",
       properties: {
         contact_id: { type: "string" },
         subject: { type: "string" },
         body: { type: "string", description: "Plain copy (paragraphs separated by blank lines). Do NOT pass raw HTML — the executor wraps it." },
-        purpose: { type: "string", description: "Intent key — drives template selection." },
+        purpose: { type: "string", description: "Intent key — drives Presale auto-template selection." },
         cta_text: { type: "string", description: "Optional CTA button label." },
         cta_url: { type: "string", description: "Optional CTA destination URL." },
       },
@@ -108,38 +108,6 @@ export const ZARA_TOOLS: ZaraTool[] = [
         body: { type: "string" },
       },
       required: ["contact_id", "body"],
-    },
-    needs_approval: true,
-  },
-  {
-    name: "create_template",
-    description:
-      "Save a reusable message template. Use when the agent says 'save that as a template called X'. channel='email' writes to crm_email_templates; channel='sms' writes to crm_sms_templates; channel='whatsapp' writes to crm_whatsapp_templates.",
-    input_schema: {
-      type: "object",
-      properties: {
-        title: { type: "string" },
-        channel: { type: "string", enum: ["email", "sms", "whatsapp"] },
-        subject: { type: "string", description: "Required for email." },
-        body: { type: "string" },
-        tags: { type: "array", items: { type: "string" } },
-      },
-      required: ["title", "channel", "body"],
-    },
-    needs_approval: true,
-  },
-  {
-    name: "update_template",
-    description:
-      "Update an existing template. Provide template_id and fields_to_update (subject/body/title/tags).",
-    input_schema: {
-      type: "object",
-      properties: {
-        template_id: { type: "string" },
-        channel: { type: "string", enum: ["email", "sms", "whatsapp"] },
-        fields_to_update: { type: "object" },
-      },
-      required: ["template_id", "fields_to_update"],
     },
     needs_approval: true,
   },

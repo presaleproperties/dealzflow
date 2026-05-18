@@ -116,7 +116,6 @@ const ZaraProjectsPage = lazy(() => import("./pages/crm/ZaraProjectsPage"));
 const ZaraCrmTrainingPage = lazy(() => import("./pages/crm/ZaraTrainingPage"));
 const ZaraTrainingChatPage = lazy(() => import("./pages/crm/ZaraTrainingChatPage"));
 const ZaraFounderPage = lazy(() => import("./pages/crm/ZaraFounderPage"));
-const ZaraTemplatesPage = lazy(() => import("./pages/crm/ZaraTemplatesPage"));
 const ZaraEngagementStatusPage = lazy(() => import("./pages/crm/ZaraEngagementStatusPage"));
 const ZaraOutboundAuditPage = lazy(() => import("./pages/crm/ZaraOutboundAuditPage"));
 const CrmSettingsPage = lazy(() => import("./pages/crm/CrmSettingsPage"));
@@ -361,7 +360,7 @@ const App = () => (
                     <Route path="/crm/zara/training-chat" element={<ProtectedRoute><CrmLayout><ZaraTrainingChatPage /></CrmLayout></ProtectedRoute>} />
                     <Route path="/crm/zara/training-chat/:sessionId" element={<ProtectedRoute><CrmLayout><ZaraTrainingChatPage /></CrmLayout></ProtectedRoute>} />
                     <Route path="/crm/zara/founder" element={<ProtectedRoute><CrmLayout><ZaraFounderPage /></CrmLayout></ProtectedRoute>} />
-                    <Route path="/crm/zara/templates" element={<ProtectedRoute><CrmLayout><ZaraTemplatesPage /></CrmLayout></ProtectedRoute>} />
+                    <Route path="/crm/zara/templates" element={<Navigate to="/crm/templates" replace />} />
                     <Route path="/crm/zara/engagement" element={<ProtectedRoute><CrmLayout><ZaraEngagementStatusPage /></CrmLayout></ProtectedRoute>} />
                     <Route path="/crm/zara/audit" element={<ProtectedRoute><CrmLayout><ZaraOutboundAuditPage /></CrmLayout></ProtectedRoute>} />
                     <Route path="/crm/zara/about" element={<Navigate to="/crm/zara/training" replace />} />

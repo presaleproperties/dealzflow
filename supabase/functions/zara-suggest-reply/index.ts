@@ -318,7 +318,7 @@ ${toneSample}
           subject: renderedSubject,
         });
         draft_html = rendered.html;
-        template_id_used = rendered.template_id_used;
+        template_id_used = rendered.template_id_used && /^[0-9a-f-]{36}$/i.test(rendered.template_id_used) ? rendered.template_id_used : null;
         if (rendered.subject) renderedSubject = rendered.subject;
       } catch (e) {
         console.warn('[zara-suggest-reply] branded email render failed', e);
