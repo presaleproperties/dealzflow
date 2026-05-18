@@ -241,6 +241,7 @@ function NativeBootstrap({ children }: { children: React.ReactNode }) {
   useVisualViewport();
   return (
     <>
+      <KillSwitchBanner />
       {children}
       <SessionRestoringBanner />
       <EmailIdentitySetupDialog />
@@ -248,15 +249,8 @@ function NativeBootstrap({ children }: { children: React.ReactNode }) {
       <NewChatDialog />
       <ComposerMount />
       <ViewportDebugOverlay />
-      <KillSwitchBannerMount />
     </>
   );
-}
-
-// Lazy-loaded so it never blocks render and quietly no-ops if zara_settings is unreachable
-function KillSwitchBannerMount() {
-  const KillSwitchBanner = require('@/components/crm/zara/KillSwitchBanner').KillSwitchBanner;
-  return <KillSwitchBanner />;
 }
 
 
