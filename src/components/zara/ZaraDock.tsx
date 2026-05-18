@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Pill } from '@/components/crm/shared/Pill';
 import { useZaraDock } from '@/stores/useZaraDock';
 import { useZaraPageContext } from '@/hooks/useZaraPageContext';
+import { useKeyboardInset } from '@/hooks/useKeyboardInset';
 import { useZaraDockChat, useZaraConversations, type Conv } from '@/hooks/useZaraDockChat';
 import { getChipsForSurface } from '@/lib/zaraDockChips';
 import { ZaraQueuedEmailsPanel } from '@/components/crm/leads/ZaraQueuedEmailsPanel';
