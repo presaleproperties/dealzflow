@@ -42,10 +42,21 @@ Rules:
 - Mutations to lead data require confirmation: when calling update_lead, return the proposed patch in your reply and only call confirm_update_lead after the user agrees.
 - Prefer real data via tools over guessing. If you don't know, call a tool.
 - When the user names a lead, call get_lead_context first.
-- Keep responses tight, scannable, markdown-formatted.
+- Keep responses tight, scannable, markdown-formatted. No filler greetings, no preamble, no "Let me know if…" sign-offs.
 - For projects, prefer recommend_projects_for_lead when a lead context exists.
 - A <current_view> block tells you what Uzair is looking at right now. When his message uses pronouns ("this lead", "him", "her", "this project") or is ambiguous, resolve them to whatever's in <current_view>. If <current_view> shows a lead and Uzair says "draft a follow-up", draft it for THAT lead — no need to ask which one.
-- CITATION RULE: When you draft a reply (draft_email, draft_sms, draft_whatsapp) AND your <retrieved_context> includes playbook chunks, past wins, or project deep-dives, you MUST end your assistant text with one short line: "Grounded in: <source-ids>" listing which sources you grounded the draft in (e.g. "Grounded in: K1 brand_voice, K3 first_touch, W1 punjabi_close").`;
+- DO NOT auto-call send_briefing_summary, list_pending_drafts, or any dashboard-style tools on greetings ("hi", "hey", "what's up", "morning"). Only call them when the user explicitly asks for a status update or briefing. On a bare greeting, reply in one short sentence and immediately suggest 2-3 next actions via the Next block (see below). No counts, no stats.
+- AT THE END OF EVERY REPLY, append a block exactly in this format so the UI can render clickable follow-up chips:
+
+  ###NEXT###
+  - <action 1, ≤6 words, imperative>
+  - <action 2, ≤6 words, imperative>
+  - <action 3, ≤6 words, imperative>
+  ###/NEXT###
+
+  Give 2-3 actions. They must be things Uzair could click to ask you next ("Draft a follow-up", "Show hot leads", "Schedule a 24h check-in"). Skip the block only when the conversation is fully closed (one-word acknowledgement).
+- CITATION RULE: When you draft a reply (draft_email, draft_sms, draft_whatsapp) AND your <retrieved_context> includes playbook chunks, past wins, or project deep-dives, you MUST end your assistant text (BEFORE the NEXT block) with one short line: "Grounded in: <source-ids>" listing which sources you grounded the draft in (e.g. "Grounded in: K1 brand_voice, K3 first_touch, W1 punjabi_close").`;
+
 
 type ToolCtx = { user_id: string; conversation_id: string; zara_enabled: boolean; test_phones: string[] };
 

@@ -153,7 +153,18 @@ function SourcesPill({ sources }: { sources: any }) {
   );
 }
 
-function MessageBubble({ m }: { m: any }) {
+// Parse a trailing `###NEXT### ... ###/NEXT###` block out of assistant text.
+// Returns { body, nextActions } so MessageBubble can render the actions as chips.
+function splitNextBlock(text: string): { body: string; nextActions: string[] } {
+  const re = /###NEXT###\s*([\s\S]*?)\s*###\/NEXT###\s*$/i;
+  const m = text.match(re);
+  if (!m) return { body: text, nextActions: [] };
+  const body = text.slice(0, m.index).trimEnd();
+  const lines = m[1].split('\n').map((l) => l.replace(/^[-*]\s*/, '').trim()).filter(Boolean);
+  return { body, nextActions: lines.slice(0, 3) };
+}
+
+function MessageBubble({ m, onChip }: { m: any; onChip?: (text: string) => void }) {
   const links = useNameLinks(m.referencedContactIds ?? [], m.referencedProjectIds ?? []);
   const fullTime = format(new Date(m.created_at), 'PPpp');
   const tokenStr = m.tokens ? `${m.tokens.input ?? '?'}→${m.tokens.output ?? '?'} · ${m.tokens.model ?? ''}` : '';
@@ -171,6 +182,8 @@ function MessageBubble({ m }: { m: any }) {
     );
   }
 
+  const { body, nextActions } = splitNextBlock(m.text ?? '');
+
   // Assistant: no bubble background per brand — text-forward editorial.
   return (
     <div className="flex justify-start group">
@@ -181,7 +194,7 @@ function MessageBubble({ m }: { m: any }) {
             <span className="font-mono">{t.name}</span>
           </div>
         ))}
-        {m.text && (
+        {body && (
           <div className="relative text-[13.5px] leading-relaxed text-foreground prose prose-sm prose-neutral dark:prose-invert max-w-none prose-p:my-1.5 prose-ul:my-1.5 prose-ol:my-1.5 prose-headings:font-semibold prose-headings:tracking-tight prose-a:text-primary">
             <ReactMarkdown
               remarkPlugins={[remarkGfm]}
@@ -190,10 +203,23 @@ function MessageBubble({ m }: { m: any }) {
                 p: ({ children }) => <p>{typeof children === 'string' ? linkifyText(children, links) : children}</p>,
                 li: ({ children }) => <li>{typeof children === 'string' ? linkifyText(children, links) : children}</li>,
               }}
-            >{m.text}</ReactMarkdown>
+            >{body}</ReactMarkdown>
             <div className="absolute -bottom-5 right-0 opacity-0 group-hover:opacity-100 transition-opacity">
-              <CopyButton text={m.text} />
+              <CopyButton text={body} />
             </div>
+          </div>
+        )}
+        {nextActions.length > 0 && onChip && (
+          <div className="pt-1.5 flex flex-wrap gap-1.5">
+            {nextActions.map((a) => (
+              <button
+                key={a}
+                onClick={() => onChip(a)}
+                className="text-[11.5px] px-2.5 py-1 rounded-full bg-foreground/[0.04] text-foreground/80 hover:bg-primary/10 hover:text-primary transition-colors"
+              >
+                {a}
+              </button>
+            ))}
           </div>
         )}
         {m.sources && <SourcesPill sources={m.sources} />}
@@ -204,6 +230,7 @@ function MessageBubble({ m }: { m: any }) {
     </div>
   );
 }
+
 
 function ConversationListOverlay({
   onPick, onClose,
@@ -458,11 +485,16 @@ export function ZaraDock() {
 
   return (
     <>
-      {/* Launcher (closed state) — glassy halo pill, Apple-Intelligence feel */}
+      {/* Launcher (closed state) — glassy halo pill, lifted off the edge so
+          it sits above any preview/native chrome at the bottom. */}
       {!open && (
         <div
           className="fixed z-40 zara-halo"
-          style={{ bottom: 'max(24px, env(safe-area-inset-bottom))', right: 24, borderRadius: 9999 }}
+          style={{
+            bottom: 'calc(max(28px, env(safe-area-inset-bottom)) + var(--bottom-nav-pad, 0px))',
+            right: 28,
+            borderRadius: 9999,
+          }}
         >
           <button
             onClick={() => setOpen(true)}
@@ -479,6 +511,7 @@ export function ZaraDock() {
           </button>
         </div>
       )}
+
 
       {/* Open panel — glass slide-over, no hard border */}
       {open && (
