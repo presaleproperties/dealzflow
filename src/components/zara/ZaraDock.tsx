@@ -607,12 +607,12 @@ export function ZaraDock() {
                   )}
                 </div>
               )}
-              {rendered.map((m) => <MessageBubble key={m.id} m={m} onChip={(t) => onSend(t)} />)}
+              {rendered.map((m) => <MessageBubble key={m.id} m={m} onChip={(t) => onSend(t)} decide={decide} />)}
               {streaming && (
                 <MessageBubble m={{
                   kind: 'assistant', id: 'stream', text: streamText, tools: streamTools, sources: streamSources,
                   created_at: new Date().toISOString(), referencedContactIds: [], referencedProjectIds: [],
-                }} onChip={(t) => onSend(t)} />
+                }} onChip={(t) => onSend(t)} decide={decide} />
               )}
               {streaming && !streamText && streamTools.length === 0 && (
                 <div className="flex items-center gap-2 text-[12px] text-muted-foreground py-1">
