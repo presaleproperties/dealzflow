@@ -354,6 +354,86 @@ function ReadOnlyMessagePreview({ toolName, input }: { toolName: string; input: 
   );
 }
 
+type DeviceKey = 'desktop' | 'tablet' | 'mobile';
+const DEVICE_SPECS: Record<DeviceKey, { label: string; width: number; icon: typeof Monitor }> = {
+  desktop: { label: 'Desktop', width: 720, icon: Monitor },
+  tablet: { label: 'Tablet', width: 540, icon: Tablet },
+  mobile: { label: 'Mobile', width: 375, icon: Smartphone },
+};
+
+function DevicePreview({
+  toolName, subject, body, ctaText, ctaUrl, device,
+}: {
+  toolName: string;
+  subject: string;
+  body: string;
+  ctaText: string;
+  ctaUrl: string;
+  device: DeviceKey;
+}) {
+  const isEmail = toolName === 'draft_email';
+  const spec = DEVICE_SPECS[device];
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const [scale, setScale] = useState(1);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const compute = () => {
+      const available = el.clientWidth - 16;
+      const next = Math.min(1, available / spec.width);
+      setScale(Number.isFinite(next) && next > 0 ? next : 1);
+    };
+    compute();
+    const ro = new ResizeObserver(compute);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [spec.width]);
+
+  const hasCta = isEmail && ctaText && ctaUrl;
+
+  return (
+    <div className="rounded-md border border-border/60 bg-muted/30 p-3">
+      <div className="flex items-center justify-between mb-2 text-[10.5px] uppercase tracking-wider text-muted-foreground">
+        <span>{spec.label} preview</span>
+        <span>{spec.width}px {scale < 1 ? `· ${Math.round(scale * 100)}%` : ''}</span>
+      </div>
+      <div ref={containerRef} className="flex justify-center overflow-hidden">
+        <div
+          style={{
+            width: spec.width,
+            transform: `scale(${scale})`,
+            transformOrigin: 'top center',
+            marginBottom: scale < 1 ? `${-(1 - scale) * 400}px` : 0,
+          }}
+          className="bg-background border border-border rounded-lg shadow-sm overflow-hidden"
+        >
+          {isEmail && (
+            <div className="px-5 py-4 border-b border-border bg-muted/40">
+              <div className="text-[11px] text-muted-foreground mb-1">Subject</div>
+              <div className="text-[16px] font-semibold leading-snug text-foreground break-words">
+                {subject || <span className="italic text-muted-foreground font-normal">No subject</span>}
+              </div>
+            </div>
+          )}
+          <div className="px-5 py-5 text-[15px] leading-[1.65] text-foreground whitespace-pre-wrap break-words font-sans">
+            {body || <span className="italic text-muted-foreground">Empty body</span>}
+          </div>
+          {hasCta && (
+            <div className="px-5 pb-6">
+              <span className="inline-block px-5 py-2.5 text-[14px] font-medium rounded-md bg-primary text-primary-foreground">
+                {ctaText} →
+              </span>
+              <div className="mt-1 text-[11px] text-muted-foreground break-all">{ctaUrl}</div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
 function ToolPill({ tool, onDecide, deciding }: {
   tool: ToolUiState;
   onDecide?: (pending_id: string, decision: 'approve' | 'deny', overrides?: MessageOverrides) => void;
