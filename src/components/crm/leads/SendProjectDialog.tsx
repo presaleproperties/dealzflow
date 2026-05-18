@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Send, Loader2, Mail, ChevronsUpDown, Check, Upload, FileText, Map, DollarSign, AlertCircle } from 'lucide-react';
+import { Send, Loader2, RefreshCw, ChevronsUpDown, Check, Upload, FileText, Map, DollarSign } from 'lucide-react';
 import { formatDistanceToNowStrict } from 'date-fns';
 import { ResponsiveDialog, ResponsiveDialogContent, ResponsiveDialogHeader, ResponsiveDialogTitle } from '@/components/ui/responsive-dialog';
 import { Button } from '@/components/ui/button';
@@ -17,6 +17,8 @@ import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { loadAgentPrefs, saveAgentPrefs, loadContactDraft, saveContactDraft, clearContactDraft } from '@/lib/sendProjectMemory';
 import { useAuth } from '@/hooks/useAuth';
+import { useEmailSettings } from '@/hooks/useEmailSettings';
+import { pickSignatureForKind, useEmailSignatures } from '@/hooks/useEmailSignatures';
 
 interface Props {
   contact: CrmContact;
@@ -24,8 +26,11 @@ interface Props {
   onOpenChange: (open: boolean) => void;
 }
 
-interface Project { slug: string; name: string; city: string | null; status: string | null; presale_slug: string | null }
+interface Project { id: string; slug: string | null; name: string; city: string | null; status: string | null; presale_slug: string | null; updated_at: string | null }
 interface Template { slug: string; name: string; description?: string }
+
+const slugifyProjectName = (name: string) => name.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+const projectOptionValue = (project: Project) => project.presale_slug || project.slug || slugifyProjectName(project.name);
 
 // (Legacy FOLLOWUP_SLUG removed — funnel picker drives enroll_followup_slug.)
 
@@ -58,18 +63,16 @@ export function SendProjectDialog({ contact, open, onOpenChange }: Props) {
   const { data: projects = [] } = useQuery<Project[]>({
     queryKey: ['send-project.projects'],
     queryFn: async () => {
-      // Show ALL active projects. We previously filtered to rows that already
-      // had a `presale_slug` populated, but the sync sometimes leaves that
-      // column null even for valid Presale projects. The render-and-send
-      // edge fn falls back to the local slug when no presale_slug exists,
-      // so it's safe (and far more complete) to surface every active project.
-      const { data } = await supabase
+      // Show every active catalog row. Older imports may be missing `slug`, so
+      // the picker falls back to presale_slug/name-derived slugs and the edge
+      // function can still resolve against Presale's backend.
+      const { data, error } = await supabase
         .from('crm_projects')
-        .select('slug, name, city, status, presale_slug')
+        .select('id, slug, name, city, status, presale_slug, updated_at')
         .eq('is_active', true)
-        .not('slug', 'is', null)
         .order('name')
-        .limit(1000);
+        .limit(5000);
+      if (error) throw error;
       return (data ?? []) as Project[];
     },
     staleTime: 5 * 60 * 1000,
@@ -135,6 +138,8 @@ export function SendProjectDialog({ contact, open, onOpenChange }: Props) {
   // ─── Local state ─────────────────────────────────────────────────────────
   const queryClient = useQueryClient();
   const { user } = useAuth();
+  const { data: emailSettings } = useEmailSettings();
+  const { data: signatures = [] } = useEmailSignatures();
   const agentKey = user?.id ?? 'anon';
   const [projectSlug, setProjectSlug] = useState<string>('');
   const [templateSlug, setTemplateSlug] = useState<string>('');
@@ -159,6 +164,19 @@ export function SendProjectDialog({ contact, open, onOpenChange }: Props) {
   const [ctaCallNow, setCtaCallNow] = useState(true);
   // CTA URL override (per-email; blank = use Presale default)
   const [projectDetailsUrlOverride, setProjectDetailsUrlOverride] = useState<string>('');
+  const [syncingProjects, setSyncingProjects] = useState(false);
+  const selectedProject = useMemo(() => projects.find((p) => projectOptionValue(p) === projectSlug) ?? null, [projects, projectSlug]);
+  const projectStats = useMemo(() => {
+    const linked = projects.filter((p) => Boolean(p.presale_slug || p.slug)).length;
+    const lastSyncedMs = projects.reduce((max, p) => {
+      const ms = p.updated_at ? new Date(p.updated_at).getTime() : 0;
+      return Number.isFinite(ms) ? Math.max(max, ms) : max;
+    }, 0);
+    return { total: projects.length, linked, needsRepair: projects.length - linked, lastSyncedAt: lastSyncedMs ? new Date(lastSyncedMs) : null };
+  }, [projects]);
+  const activeSignature = useMemo(() => pickSignatureForKind(signatures, 'full') ?? signatures.find((s) => s.is_default) ?? signatures[0] ?? null, [signatures]);
+  const senderName = emailSettings?.sender_name || user?.email || 'Sender';
+  const senderEmail = emailSettings?.reply_to || user?.email || '';
 
   // Hydrate per-agent defaults (personal note + CTA toggles) once per open.
   const hydratedRef = useRef(false);
