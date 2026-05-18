@@ -24,6 +24,8 @@ import { SlashCommandPalette } from '@/components/crm/zara/SlashCommandPalette';
 import { ZaraKillSwitch } from '@/components/crm/zara/ZaraKillSwitch';
 import { AutonomyControl } from '@/components/crm/zara/AutonomyControl';
 import { DynamicSuggestions } from '@/components/crm/zara/DynamicSuggestions';
+import { useZaraLeadMemory } from '@/hooks/useZaraLeadMemory';
+import { useZaraNoteIntelligence } from '@/hooks/useZaraNoteIntelligence';
 
 
 type Conv = {
