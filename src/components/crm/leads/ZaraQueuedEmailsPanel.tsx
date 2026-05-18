@@ -282,15 +282,15 @@ export function ZaraQueuedEmailsPanel({ contactId }: { contactId: string }) {
                         </>
                       ) : (
                         <>
+                          <Button size="sm" disabled={busy} onClick={() => sendNow(row)} className="h-7 gap-1.5">
+                            {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
+                            {row.needs_review ? 'Approve & send' : 'Send now'}
+                          </Button>
                           {row.needs_review && (
-                            <Button size="sm" disabled={busy} onClick={() => approve(row)} className="h-7 gap-1.5">
-                              {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
-                              Approve
+                            <Button size="sm" variant="outline" disabled={busy} onClick={() => approve(row)} className="h-7 gap-1.5">
+                              <Check className="h-3.5 w-3.5" /> Approve only
                             </Button>
                           )}
-                          <Button size="sm" variant="outline" disabled={busy} onClick={() => sendNow(row)} className="h-7 gap-1.5">
-                            <Send className="h-3.5 w-3.5" /> Send now
-                          </Button>
                           <Button size="sm" variant="outline" disabled={busy} onClick={() => startEdit(row)} className="h-7 gap-1.5">
                             <Pencil className="h-3.5 w-3.5" /> Edit
                           </Button>
