@@ -47,8 +47,12 @@ function escapeHtml(s: string) {
     .replace(/'/g, "&#39;");
 }
 
-/** Render the agent's personal note as a styled block. Returns "" if blank. */
-function renderPersonalNoteBlock(note: string | null | undefined): string {
+/** Render the agent's personal note as a styled block. Returns "" if blank.
+ *  Designed to feel integrated with the project hero card below it — soft
+ *  warm tint, no harsh rail, eyebrow label "A note from {first name}", and
+ *  a -8px bottom margin so it visually connects to the hero image.
+ */
+function renderPersonalNoteBlock(note: string | null | undefined, agentFirstName?: string | null): string {
   const clean = (note ?? "").trim();
   if (!clean) return "";
   // Strip any HTML the agent might have pasted, keep paragraph breaks.
@@ -59,10 +63,15 @@ function renderPersonalNoteBlock(note: string | null | undefined): string {
     .trim();
   const paragraphs = stripped
     .split(/\n{2,}/)
-    .map((p) => `<p style="margin:0 0 12px;line-height:1.55;color:#222;">${escapeHtml(p).replace(/\n/g, "<br/>")}</p>`)
-    .join("");
-  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 16px;">
-    <tr><td style="background:#FAF7F0;border-left:3px solid #D7A542;padding:14px 18px;border-radius:4px;font-family:Helvetica,Arial,sans-serif;font-size:15px;color:#222;">
+    .map((p) => `<p style="margin:0 0 10px;line-height:1.6;color:#1f2937;font-size:15px;">${escapeHtml(p).replace(/\n/g, "<br/>")}</p>`)
+    .join("")
+    .replace(/<p([^>]*)>(?![\s\S]*<p)/, '<p$1 style="margin:0;line-height:1.6;color:#1f2937;font-size:15px;">'); // last <p> no bottom margin
+  const eyebrow = agentFirstName
+    ? `A note from ${escapeHtml(agentFirstName)}`
+    : `A personal note`;
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 -10px;">
+    <tr><td style="background:#FBF8F2;border:1px solid #EFE6D2;border-bottom:none;border-radius:10px 10px 0 0;padding:18px 22px 22px;font-family:Helvetica,Arial,sans-serif;">
+      <div style="font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:#9A7A2E;font-weight:600;margin:0 0 8px;">${eyebrow}</div>
       ${paragraphs}
     </td></tr>
   </table>`;
@@ -583,7 +592,8 @@ Deno.serve(async (req) => {
   // We post-process to inject the agent's personal note as a styled block
   // above the project card, and to honor the agent's optional subject
   // override from the composer.
-  const noteHtml = renderPersonalNoteBlock(personal_note);
+  const agentFirstName = (agentName || "").trim().split(/\s+/)[0] || null;
+  const noteHtml = renderPersonalNoteBlock(personal_note, agentFirstName);
   let html_final = html_rendered;
   if (noteHtml) {
     html_final = injectPersonalNote(html_final, noteHtml);
