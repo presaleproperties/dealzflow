@@ -126,14 +126,12 @@ Deno.test({
       assert(draft.draft_text?.length > 0, "draft_text is empty");
       assertEquals(draft.status, "pending", `expected pending, got ${draft.status}`);
 
-      // ── 3. EDIT — agent tweaks before sending
+      // ── 3. EDIT — agent tweaks before sending. In the real UI the edit is
+      // held in local state and shipped as `finalText` to execute-send (the
+      // draft row itself is updated server-side). We mirror that here rather
+      // than writing zara_suggested_replies directly (sandbox role can't UPDATE).
       const editedText = `${draft.draft_text}\n\n— Edited by agent during E2E test.`;
-      await sql`
-        UPDATE public.zara_suggested_replies
-        SET draft_text = ${editedText}
-        WHERE id = ${draftId}::uuid
-      `;
-      log("3.edit", `applied agent edit`, {
+      log("3.edit", `held edit locally for execute-send`, {
         edit_chars_added: editedText.length - draft.draft_text.length,
       });
 
