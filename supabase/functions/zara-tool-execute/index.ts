@@ -406,8 +406,18 @@ async function project_details(args: any) {
   else return fail("slug or id required");
   const { data, error } = await q.maybeSingle();
   if (error) return fail(error.message);
-  if (!data) return fail("project not found");
-  return ok({ project: data });
+  if (data) return ok({ project: data });
+  // Bridge fallback by slug — Presale is source of truth.
+  if (args.slug) {
+    try {
+      const { presaleBridge } = await import("../_shared/presale-bridge.ts");
+      const bp = await presaleBridge.getProject(args.slug);
+      if (bp && (bp as any).slug) return ok({ project: bp, source: "presale-bridge" });
+    } catch (e) {
+      console.warn("[project_details] bridge fallback failed", (e as Error).message);
+    }
+  }
+  return fail("project not found");
 }
 
 async function recommend_projects_for_lead(args: any) {
