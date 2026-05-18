@@ -592,7 +592,8 @@ Deno.serve(async (req) => {
   // We post-process to inject the agent's personal note as a styled block
   // above the project card, and to honor the agent's optional subject
   // override from the composer.
-  const noteHtml = renderPersonalNoteBlock(personal_note);
+  const agentFirstName = (agentName || "").trim().split(/\s+/)[0] || null;
+  const noteHtml = renderPersonalNoteBlock(personal_note, agentFirstName);
   let html_final = html_rendered;
   if (noteHtml) {
     html_final = injectPersonalNote(html_final, noteHtml);
