@@ -944,6 +944,10 @@ export default function CrmChatThreadPage({ embedded = false }: CrmChatThreadPag
                 className="ml-auto underline underline-offset-2 font-medium"
                 onClick={() => mine.filter((i) => i.status === 'failed').forEach((i) => outbox.retry(i.id))}
               >Retry all</button>
+              <button
+                className="underline underline-offset-2 font-medium opacity-80 hover:opacity-100"
+                onClick={() => mine.filter((i) => i.status === 'failed').forEach((i) => outbox.remove(i.id))}
+              >Discard all</button>
             </div>
           );
         }
