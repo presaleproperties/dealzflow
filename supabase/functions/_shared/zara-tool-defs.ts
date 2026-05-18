@@ -68,15 +68,15 @@ export const ZARA_TOOLS: ZaraTool[] = [
   {
     name: "draft_email",
     description:
-      "Draft an email to a lead. The body you pass is COPY only — the executor sends it to Presale Properties auto-templates for the final branded render and agent signature. Never create, save, update, or select CRM email templates. Pass `purpose` as the intent: greeting | first_touch | follow_up | reactivation | neighborhood | project_info | newsletter | market_update | project_match | send_project_details. SMS/WhatsApp drafts stay plain text; email becomes Presale-rendered HTML.",
+      "Draft an email to a lead. The body you pass is COPY only — the executor sends it to Presale Properties auto-templates for the final branded render and agent signature. Never create, save, update, or select CRM email templates.\n\nThere are exactly TWO Presale auto-templates Zara can trigger:\n  • `project_details`  → Template A (`auto_project_details_docs`): full project card + brochure/floorplan/pricing CTAs. Use for first send of a specific project, post-download follow-up, or any reply where the lead asked for docs/specs.\n  • `follow_up`        → Template B (`auto_agent_followup`): personal agent note with a small project summary, no doc CTAs. Use for greetings, check-ins, nurture, reactivation, neighborhood chat, market updates, newsletters.\n\nPass `purpose` as one of: project_details | follow_up. Legacy aliases (`send_project_details`, `project_match`, `project_info` → project_details; `greeting`, `first_touch`, `reactivation`, `neighborhood`, `newsletter`, `market_update` → follow_up) are auto-mapped server-side. SMS/WhatsApp drafts stay plain text; email becomes Presale-rendered HTML.",
     input_schema: {
       type: "object",
       properties: {
         contact_id: { type: "string" },
         subject: { type: "string" },
-        body: { type: "string", description: "Plain copy (paragraphs separated by blank lines). Do NOT pass raw HTML — the executor wraps it." },
-        purpose: { type: "string", description: "Intent key — drives Presale auto-template selection." },
-        cta_text: { type: "string", description: "Optional CTA button label." },
+        body: { type: "string", description: "Plain copy (paragraphs separated by blank lines). Do NOT pass raw HTML — the executor wraps it. Proofread for typos before submitting." },
+        purpose: { type: "string", enum: ["project_details", "follow_up"], description: "project_details = Presale Template A (with brochure/floorplan CTAs). follow_up = Presale Template B (personal note)." },
+        cta_text: { type: "string", description: "Optional CTA button label (Template B only — Template A renders its own doc CTAs)." },
         cta_url: { type: "string", description: "Optional CTA destination URL." },
       },
       required: ["contact_id", "body"],
