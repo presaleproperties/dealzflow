@@ -678,10 +678,91 @@ export default function ZaraCockpitPage() {
     return out;
   }, [messages, pendingByUseId]);
 
+  // Mobile rail drawer
+  const [railOpen, setRailOpen] = useState(false);
+  useKeyboardInset(true);
+
+  const railContent = (
+    <>
+        <div className="p-3 border-b border-border/60 space-y-2">
+          <Button className="w-full bg-primary text-primary-foreground hover:bg-primary/90" size="sm" onClick={() => { newConv.mutate(); setRailOpen(false); }}>
+            <Plus className="w-3.5 h-3.5 mr-1.5" />
+            New conversation
+          </Button>
+          <div className="relative">
+            <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+            <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search" className="h-9 pl-7 text-[14px] sm:text-[12px] sm:h-8" />
+          </div>
+        </div>
+        <div className="flex-1 min-h-0 overflow-y-auto p-1.5 space-y-0.5">
+          {filteredConvs.length === 0 && (
+            <div className="text-center text-[11px] text-muted-foreground py-8 px-3">
+              No conversations yet. Start one with "New conversation".
+            </div>
+          )}
+          {filteredConvs.map((c) => (
+            <button
+              key={c.id}
+              onClick={() => { setActiveId(c.id); setRailOpen(false); }}
+              onContextMenu={(e) => {
+                e.preventDefault();
+                const choice = window.prompt('Action: pin | archive', 'pin');
+                if (choice === 'pin') togglePin(c);
+                else if (choice === 'archive') archive(c);
+              }}
+              className={`w-full text-left px-2.5 py-2.5 sm:py-2 rounded-md transition-colors ${
+                activeId === c.id ? 'bg-primary/10 text-foreground' : 'hover:bg-muted/60 text-foreground/90'
+              }`}
+            >
+              <div className="flex items-center gap-1.5 mb-0.5">
+                {c.pinned && <Pin className="w-3 h-3 text-primary shrink-0" />}
+                <span className="text-[13px] font-medium truncate">{c.title}</span>
+              </div>
+              <div className="text-[10.5px] text-muted-foreground">
+                {c.last_message_at
+                  ? formatDistanceToNow(new Date(c.last_message_at), { addSuffix: true })
+                  : formatDistanceToNow(new Date(c.created_at), { addSuffix: true })}
+              </div>
+            </button>
+          ))}
+        </div>
+        <div className="p-2.5 border-t border-border/60 space-y-1.5">
+          <Link to="/crm/zara/queue" onClick={() => setRailOpen(false)} className="flex items-center justify-between text-[12px] px-2 py-2 sm:py-1.5 rounded-md hover:bg-muted/60 transition-colors">
+            <span className="flex items-center gap-1.5"><Inbox className="w-3.5 h-3.5" />Approval queue</span>
+            <span className="flex items-center gap-1">
+              {pendingCount > 0 && <Pill size="sm" tone="warning">{pendingCount}</Pill>}
+              <ChevronRight className="w-3 h-3 text-muted-foreground" />
+            </span>
+          </Link>
+          <Link to="/crm/zara/projects" onClick={() => setRailOpen(false)} className="flex items-center justify-between text-[12px] px-2 py-2 sm:py-1.5 rounded-md hover:bg-muted/60 transition-colors">
+            <span className="flex items-center gap-1.5"><Building2 className="w-3.5 h-3.5" />Project catalog</span>
+            <ChevronRight className="w-3 h-3 text-muted-foreground" />
+          </Link>
+          <Link to="/crm/zara/training" onClick={() => setRailOpen(false)} className="flex items-center justify-between text-[12px] px-2 py-2 sm:py-1.5 rounded-md hover:bg-muted/60 transition-colors">
+            <span className="flex items-center gap-1.5"><Brain className="w-3.5 h-3.5" />Self-awareness</span>
+            <ChevronRight className="w-3 h-3 text-muted-foreground" />
+          </Link>
+          <Link to="/crm/zara/engagement" onClick={() => setRailOpen(false)} className="flex items-center justify-between text-[12px] px-2 py-2 sm:py-1.5 rounded-md hover:bg-muted/60 transition-colors">
+            <span className="flex items-center gap-1.5"><ActivityIcon className="w-3.5 h-3.5" />Engagement status</span>
+            <ChevronRight className="w-3 h-3 text-muted-foreground" />
+          </Link>
+          <Link to="/crm/zara/audit" onClick={() => setRailOpen(false)} className="flex items-center justify-between text-[12px] px-2 py-2 sm:py-1.5 rounded-md hover:bg-muted/60 transition-colors">
+            <span className="flex items-center gap-1.5"><FileText className="w-3.5 h-3.5" />Outbound audit</span>
+            <ChevronRight className="w-3 h-3 text-muted-foreground" />
+          </Link>
+          <Link to="/crm/settings#zara" onClick={() => setRailOpen(false)} className="flex items-center justify-between text-[12px] px-2 py-2 sm:py-1.5 rounded-md hover:bg-muted/60 transition-colors">
+            <span>Mode</span>
+            <Pill size="sm" tone={modePill.tone}>{modePill.label}</Pill>
+          </Link>
+        </div>
+    </>
+  );
+
   return (
     <div className="flex flex-1 min-h-0 h-full -mx-4 -my-4 bg-background">
-      {/* LEFT — Conversations rail */}
-      <aside className="w-[240px] shrink-0 border-r border-border/60 flex flex-col min-h-0">
+      {/* LEFT — Conversations rail (desktop) */}
+      <aside className="hidden md:flex w-[240px] shrink-0 border-r border-border/60 flex-col min-h-0">
+
         <div className="p-3 border-b border-border/60 space-y-2">
           <Button className="w-full bg-primary text-primary-foreground hover:bg-primary/90" size="sm" onClick={() => newConv.mutate()}>
             <Plus className="w-3.5 h-3.5 mr-1.5" />
