@@ -90,6 +90,8 @@ export default function ZaraTrainingChatPage() {
   const [pendingFeedbackFor, setPendingFeedbackFor] = useState<{ messageId: string; kind: string; saveAs?: "winning" | "bad" } | null>(null);
   const [feedbackNote, setFeedbackNote] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
+  useKeyboardInset(true);
+
 
   useEffect(() => {
     setActiveSessionId(routeSessionId ?? null);
