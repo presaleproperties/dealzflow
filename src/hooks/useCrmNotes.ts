@@ -73,6 +73,14 @@ export function useAddNote() {
           },
         });
       }
+      // Fire-and-forget: Zara analyzes the note for relationship intelligence.
+      const noteId = (data as { id?: string } | null)?.id;
+      const skipTypes = new Set(['import_archive', 'system', 'ai_summary', 'website_behavior']);
+      if (noteId && !skipTypes.has(note.note_type || 'manual')) {
+        supabase.functions
+          .invoke('zara-analyze-note', { body: { note_id: noteId } })
+          .catch((e) => console.warn('zara-analyze-note (note save) failed', e));
+      }
     },
     onSuccess: (_, vars) => {
       qc.invalidateQueries({ queryKey: ['crm-notes', vars.contact_id] });
