@@ -27,6 +27,7 @@ import { SystemActivityCluster, isSystemishNote } from './SystemActivityCluster'
 import { EmailThreadStack, SmsRunStack, normalizeSubject } from './ThreadStack';
 import { Pin } from 'lucide-react';
 import { ZaraReplyChip } from '@/components/crm/leads/ZaraReplyChip';
+import { ZaraQueuedEmailsPanel } from '@/components/crm/leads/ZaraQueuedEmailsPanel';
 import { HandoffBriefBanner } from '@/components/crm/zara/HandoffBriefBanner';
 
 
