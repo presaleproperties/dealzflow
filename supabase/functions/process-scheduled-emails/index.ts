@@ -39,18 +39,18 @@ function rewriteLinks(html: string, trackingId: string): string {
   );
 }
 
-async function buildBrandBanner(supabase: any, userId: string | null | undefined): Promise<string> {
-  if (!userId) return "";
+async function getBrandSettings(supabase: any, userId: string | null | undefined): Promise<{ logoUrl: string | null; logoAlt: string | null }> {
+  if (!userId) return { logoUrl: null, logoAlt: null };
   const { data: settings } = await supabase
     .from("crm_email_settings")
     .select("sender_name,brand_logo_url,brand_logo_alt,brand_logo_enabled")
     .eq("user_id", userId)
     .maybeSingle();
-  if (!settings || settings.brand_logo_enabled !== true) return "";
-  const url = (settings.brand_logo_url ?? "").trim();
-  if (!/^https:\/\//i.test(url)) return "";
-  const alt = ((settings.brand_logo_alt ?? settings.sender_name ?? "Logo") || "Logo").replace(/[<>"']/g, "");
-  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;margin:0 0 20px 0;"><tr><td align="center" style="padding:8px 0 16px 0;border-bottom:1px solid #ececec;"><img src="${url}" alt="${alt}" style="display:block;max-height:64px;max-width:240px;height:auto;width:auto;border:0;outline:none;text-decoration:none;" /></td></tr></table>`;
+  if (!settings || settings.brand_logo_enabled !== true) return { logoUrl: null, logoAlt: null };
+  return {
+    logoUrl: settings.brand_logo_url ?? null,
+    logoAlt: settings.brand_logo_alt ?? settings.sender_name ?? null,
+  };
 }
 
 type SendResult = { ok: true; provider: "gmail" | "presale"; messageId?: string | null; detail?: string } | { ok: false; provider: "gmail" | "presale" | "none"; error: string; retryable: boolean };
