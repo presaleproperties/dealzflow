@@ -2,3 +2,10 @@ project_id = "svbilqvudkkdhslxebce"
 
 [functions.zara-public-chat]
 verify_jwt = false
+
+# Telnyx webhooks are signature-verified, not JWT.
+[functions.telnyx-messaging-webhook]
+verify_jwt = false
+
+[functions.telnyx-voice-webhook]
+verify_jwt = false
