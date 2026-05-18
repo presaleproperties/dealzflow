@@ -26,6 +26,7 @@ import { AiSummaryCard, GenerateAiSummaryButton } from './AiSummaryCard';
 import { SystemActivityCluster, isSystemishNote } from './SystemActivityCluster';
 import { EmailThreadStack, SmsRunStack, normalizeSubject } from './ThreadStack';
 import { Pin } from 'lucide-react';
+import { ZaraReplyChip } from '@/components/crm/leads/ZaraReplyChip';
 
 
 type FilterType = 'all' | 'manual' | 'email' | 'sms' | 'call_log' | 'web' | 'system';
@@ -346,6 +347,10 @@ export function CenterColumn({ contact, onCall, onText, onEmail, onTask, onShowi
       <TabsContent value="overview" className="flex-1 overflow-y-auto mt-0 px-0 py-2.5 md:p-6 space-y-2.5 md:space-y-5">
         <div className="px-3 md:px-0">
           <QuickActionBar contact={contact} />
+        </div>
+
+        <div className="px-3 md:px-0">
+          <ZaraReplyChip contactId={contact.id} />
         </div>
 
         <div className="px-3 md:px-0">
