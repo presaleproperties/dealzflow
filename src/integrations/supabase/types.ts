@@ -7500,11 +7500,13 @@ export type Database = {
           body: string | null
           contact_id: string | null
           created_at: string
+          created_by: string | null
           dedupe_key: string
           id: string
           kind: string
           payload: Json
           resolved_at: string | null
+          scheduled_for: string | null
           title: string
         }
         Insert: {
@@ -7512,11 +7514,13 @@ export type Database = {
           body?: string | null
           contact_id?: string | null
           created_at?: string
+          created_by?: string | null
           dedupe_key: string
           id?: string
           kind: string
           payload?: Json
           resolved_at?: string | null
+          scheduled_for?: string | null
           title: string
         }
         Update: {
@@ -7524,11 +7528,13 @@ export type Database = {
           body?: string | null
           contact_id?: string | null
           created_at?: string
+          created_by?: string | null
           dedupe_key?: string
           id?: string
           kind?: string
           payload?: Json
           resolved_at?: string | null
+          scheduled_for?: string | null
           title?: string
         }
         Relationships: [

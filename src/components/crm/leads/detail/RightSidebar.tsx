@@ -11,6 +11,7 @@ import type { CrmContact } from '@/hooks/useCrmContacts';
 import type { LeadScore } from './types';
 import { ZaraLeadCard } from './ZaraLeadCard';
 import { ZaraRemembersCard } from '@/components/crm/leads/ZaraRemembersCard';
+import { ZaraEngagePanel } from '@/components/crm/leads/ZaraEngagePanel';
 
 interface Props {
   contact: CrmContact;
@@ -72,6 +73,9 @@ export function RightSidebar({
         onAddTask={onAddTask}
         onAddShowing={onAddShowing}
       />
+
+      {/* Engage Zara — primary in-lead command surface */}
+      <ZaraEngagePanel contact={contact} />
 
       {/* Zara remembers — structured facts from rolling memory */}
       <ZaraRemembersCard contactId={contact.id} />

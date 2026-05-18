@@ -290,6 +290,32 @@ Draft Zara's reply now. Return ONLY the JSON object.`;
     const assignedUserId = await resolveAssignedToUuid(admin, contact.assigned_to);
     const safeAssignedTo = coerceUuid(assignedUserId);
 
+    // 8c. Email branding — render the model's plain draft inside the team's
+    //     branded HTML scaffold + agent signature so the email looks like the
+    //     other agent emails (not bare <p>{{text}}</p>). SMS / WhatsApp stay
+    //     plain text. Failures are non-fatal — execute-send falls back to a
+    //     plain wrapper.
+    let draft_html: string | null = null;
+    let template_id_used: string | null = null;
+    let renderedSubject: string | null = parsed.draft_subject ?? null;
+    if (channel === 'email') {
+      try {
+        const { renderBrandedEmail } = await import('../_shared/zara-email-render.ts');
+        const rendered = await renderBrandedEmail(admin, {
+          userId: assignedUserId ?? '00000000-0000-0000-0000-000000000000',
+          contactId,
+          intent: (parsed.intent ?? modelIntent) as string,
+          bodyText: parsed.draft_text ?? '',
+          subject: renderedSubject,
+        });
+        draft_html = rendered.html;
+        template_id_used = rendered.template_id_used;
+        if (rendered.subject) renderedSubject = rendered.subject;
+      } catch (e) {
+        console.warn('[zara-suggest-reply] branded email render failed', e);
+      }
+    }
+
     // 9. Insert draft
     const { data: draft, error: insertErr } = await admin
       .from('zara_suggested_replies')
@@ -300,7 +326,9 @@ Draft Zara's reply now. Return ONLY the JSON object.`;
         inbound_text: inboundText,
         inbound_at: inboundAt ?? new Date().toISOString(),
         draft_text: parsed.draft_text ?? '',
-        draft_subject: parsed.draft_subject ?? null,
+        draft_html,
+        template_id_used,
+        draft_subject: renderedSubject,
         draft_language: parsed.draft_language ?? detectedLang,
         intent: parsed.intent ?? modelIntent,
         confidence: Number(parsed.confidence ?? 0),

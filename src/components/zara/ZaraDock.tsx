@@ -162,8 +162,8 @@ function MessageBubble({ m }: { m: any }) {
     return (
       <div className="flex justify-end group">
         <div className="max-w-[88%]">
-          <div className="rounded-2xl bg-primary text-primary-foreground px-3 py-2 text-[13px] whitespace-pre-wrap">{m.text}</div>
-          <div className="text-[10px] text-muted-foreground text-right mt-0.5" title={fullTime}>
+          <div className="rounded-2xl bg-primary text-primary-foreground px-3.5 py-2 text-[13px] leading-relaxed whitespace-pre-wrap shadow-sm">{m.text}</div>
+          <div className="text-[10px] text-muted-foreground text-right mt-1" title={fullTime}>
             {formatDistanceToNow(new Date(m.created_at), { addSuffix: true })}
           </div>
         </div>
@@ -171,9 +171,10 @@ function MessageBubble({ m }: { m: any }) {
     );
   }
 
+  // Assistant: no bubble background per brand — text-forward editorial.
   return (
     <div className="flex justify-start group">
-      <div className="max-w-[92%] w-full space-y-1">
+      <div className="max-w-full w-full space-y-1.5">
         {(m.tools ?? []).map((t: any) => (
           <div key={t.id} className="rounded-md border border-border/60 bg-card text-[11px] px-2 py-1 inline-flex items-center gap-1.5">
             <Pill size="sm" tone={t.status === 'error' ? 'danger' : t.status === 'pending' ? 'warning' : 'success'}>{t.status}</Pill>
@@ -181,7 +182,7 @@ function MessageBubble({ m }: { m: any }) {
           </div>
         ))}
         {m.text && (
-          <div className="relative rounded-2xl bg-muted/40 border border-border/40 px-3 py-2 text-[13px] prose prose-sm prose-neutral dark:prose-invert max-w-none prose-p:my-1 prose-ul:my-1 prose-ol:my-1">
+          <div className="relative text-[13.5px] leading-relaxed text-foreground prose prose-sm prose-neutral dark:prose-invert max-w-none prose-p:my-1.5 prose-ul:my-1.5 prose-ol:my-1.5 prose-headings:font-semibold prose-headings:tracking-tight prose-a:text-primary">
             <ReactMarkdown
               remarkPlugins={[remarkGfm]}
               components={{
@@ -506,12 +507,20 @@ export function ZaraDock() {
             {/* Body */}
             <div ref={scrollerRef} className="flex-1 min-h-0 overflow-y-auto px-3 py-3 space-y-2.5">
               {rendered.length === 0 && !streaming && (
-                <div className="text-center py-8">
-                  <div className="w-10 h-10 mx-auto mb-2 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center">
+                <div className="text-center py-10 px-2">
+                  <div className="w-12 h-12 mx-auto mb-3 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/30 flex items-center justify-center shadow-sm">
                     <Sparkles className="w-5 h-5 text-primary" />
                   </div>
-                  <div className="text-[13px] font-semibold tracking-tight">Ask Zara about {pageContext.label.toLowerCase()}</div>
-                  <p className="text-[11.5px] text-muted-foreground mt-1">She sees the page you're on.</p>
+                  <div className="text-[14px] font-semibold tracking-tight">Ask Zara about {pageContext.label.toLowerCase()}</div>
+                  <p className="text-[11.5px] text-muted-foreground mt-1 max-w-[260px] mx-auto leading-relaxed">
+                    She sees the page you're on — leads, projects, calendar, all of it.
+                  </p>
+                  {pageContext.contact_id && (
+                    <div className="mt-3 inline-flex items-center gap-1.5 text-[10.5px] px-2 py-1 rounded-full border border-primary/30 bg-primary/5 text-primary">
+                      <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+                      Pinned to this lead
+                    </div>
+                  )}
                 </div>
               )}
               {rendered.map((m) => <MessageBubble key={m.id} m={m} />)}
@@ -522,7 +531,14 @@ export function ZaraDock() {
                 }} />
               )}
               {streaming && !streamText && streamTools.length === 0 && (
-                <div className="flex items-center gap-2 text-[11px] text-muted-foreground"><Loader2 className="w-3 h-3 animate-spin" />Thinking…</div>
+                <div className="flex items-center gap-2 text-[12px] text-muted-foreground py-1">
+                  <span className="inline-flex gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-primary/60 animate-pulse" style={{ animationDelay: '0ms' }} />
+                    <span className="w-1.5 h-1.5 rounded-full bg-primary/60 animate-pulse" style={{ animationDelay: '150ms' }} />
+                    <span className="w-1.5 h-1.5 rounded-full bg-primary/60 animate-pulse" style={{ animationDelay: '300ms' }} />
+                  </span>
+                  Thinking…
+                </div>
               )}
             </div>
 
