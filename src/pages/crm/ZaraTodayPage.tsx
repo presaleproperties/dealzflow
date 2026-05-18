@@ -8,7 +8,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 
 function KindBadge({ kind, payload }: { kind: ZaraTodayItem['kind']; payload: any }) {
-  if (kind === 'draft') return <Pill tone="gold" size="sm">{payload?.channel ?? 'reply'}</Pill>;
+  if (kind === 'draft') return <Pill tone="primary" size="sm">{payload?.channel ?? 'reply'}</Pill>;
   if (kind === 'handoff') return <Pill tone="info" size="sm">handoff</Pill>;
   const k = payload?.nudge_kind ?? 'nudge';
   return <Pill tone={k === 'risk_scan' ? 'danger' : 'neutral'} size="sm">{String(k).replace('_',' ')}</Pill>;
