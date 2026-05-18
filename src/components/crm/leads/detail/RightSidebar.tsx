@@ -9,9 +9,7 @@ import { UpcomingMini } from '@/components/crm/leads/UpcomingMini';
 import { RecentCallsCard } from '@/components/crm/leads/RecentCallsCard';
 import type { CrmContact } from '@/hooks/useCrmContacts';
 import type { LeadScore } from './types';
-import { ZaraLeadCard } from './ZaraLeadCard';
-import { ZaraRemembersCard } from '@/components/crm/leads/ZaraRemembersCard';
-import { ZaraEngagePanel } from '@/components/crm/leads/ZaraEngagePanel';
+import { ZaraSection } from './ZaraSection';
 
 interface Props {
   contact: CrmContact;
@@ -74,17 +72,9 @@ export function RightSidebar({
         onAddShowing={onAddShowing}
       />
 
-      {/* Engage Zara — primary in-lead command surface */}
-      <ZaraEngagePanel contact={contact} />
+      {/* Zara — unified memory + actions + composer */}
+      <ZaraSection contact={contact} />
 
-      {/* Zara remembers — structured facts from rolling memory */}
-      <ZaraRemembersCard contactId={contact.id} />
-
-      {/* Zara — AI assistant memory & draft toggle */}
-      <ZaraLeadCard
-        contactId={contact.id}
-        contactName={[contact.first_name, contact.last_name].filter(Boolean).join(' ').trim() || '(unknown)'}
-      />
 
       {/* ③ Engagement (Emails / Behavior) */}
       <EngagementTabs contact={contact} />
