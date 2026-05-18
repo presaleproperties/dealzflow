@@ -224,7 +224,9 @@ function EditableMessagePreview({
   const [body, setBody] = useState(initialBody);
   const [ctaText, setCtaText] = useState(initialCtaText);
   const [ctaUrl, setCtaUrl] = useState(initialCtaUrl);
-  const showCta = isEmail && (initialCtaText || initialCtaUrl);
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const hasCta = !!(initialCtaText || initialCtaUrl);
+  const showCtaSection = isEmail; // always allow editing CTA on emails, but hidden inside details
 
   useEffect(() => {
     const o: MessageOverrides = {};
@@ -239,7 +241,7 @@ function EditableMessagePreview({
   return (
     <div className="rounded-md border border-border/60 bg-background overflow-hidden">
       {isEmail && (
-        <div className="px-3 py-2 border-b border-border/60 bg-muted/30 space-y-1">
+        <div className="px-3 py-2 border-b border-border/60 bg-muted/20">
           <input
             type="text"
             value={subject}
@@ -248,45 +250,68 @@ function EditableMessagePreview({
             maxLength={300}
             className="w-full bg-transparent outline-none text-[13px] font-semibold leading-snug placeholder:text-muted-foreground placeholder:font-normal"
           />
-          {purpose && (
-            <div className="text-[10.5px] uppercase tracking-wider text-muted-foreground">
-              {purpose === 'project_details' ? 'Project details template' : 'Follow-up template'}
-            </div>
-          )}
         </div>
       )}
       <textarea
         value={body}
         onChange={(e) => setBody(e.target.value)}
         placeholder="Message body"
-        rows={Math.min(20, Math.max(5, body.split('\n').length + 1))}
+        rows={Math.min(20, Math.max(6, body.split('\n').length + 1))}
         maxLength={20000}
-        className="w-full bg-transparent outline-none resize-y px-3 py-2.5 text-[13px] leading-relaxed text-foreground placeholder:text-muted-foreground min-h-[120px]"
+        className="w-full bg-transparent outline-none resize-y px-3 py-3 text-[13.5px] leading-[1.65] text-foreground placeholder:text-muted-foreground min-h-[160px]"
       />
-      {showCta && (
-        <div className="px-3 pb-3 pt-1 grid grid-cols-1 sm:grid-cols-2 gap-2 border-t border-border/40">
-          <div>
-            <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">CTA label</div>
-            <input
-              type="text"
-              value={ctaText}
-              onChange={(e) => setCtaText(e.target.value)}
-              placeholder="Book a time"
-              maxLength={500}
-              className="w-full bg-background border border-border/60 rounded px-2 py-1 text-[12px] outline-none focus:border-primary/60"
-            />
-          </div>
-          <div>
-            <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">CTA URL</div>
-            <input
-              type="url"
-              value={ctaUrl}
-              onChange={(e) => setCtaUrl(e.target.value)}
-              placeholder="https://…"
-              maxLength={500}
-              className="w-full bg-background border border-border/60 rounded px-2 py-1 text-[12px] outline-none focus:border-primary/60"
-            />
-          </div>
+      {(showCtaSection || purpose) && (
+        <div className="border-t border-border/40">
+          <button
+            type="button"
+            onClick={() => setDetailsOpen((o) => !o)}
+            className="w-full flex items-center gap-2 px-3 py-1.5 text-[11px] text-muted-foreground hover:text-foreground hover:bg-muted/30 transition-colors"
+          >
+            <ChevronDown className={`w-3 h-3 transition-transform ${detailsOpen ? 'rotate-180' : ''}`} />
+            <span>Purpose & CTA</span>
+            {!detailsOpen && (
+              <span className="ml-auto text-[10.5px] text-muted-foreground/70">
+                {purpose ? (purpose === 'project_details' ? 'Project details' : 'Follow-up') : ''}
+                {purpose && hasCta ? ' · ' : ''}
+                {hasCta ? 'CTA set' : ''}
+              </span>
+            )}
+          </button>
+          {detailsOpen && (
+            <div className="px-3 pb-3 pt-1 space-y-2">
+              {purpose && (
+                <div className="text-[10.5px] uppercase tracking-wider text-muted-foreground">
+                  Template · {purpose === 'project_details' ? 'Project details' : 'Follow-up'}
+                </div>
+              )}
+              {showCtaSection && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <div>
+                    <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">CTA label</div>
+                    <input
+                      type="text"
+                      value={ctaText}
+                      onChange={(e) => setCtaText(e.target.value)}
+                      placeholder="Book a time"
+                      maxLength={500}
+                      className="w-full bg-background border border-border/60 rounded px-2 py-1 text-[12px] outline-none focus:border-primary/60"
+                    />
+                  </div>
+                  <div>
+                    <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">CTA URL</div>
+                    <input
+                      type="url"
+                      value={ctaUrl}
+                      onChange={(e) => setCtaUrl(e.target.value)}
+                      placeholder="https://…"
+                      maxLength={500}
+                      className="w-full bg-background border border-border/60 rounded px-2 py-1 text-[12px] outline-none focus:border-primary/60"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
     </div>
