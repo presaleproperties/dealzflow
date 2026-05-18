@@ -424,7 +424,7 @@ function MessageBubble({
   tools?: ToolUiState[];
   onFeedback?: (rating: 'up' | 'down') => void;
   messageId?: string | null;
-  onDecide?: (pending_id: string, decision: 'approve' | 'deny') => void;
+  onDecide?: (pending_id: string, decision: 'approve' | 'deny', overrides?: MessageOverrides) => void;
   decidingId?: string | null;
   sources?: any;
 }) {
