@@ -301,7 +301,7 @@ ${priceRange ? `<div style="color:#14181F;font-size:16px;margin-bottom:10px;">${
     draft_subject: subject,
     draft_text: text,
     draft_html: html,
-    template_id_used: (tpl as any).id,
+    template_id_used: templateId && /^[0-9a-f-]{36}$/i.test(templateId) ? templateId : null,
     inbound_text: "(agent-initiated · one-click Send Project Details)",
     inbound_at: now,
     intent: "send_project_details",
@@ -346,7 +346,7 @@ ${priceRange ? `<div style="color:#14181F;font-size:16px;margin-bottom:10px;">${
     });
   } catch (_) { /* non-fatal */ }
 
-  return reply({ ok: true, draft_id: ins.id, project_count: top.length, template_id: (tpl as any).id });
+  return reply({ ok: true, draft_id: ins.id, project_count: top.length, template_id: templateId });
 });
 
 function whyForLead(p: any, c: any): string {
