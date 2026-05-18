@@ -16,6 +16,8 @@ import { useProfile } from '@/hooks/useProfile';
 import { usePresaleAgentStore } from '@/stores/usePresaleAgent';
 import { openComposer } from '@/stores/useComposer';
 import { useLeadQuickReplies } from '@/hooks/useLeadQuickReplies';
+import { useEmailSignatures, pickSignatureForKind } from '@/hooks/useEmailSignatures';
+import { useEmailSettings } from '@/hooks/useEmailSettings';
 import { toast } from 'sonner';
 import type { CrmContact } from '@/hooks/useCrmContacts';
 
@@ -64,17 +66,30 @@ export function QuickActionBar({ contact }: Props) {
     mode === 'email' || mode === 'text',
   );
 
+  // Canonical signature path — same as ComposeEmailDialog. Inline composer
+  // is a reply-context, so prefer the agent's REPLY signature.
+  const { data: signatures = [] } = useEmailSignatures();
+  const { data: emailSettings } = useEmailSettings();
+  const activeSignatureHtml = useMemo(() => {
+    const picked = pickSignatureForKind(signatures, 'reply')
+      ?? signatures.find((s) => s.is_default)
+      ?? signatures[0];
+    if (picked) return picked.html;
+    return emailSettings?.signature_html ?? presaleAgent?.signatureHtml ?? '';
+  }, [signatures, emailSettings, presaleAgent]);
+
   const sender = useMemo(() => {
-    const fullName = profile?.full_name || presaleAgent?.name || user?.email || '';
+    const fullName =
+      emailSettings?.sender_name || profile?.full_name || presaleAgent?.name || user?.email || '';
     const firstName = fullName.split(' ')[0] || '';
     return {
       first_name: firstName,
       full_name: fullName,
-      email: user?.email || presaleAgent?.email || '',
+      email: emailSettings?.reply_to || user?.email || presaleAgent?.email || '',
       phone: profile?.phone || presaleAgent?.phone || '',
-      signature: presaleAgent?.signatureHtml || '',
+      signature: activeSignatureHtml,
     };
-  }, [profile, presaleAgent, user]);
+  }, [profile, presaleAgent, user, emailSettings, activeSignatureHtml]);
 
   const switchMode = (next: Mode) => {
     setMode(next);
@@ -115,7 +130,8 @@ export function QuickActionBar({ contact }: Props) {
         return;
       }
       if (!subject.trim() || !body.trim()) return;
-      // Build minimal HTML: paragraphs from line breaks + signature
+      // Build minimal HTML: paragraphs from line breaks + canonical signature.
+      // Brand shell + tracking pixel are applied by bridge-send-email.
       const escaped = body
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
@@ -124,9 +140,7 @@ export function QuickActionBar({ contact }: Props) {
         .split(/\n{2,}/)
         .map((p) => `<p style="margin:0 0 1em">${p.replace(/\n/g, '<br>')}</p>`)
         .join('');
-      const sigBlock = sender.signature
-        ? `<div style="margin-top:1.5em">${sender.signature}</div>`
-        : '';
+      const sigBlock = activeSignatureHtml ? `<br/>${activeSignatureHtml}` : '';
       const rawHtml = `${paragraphs}${sigBlock}`;
       const html = renderForRecipient(rawHtml, { lead: contact as any, sender });
       const renderedSubject = renderForRecipient(subject, { lead: contact as any, sender });
