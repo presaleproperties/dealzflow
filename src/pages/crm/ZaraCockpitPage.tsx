@@ -86,7 +86,96 @@ function isEmptyInput(input: any) {
   return Object.keys(input).length === 0;
 }
 
-function MessagePreview({ toolName, input }: { toolName: string; input: any }) {
+type MessageOverrides = { subject?: string; body?: string; cta_text?: string; cta_url?: string };
+
+function EditableMessagePreview({
+  toolName, input, onChange,
+}: {
+  toolName: string;
+  input: any;
+  onChange: (overrides: MessageOverrides) => void;
+}) {
+  const isEmail = toolName === 'draft_email';
+  const initialSubject = (input?.subject ?? '').toString();
+  const initialBody = (input?.body ?? '').toString();
+  const initialCtaText = (input?.cta_text ?? '').toString();
+  const initialCtaUrl = (input?.cta_url ?? '').toString();
+  const purpose = input?.purpose;
+
+  const [subject, setSubject] = useState(initialSubject);
+  const [body, setBody] = useState(initialBody);
+  const [ctaText, setCtaText] = useState(initialCtaText);
+  const [ctaUrl, setCtaUrl] = useState(initialCtaUrl);
+  const showCta = isEmail && (initialCtaText || initialCtaUrl);
+
+  useEffect(() => {
+    const o: MessageOverrides = {};
+    if (subject !== initialSubject) o.subject = subject;
+    if (body !== initialBody) o.body = body;
+    if (ctaText !== initialCtaText) o.cta_text = ctaText;
+    if (ctaUrl !== initialCtaUrl) o.cta_url = ctaUrl;
+    onChange(o);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [subject, body, ctaText, ctaUrl]);
+
+  return (
+    <div className="rounded-md border border-border/60 bg-background overflow-hidden">
+      {isEmail && (
+        <div className="px-3 py-2 border-b border-border/60 bg-muted/30 space-y-1">
+          <input
+            type="text"
+            value={subject}
+            onChange={(e) => setSubject(e.target.value)}
+            placeholder="Subject"
+            maxLength={300}
+            className="w-full bg-transparent outline-none text-[13px] font-semibold leading-snug placeholder:text-muted-foreground placeholder:font-normal"
+          />
+          {purpose && (
+            <div className="text-[10.5px] uppercase tracking-wider text-muted-foreground">
+              {purpose === 'project_details' ? 'Project details template' : 'Follow-up template'}
+            </div>
+          )}
+        </div>
+      )}
+      <textarea
+        value={body}
+        onChange={(e) => setBody(e.target.value)}
+        placeholder="Message body"
+        rows={Math.min(20, Math.max(5, body.split('\n').length + 1))}
+        maxLength={20000}
+        className="w-full bg-transparent outline-none resize-y px-3 py-2.5 text-[13px] leading-relaxed text-foreground placeholder:text-muted-foreground min-h-[120px]"
+      />
+      {showCta && (
+        <div className="px-3 pb-3 pt-1 grid grid-cols-1 sm:grid-cols-2 gap-2 border-t border-border/40">
+          <div>
+            <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">CTA label</div>
+            <input
+              type="text"
+              value={ctaText}
+              onChange={(e) => setCtaText(e.target.value)}
+              placeholder="Book a time"
+              maxLength={500}
+              className="w-full bg-background border border-border/60 rounded px-2 py-1 text-[12px] outline-none focus:border-primary/60"
+            />
+          </div>
+          <div>
+            <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">CTA URL</div>
+            <input
+              type="url"
+              value={ctaUrl}
+              onChange={(e) => setCtaUrl(e.target.value)}
+              placeholder="https://…"
+              maxLength={500}
+              className="w-full bg-background border border-border/60 rounded px-2 py-1 text-[12px] outline-none focus:border-primary/60"
+            />
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ReadOnlyMessagePreview({ toolName, input }: { toolName: string; input: any }) {
   const isEmail = toolName === 'draft_email';
   const subject = input?.subject?.trim?.();
   const body = (input?.body ?? '').toString();
@@ -124,11 +213,12 @@ function MessagePreview({ toolName, input }: { toolName: string; input: any }) {
 
 function ToolPill({ tool, onDecide, deciding }: {
   tool: ToolUiState;
-  onDecide?: (pending_id: string, decision: 'approve' | 'deny') => void;
+  onDecide?: (pending_id: string, decision: 'approve' | 'deny', overrides?: MessageOverrides) => void;
   deciding?: boolean;
 }) {
   const [open, setOpen] = useState(tool.status === 'pending');
   const [showRaw, setShowRaw] = useState(false);
+  const [overrides, setOverrides] = useState<MessageOverrides>({});
   const Icon = tool.status === 'running' ? Loader2 : Wrench;
   const tone =
     tool.status === 'error' || tool.status === 'denied' ? 'destructive'
@@ -142,6 +232,7 @@ function ToolPill({ tool, onDecide, deciding }: {
     ? 'border-amber-500/50 ring-1 ring-amber-500/20'
     : 'border-border/60';
   const label = TOOL_LABELS[tool.name] ?? tool.name;
+  const isEdited = Object.keys(overrides).length > 0;
 
   return (
     <div className={`my-2 rounded-lg border bg-card text-[12px] overflow-hidden ${borderCls}`}>
@@ -152,6 +243,7 @@ function ToolPill({ tool, onDecide, deciding }: {
         <Icon className={`w-3.5 h-3.5 ${tool.status === 'running' ? 'animate-spin text-primary' : 'text-muted-foreground'}`} />
         <span className="font-medium text-[12px]">{label}</span>
         <Pill size="sm" tone={tone as any}>{tool.status === 'pending' ? 'needs approval' : tool.status}</Pill>
+        {isEdited && isPending && <Pill size="sm" tone="warning">edited</Pill>}
         <ChevronDown className={`w-3 h-3 ml-auto text-muted-foreground transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
       {open && (
@@ -165,8 +257,12 @@ function ToolPill({ tool, onDecide, deciding }: {
 
           {isPending && isMessage && !empty && (
             <>
-              <MessagePreview toolName={tool.name} input={tool.input} />
-              <div className="flex items-center gap-2 justify-end">
+              <EditableMessagePreview
+                toolName={tool.name}
+                input={tool.input}
+                onChange={setOverrides}
+              />
+              <div className="flex items-center gap-2 justify-end flex-wrap">
                 <button
                   onClick={() => setShowRaw((s) => !s)}
                   className="text-[11px] text-muted-foreground hover:text-foreground underline"
@@ -183,20 +279,21 @@ function ToolPill({ tool, onDecide, deciding }: {
                 </button>
                 <button
                   disabled={deciding}
-                  onClick={() => onDecide?.(tool.pending_id!, 'approve')}
+                  onClick={() => onDecide?.(tool.pending_id!, 'approve', overrides)}
                   className="px-3 py-1.5 text-[12px] rounded-md bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 inline-flex items-center gap-1"
                 >
                   {deciding ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
-                  Approve & send
+                  {isEdited ? 'Approve edited & send' : 'Approve & send'}
                 </button>
               </div>
               {showRaw && (
                 <pre className="text-[10.5px] font-mono whitespace-pre-wrap break-words bg-background rounded p-2 border border-border/40 max-h-48 overflow-auto">
-                  {JSON.stringify(tool.input, null, 2)}
+                  {JSON.stringify({ ...tool.input, ...overrides }, null, 2)}
                 </pre>
               )}
             </>
           )}
+
 
           {isPending && !isMessage && (
             <div className="space-y-2">
