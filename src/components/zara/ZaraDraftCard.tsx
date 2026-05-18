@@ -246,12 +246,16 @@ export function ZaraDraftCard({ tool, channel, decide, onChip }: Props) {
           />
         </div>
       ) : previewMode === 'branded' && canShowBranded ? (
-        <iframe
-          title="Email preview"
-          srcDoc={draft!.draft_html!}
-          sandbox=""
-          className="w-full h-[360px] bg-background"
-        />
+        <div className="bg-neutral-100 dark:bg-neutral-900 p-2 sm:p-3">
+          <iframe
+            title="Email preview"
+            srcDoc={draft!.draft_html!}
+            sandbox=""
+            className="w-full rounded-md bg-white shadow-sm"
+            style={{ height: 560, border: 0 }}
+          />
+        </div>
+
       ) : (
         <div className="px-3 py-2.5 text-[13px] whitespace-pre-wrap text-foreground/90 max-h-[320px] overflow-y-auto">
           {previewBody || <span className="text-muted-foreground italic">(empty)</span>}

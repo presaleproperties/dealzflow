@@ -152,80 +152,139 @@ ${priceRange ? `<div style="color:#14181F;font-size:16px;margin-bottom:10px;">${
   const closing =
     `Worth me sending the deposit structures and comparable sold prices on any of these? Reply with the project name and I'll have it back in your inbox today.`;
 
-  // ── Load Project Showcase scaffold ───────────────────────────────────
-  // 1) Try the registry (crm_zara_trigger_map → preferred/fallback slug,
-  //    agent-scoped first). 2) Legacy slug. 3) prefs.fallback_template_id.
+  // ── Render via Presale auto-templates (same branded template used by
+  //    "Send Project Details" in the Lead Detail page). The Presale side
+  //    owns the layout AND the agent signature, so we never stitch our
+  //    own HTML or append a signature here.
   const prefs = await getZaraEmailPrefs(sb);
 
-  // Resolve caller's presale slug for agent-scoped template preference.
+  // Resolve caller's presale slug so the bridge picks the agent's signature.
   let agentSlug: string | null = null;
+  let agentName: string | null = null;
+  let agentEmail: string | null = null;
   try {
     const lookupUserId = userId ?? (await resolveAssignedToUuid(sb, (contact as any).assigned_to));
     if (lookupUserId) {
       const { data: teamRow } = await sb.from("crm_team")
-        .select("presale_slug, slug").eq("user_id", lookupUserId).maybeSingle();
+        .select("presale_slug, slug, display_name, email").eq("user_id", lookupUserId).maybeSingle();
       agentSlug = (teamRow as any)?.presale_slug ?? (teamRow as any)?.slug ?? null;
+      agentName = (teamRow as any)?.display_name ?? null;
+      agentEmail = (teamRow as any)?.email ?? null;
     }
   } catch (_) { /* non-fatal */ }
 
-  let tpl: any = await resolveTemplateForTrigger(sb, TRIGGER_KIND, agentSlug);
-  if (!tpl) {
-    ({ data: tpl } = await sb.from("crm_email_templates")
-      .select("id, body_html, subject")
-      .eq("slug", "project-showcase-zara").maybeSingle());
-  }
-  if (!tpl && prefs.fallback_template_id) {
-    ({ data: tpl } = await sb.from("crm_email_templates")
-      .select("id, body_html, subject").eq("id", prefs.fallback_template_id).maybeSingle());
-  }
-  if (!tpl) return reply({ ok: false, error: "Project Showcase template missing — re-run migration" }, 500);
-
-  const sigHtml = prefs.append_signature && userId ? await resolveSignatureHtml(sb, userId) : "";
-
-  // Pull rolling memory for personalize context (best-effort).
-  const { data: memoryRow } = await sb.from("zara_lead_memory")
-    .select("summary, facts").eq("contact_id", contactId).maybeSingle();
-
-  const vars: Record<string, string> = {
-    first_name: firstName,
-    intro_html: `<p style="margin:0 0 14px 0;">${intro}</p>`,
-    cards_html,
-    closing_html: `<p style="margin:0 0 14px 0;">${escapeHtml(closing)}</p>`,
-    signature_html: sigHtml,
-    unsubscribe: "{{unsubscribe}}",
+  const BRIDGE_SECRET = Deno.env.get("PRESALE_BRIDGE_SECRET") ?? "";
+  const SERVE_AUTO_URL = "https://thvlisplwqhtjpzpedhq.supabase.co/functions/v1/serve-auto-templates";
+  const lead = top[0];
+  const fmtPrice = (n: any) => {
+    const v = Number(n);
+    return Number.isFinite(v) && v > 0 ? `From $${v.toLocaleString("en-CA")}` : undefined;
   };
-  let html = interpolate((tpl as any).body_html, vars);
-  let subject = interpolate((tpl as any).subject ?? "Curated projects for {{first_name}}", vars);
+  const projectDetailsUrl =
+    lead?.marketing_url ||
+    lead?.website_url ||
+    (lead?.slug ? `https://presaleproperties.com/projects/${lead.slug}` : undefined);
 
-  // ── Personalize: merge {{first_name}}/{{matched_project}}/{{price_band}}/etc. ──
-  const mergeVars = buildMergeVars({
-    contact: contact as any,
-    memory: memoryRow as any,
-    matched_project: top[0] ? { name: top[0].name, city: top[0].city, price_from: top[0].price_from, price_to: top[0].price_to } : null,
-  });
-  html = personalize(html, mergeVars);
-  subject = personalize(subject, mergeVars);
+  const autoBody = {
+    template_id: "auto_project_details_docs",
+    recipient_name: firstName,
+    agent_slug: agentSlug ?? undefined,
+    agent: agentSlug ? undefined : { full_name: agentName ?? undefined, email: agentEmail ?? undefined },
+    project: {
+      projectName: lead?.name,
+      city: lead?.city || undefined,
+      developerName: lead?.developer || undefined,
+      startingPrice: fmtPrice(lead?.price_from),
+      completion: lead?.completion_date
+        ? new Date(lead.completion_date as string).getUTCFullYear().toString()
+        : undefined,
+      projectUrl: projectDetailsUrl,
+      brochureUrl: lead?.brochure_url || undefined,
+    },
+  };
 
-  // ── Preflight QA (blocks if no projects, empty body, unrendered tokens, etc.) ──
-  const qa = preflightQA({
-    to: (contact as any).email ?? null,
-    subject,
-    html,
-    channel: "email",
-    projectsCount: top.length,
-    signaturePresent: !!sigHtml,
-    requireProjects: true,
-  });
-  const blockers = qa.filter((i) => i.severity === "block");
-  if (blockers.length > 0) {
-    return reply({
-      ok: false,
-      error: "preflight_qa_blocked",
-      issues: qa,
-    }, 422);
+  let html = "";
+  let subject = `${lead?.name ?? "Your project"} — details inside`;
+  let templateId: string | null = "auto_project_details_docs";
+
+  if (BRIDGE_SECRET) {
+    try {
+      const r = await fetch(SERVE_AUTO_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-bridge-secret": BRIDGE_SECRET },
+        body: JSON.stringify(autoBody),
+      });
+      const text = await r.text();
+      let parsed: any = {};
+      try { parsed = text ? JSON.parse(text) : {}; } catch { /* */ }
+      if (r.ok && (parsed.html_rendered || parsed.html)) {
+        html = parsed.html_rendered || parsed.html;
+        subject = parsed.subject_rendered || parsed.subject || subject;
+      } else {
+        console.warn("[zara-send-project-details] auto-template render failed", { status: r.status, snippet: text.slice(0, 300) });
+      }
+    } catch (e) {
+      console.warn("[zara-send-project-details] auto-template fetch threw", (e as Error).message);
+    }
+  }
+
+  // Fallback to local template ONLY if Presale render didn't return HTML.
+  if (!html) {
+    let tpl: any = await resolveTemplateForTrigger(sb, TRIGGER_KIND, agentSlug);
+    if (!tpl) {
+      ({ data: tpl } = await sb.from("crm_email_templates")
+        .select("id, body_html, subject")
+        .eq("slug", "project-showcase-zara").maybeSingle());
+    }
+    if (!tpl && prefs.fallback_template_id) {
+      ({ data: tpl } = await sb.from("crm_email_templates")
+        .select("id, body_html, subject").eq("id", prefs.fallback_template_id).maybeSingle());
+    }
+    if (!tpl) return reply({ ok: false, error: "Project Showcase template missing and Presale bridge unavailable" }, 500);
+
+    // Pull rolling memory for personalize context (best-effort).
+    const { data: memoryRow } = await sb.from("zara_lead_memory")
+      .select("summary, facts").eq("contact_id", contactId).maybeSingle();
+
+    // Only append the local signature in fallback mode — the bridge bakes it in.
+    const sigHtml = prefs.append_signature && userId ? await resolveSignatureHtml(sb, userId) : "";
+    const vars: Record<string, string> = {
+      first_name: firstName,
+      intro_html: `<p style="margin:0 0 14px 0;">${intro}</p>`,
+      cards_html,
+      closing_html: `<p style="margin:0 0 14px 0;">${escapeHtml(closing)}</p>`,
+      signature_html: sigHtml,
+      unsubscribe: "{{unsubscribe}}",
+    };
+    html = interpolate((tpl as any).body_html, vars);
+    subject = interpolate((tpl as any).subject ?? "Curated projects for {{first_name}}", vars);
+    const mergeVars = buildMergeVars({
+      contact: contact as any,
+      memory: memoryRow as any,
+      matched_project: lead ? { name: lead.name, city: lead.city, price_from: lead.price_from, price_to: lead.price_to } : null,
+    });
+    html = personalize(html, mergeVars);
+    subject = personalize(subject, mergeVars);
+    templateId = (tpl as any).id ?? null;
+
+    const qa = preflightQA({
+      to: (contact as any).email ?? null,
+      subject,
+      html,
+      channel: "email",
+      projectsCount: top.length,
+      signaturePresent: !!sigHtml,
+      requireProjects: true,
+    });
+    const blockers = qa.filter((i) => i.severity === "block");
+    if (blockers.length > 0) {
+      return reply({ ok: false, error: "preflight_qa_blocked", issues: qa }, 422);
+    }
   }
 
   const text = htmlToPlain(html);
+
+
 
   // ── Resolve assigned_to safely ─────────────────────────────────────
   // Prefer the lead's assigned agent; fall back to the caller (button-clicker).
@@ -242,7 +301,7 @@ ${priceRange ? `<div style="color:#14181F;font-size:16px;margin-bottom:10px;">${
     draft_subject: subject,
     draft_text: text,
     draft_html: html,
-    template_id_used: (tpl as any).id,
+    template_id_used: templateId && /^[0-9a-f-]{36}$/i.test(templateId) ? templateId : null,
     inbound_text: "(agent-initiated · one-click Send Project Details)",
     inbound_at: now,
     intent: "send_project_details",
@@ -287,7 +346,7 @@ ${priceRange ? `<div style="color:#14181F;font-size:16px;margin-bottom:10px;">${
     });
   } catch (_) { /* non-fatal */ }
 
-  return reply({ ok: true, draft_id: ins.id, project_count: top.length, template_id: (tpl as any).id });
+  return reply({ ok: true, draft_id: ins.id, project_count: top.length, template_id: templateId });
 });
 
 function whyForLead(p: any, c: any): string {
