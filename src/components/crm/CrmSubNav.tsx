@@ -26,6 +26,7 @@ const PRIMARY: Tab[] = [
 const OVERFLOW: Tab[] = [
   { label: 'Scheduler',    path: '/crm/scheduler' },
   { label: 'Needs Review', path: '/crm/needs-review' },
+  { label: 'Train Zara', path: '/crm/zara/training-chat' },
   { label: 'Behavior',     path: '/crm/behavior',     ownerOnly: true },
   { label: 'Reports',      path: '/crm/reports',      ownerOnly: true },
   { label: 'Automations',  path: '/crm/automations',  ownerAdminOnly: true },
