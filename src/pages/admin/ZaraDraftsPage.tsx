@@ -145,6 +145,7 @@ export default function ZaraDraftsPage() {
     if (selected) {
       setEditSubject(selected.subject ?? '');
       setEditBody(selected.body);
+      setSelectedLabels([]);
     }
   }, [selectedId]); // eslint-disable-line
 
