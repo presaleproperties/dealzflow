@@ -400,20 +400,34 @@ function ToolPill({ tool, onDecide, deciding }: {
 
           {isPending && isMessage && !empty && (
             <>
-              <LeadIntelligenceSummary contactId={tool.input?.contact_id} />
               <EditableMessagePreview
                 toolName={tool.name}
                 input={tool.input}
                 onChange={setOverrides}
               />
-              <div className="flex items-center gap-2 justify-end flex-wrap">
+              <div className="flex items-center gap-3 flex-wrap text-[11px]">
+                <button
+                  onClick={() => setShowIntel((s) => !s)}
+                  className="text-muted-foreground hover:text-foreground underline-offset-2 hover:underline inline-flex items-center gap-1"
+                >
+                  <ChevronDown className={`w-3 h-3 transition-transform ${showIntel ? 'rotate-180' : ''}`} />
+                  {showIntel ? 'Hide lead intelligence' : 'Using lead intelligence'}
+                </button>
                 <button
                   onClick={() => setShowRaw((s) => !s)}
-                  className="text-[11px] text-muted-foreground hover:text-foreground underline"
+                  className="text-muted-foreground hover:text-foreground underline-offset-2 hover:underline inline-flex items-center gap-1"
                 >
-                  {showRaw ? 'Hide raw' : 'View raw'}
+                  <ChevronDown className={`w-3 h-3 transition-transform ${showRaw ? 'rotate-180' : ''}`} />
+                  {showRaw ? 'Hide raw JSON' : 'View raw JSON'}
                 </button>
-                <div className="flex-1" />
+              </div>
+              {showIntel && <LeadIntelligenceSummary contactId={tool.input?.contact_id} />}
+              {showRaw && (
+                <pre className="text-[10.5px] font-mono whitespace-pre-wrap break-words bg-background rounded p-2 border border-border/40 max-h-48 overflow-auto">
+                  {JSON.stringify({ ...tool.input, ...overrides }, null, 2)}
+                </pre>
+              )}
+              <div className="flex items-center gap-2 justify-end flex-wrap pt-1 border-t border-border/40">
                 <button
                   disabled={deciding}
                   onClick={() => onDecide?.(tool.pending_id!, 'deny')}
@@ -430,11 +444,6 @@ function ToolPill({ tool, onDecide, deciding }: {
                   {isEdited ? 'Approve edited & send' : 'Approve & send'}
                 </button>
               </div>
-              {showRaw && (
-                <pre className="text-[10.5px] font-mono whitespace-pre-wrap break-words bg-background rounded p-2 border border-border/40 max-h-48 overflow-auto">
-                  {JSON.stringify({ ...tool.input, ...overrides }, null, 2)}
-                </pre>
-              )}
             </>
           )}
 
