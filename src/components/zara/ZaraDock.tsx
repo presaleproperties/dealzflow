@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
-import { Sparkles, X, History, Maximize2, Send, Plus, Pin, Search, Loader2, ChevronDown, Copy, Check, Trash2, Archive, Edit2, Download, MoreVertical } from 'lucide-react';
+import { Sparkles, X, History, Maximize2, Send, Plus, Pin, Search, Loader2, ChevronDown, Copy, Check, Trash2, Archive, Edit2, Download, MoreVertical, Eraser } from 'lucide-react';
 import { formatDistanceToNow, format } from 'date-fns';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -408,7 +408,7 @@ export function ZaraDock() {
   const navigate = useNavigate();
   const pageContext = useZaraPageContext();
   const { open, setOpen, conversationId, setConversationId, showHistory, setShowHistory } = useZaraDock();
-  const { create } = useZaraConversations();
+  const { create, archive, data: convs = [] } = useZaraConversations();
   const { rendered, send, stop, streaming, streamText, streamTools, streamSources, decide } =
     useZaraDockChat(conversationId, pageContext);
 
@@ -468,6 +468,19 @@ export function ZaraDock() {
     const c = await create();
     if (c) { setConversationId(c.id); return c.id; }
     return null;
+  };
+
+  // Clear chat — archive the current convo (preserves audit trail) and start a fresh one.
+  const clearChat = async () => {
+    if (streaming) { stop(); }
+    const current = convs.find((c) => c.id === conversationId);
+    if (current && !current.archived && rendered.length > 0) {
+      await archive(current);
+    }
+    setConversationId(null);
+    setShowHistory(false);
+    setInput('');
+    setTimeout(() => inputRef.current?.focus(), 60);
   };
 
   const onSend = async (textOverride?: string) => {
@@ -536,6 +549,7 @@ export function ZaraDock() {
               <Pill size="sm" tone={modePill.tone}>{modePill.label}</Pill>
             </div>
             <div className="flex items-center gap-0.5">
+              <button onClick={clearChat} disabled={rendered.length === 0 && !streaming} className="p-2 rounded-full hover:bg-foreground/5 disabled:opacity-30 disabled:hover:bg-transparent" title="Clear chat"><Eraser className="w-4 h-4" /></button>
               <button onClick={() => navigate('/crm/zara')} className="p-2 rounded-full hover:bg-foreground/5" title="Open full cockpit"><Maximize2 className="w-4 h-4" /></button>
               <button onClick={() => setShowHistory(true)} className="p-2 rounded-full hover:bg-foreground/5" title="Conversations (/)"><History className="w-4 h-4" /></button>
               <button onClick={() => setOpen(false)} className="p-2 rounded-full hover:bg-foreground/5" title="Close (Esc)"><X className="w-4 h-4" /></button>
