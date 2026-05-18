@@ -3,6 +3,7 @@
 // All writes are logged into zara_actions_log.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { presaleBridge } from "../_shared/presale-bridge.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -346,11 +347,56 @@ async function send_briefing_summary(_args: any, ctx: Ctx) {
 
 async function list_projects(args: any) {
   const sb = svc();
-  let q = sb.from("crm_projects").select("name,slug,city,status").limit(Math.min(args.limit ?? 25, 100));
+  const limit = Math.min(Math.max(Number(args.limit ?? 50), 1), 500);
+  const offset = Math.max(Number(args.offset ?? 0), 0);
+  const qStr = typeof args.q === "string" ? args.q.trim() : "";
+  let q = sb
+    .from("crm_projects")
+    .select("name,slug,city,status", { count: "exact" })
+    .order("name", { ascending: true })
+    .range(offset, offset + limit - 1);
   if (args.city) q = q.ilike("city", `%${args.city}%`);
-  const { data, error } = await q;
+  if (args.status) q = q.eq("status", args.status);
+  if (qStr) {
+    const esc = qStr.replace(/[%,()]/g, " ");
+    q = q.or(`name.ilike.%${esc}%,slug.ilike.%${esc}%`);
+  }
+  const { data, error, count } = await q;
   if (error) return fail(error.message);
-  return ok({ projects: data });
+
+  // Bridge fallback — Presale Properties is source of truth. If the caller
+  // searched by name and we have <3 local hits, fan out to the bridge so
+  // newly-launched projects (not yet synced) still surface.
+  let bridge_hits: any[] = [];
+  if (qStr && (data?.length ?? 0) < 3) {
+    try {
+      
+      const raw = await presaleBridge.searchProjects(qStr);
+      const arr: any[] = Array.isArray(raw) ? raw : (raw as any)?.projects ?? [];
+      const localSlugs = new Set((data ?? []).map((p: any) => p.slug));
+      bridge_hits = arr
+        .filter((p) => p?.slug && !localSlugs.has(p.slug))
+        .slice(0, 10)
+        .map((p) => ({
+          name: p.name ?? p.title ?? p.slug,
+          slug: p.slug,
+          city: p.city ?? p.location ?? null,
+          status: p.status ?? "bridge",
+          source: "presale-bridge",
+        }));
+    } catch (e) {
+      console.warn("[list_projects] bridge fallback failed", (e as Error).message);
+    }
+  }
+
+  return ok({
+    projects: [...(data ?? []), ...bridge_hits],
+    total: count ?? null,
+    offset,
+    limit,
+    has_more: count != null ? offset + (data?.length ?? 0) < count : false,
+    bridge_fallback_used: bridge_hits.length > 0,
+  });
 }
 
 async function project_details(args: any) {
@@ -361,8 +407,18 @@ async function project_details(args: any) {
   else return fail("slug or id required");
   const { data, error } = await q.maybeSingle();
   if (error) return fail(error.message);
-  if (!data) return fail("project not found");
-  return ok({ project: data });
+  if (data) return ok({ project: data });
+  // Bridge fallback by slug — Presale is source of truth.
+  if (args.slug) {
+    try {
+      
+      const bp = await presaleBridge.getProject(args.slug);
+      if (bp && (bp as any).slug) return ok({ project: bp, source: "presale-bridge" });
+    } catch (e) {
+      console.warn("[project_details] bridge fallback failed", (e as Error).message);
+    }
+  }
+  return fail("project not found");
 }
 
 async function recommend_projects_for_lead(args: any) {
