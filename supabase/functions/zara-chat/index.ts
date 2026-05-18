@@ -724,6 +724,8 @@ Deno.serve(async (req) => {
         try {
           if (ragWarning) send("warning", { message: ragWarning });
           if (ragSources) send("sources", ragSources);
+          if (leadMemoryPayload) send("resolved_lead", { lead: leadMemoryPayload, resolved_via: resolvedPayload?.via ?? "page_context", confidence: resolvedPayload?.confidence ?? "high" });
+          else if (candidatesPayload.length) send("lead_candidates", { candidates: candidatesPayload });
 
           // Auto-title from first user msg
           const userTurns = history.filter((r) => r.role === "user").length;
