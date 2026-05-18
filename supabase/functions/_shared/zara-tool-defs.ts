@@ -399,4 +399,56 @@ export const ZARA_TOOLS: ZaraTool[] = [
       required: ["contact_id"],
     },
   },
+
+  // ── Public-site tools (used by zara-public-chat) ──────────────────────
+  {
+    name: "capture_lead",
+    description:
+      "Create or upsert a CRM lead from a website visitor's volunteered info (name, email, phone, intent, project interest). Idempotent via identity resolution. Use the moment a visitor shares email or phone — BEFORE sending floor plans, deck, or booking links. Adds tags 'presale-website' and 'zara-public-chat'.",
+    input_schema: {
+      type: "object",
+      properties: {
+        email: { type: "string" },
+        phone: { type: "string" },
+        first_name: { type: "string" },
+        last_name: { type: "string" },
+        project_slug: { type: "string", description: "If the visitor is interested in a specific project." },
+        intent: { type: "string", enum: ["buy", "invest", "browse", "sell"] },
+        timeframe: { type: "string", enum: ["0-3m", "3-6m", "6-12m", "12m+"] },
+        budget_max: { type: "number" },
+        bedrooms_preferred: { type: "string" },
+        language: { type: "string" },
+        message: { type: "string", description: "Free-text note from the visitor — appended to lead notes." },
+        presale_user_id: { type: "string", description: "Anonymous browser id; used to stitch prior page activity." },
+      },
+    },
+  },
+  {
+    name: "get_unit_availability",
+    description:
+      "Check real-time selling status, unit types, and unit count for a project. Returns the project's current status (pre_launch | selling | sold_out | completed), unit_types, unit_count, completion year/quarter. Use BEFORE telling a visitor a project is available.",
+    input_schema: {
+      type: "object",
+      properties: {
+        project_slug: { type: "string" },
+        project_id: { type: "string" },
+      },
+    },
+  },
+  {
+    name: "escalate_to_human",
+    description:
+      "Ping the assigned agent (or owner+admins if unassigned) with a short transcript snippet and the reason for escalation. Use when the visitor wants to speak to a human, is in distress, asks something Zara cannot answer, or shows very high intent (ready to buy, asking about deposit wiring, etc).",
+    input_schema: {
+      type: "object",
+      properties: {
+        contact_id: { type: "string", description: "Captured lead id (call capture_lead first if you have email/phone)." },
+        reason: { type: "string", description: "Short reason — what they need." },
+        transcript_snippet: { type: "string", description: "Last 1-3 visitor messages, plain text." },
+        urgency: { type: "string", enum: ["low", "medium", "high"], description: "Default medium." },
+      },
+      required: ["reason"],
+    },
+  },
 ];
+
