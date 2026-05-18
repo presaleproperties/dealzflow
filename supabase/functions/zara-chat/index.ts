@@ -840,7 +840,8 @@ Deno.serve(async (req) => {
     // Learned preferences from past approvals — tone rules, phrasing swaps,
     // CTA verdicts, timing patterns. Compact block, soft-default semantics.
     const { buildLearnedPreferencesBlock } = await import("../_shared/zara-learned-brief.ts");
-    const learnedPreferencesBlock = await buildLearnedPreferencesBlock(svc as any).catch(() => "");
+    const learnedPreferencesBlock = await buildLearnedPreferencesBlock(svc() as any).catch(() => "");
+
     const systemParts = [SYSTEM_PROMPT_BASE];
     if (learnedPreferencesBlock) systemParts.push(learnedPreferencesBlock);
     if (rollingSummaryBlock) systemParts.push(rollingSummaryBlock);
