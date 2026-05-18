@@ -486,5 +486,58 @@ export const ZARA_TOOLS: ZaraTool[] = [
       required: ["reason"],
     },
   },
+
+  // ── Website Intelligence Layer ────────────────────────────────────────
+  {
+    name: "get_lead_website_behavior",
+    description:
+      "Read a lead's PresaleProperties.com website behaviour: project views, repeat visits, floor-plan downloads, pricing sheet requests, brochure downloads, calculator usage, comparison views, assignment page views, buyer-guide / blog / city-page views, booking starts/abandons, CTA clicks. Aggregates `crm_activity_events` (incl. nested `behavior_batch.metadata.behavior.{views,sessions,forms}`). Use BEFORE drafting any follow-up to a website lead so the message references what they actually did. Falls back to the Presale bridge `getLeadBehavior` if there are no local events.",
+    input_schema: {
+      type: "object",
+      properties: {
+        contact_id: { type: "string" },
+        email: { type: "string" },
+        phone: { type: "string" },
+        since_days: { type: "number", description: "Default 90." },
+        types: { type: "array", items: { type: "string" }, description: "Optional event type filter." },
+      },
+    },
+  },
+  {
+    name: "search_website_content",
+    description:
+      "Semantic search over crawled PresaleProperties.com content (buyer guides, assignment pages, city pages, calculator pages, comparison pages, blog posts, process pages). Use when a lead asks about the buying process, assignment sales, deposit timing, calculators, or anything described on the website itself. Distinct from `search_knowledge` which is for internal playbooks.",
+    input_schema: {
+      type: "object",
+      properties: {
+        query: { type: "string" },
+        types: {
+          type: "array",
+          items: { type: "string", enum: ["buyer_guide", "assignment_page", "city_page", "calculator", "comparison", "blog_post", "process_page"] },
+        },
+        top_k: { type: "number", description: "Default 5, max 10." },
+      },
+      required: ["query"],
+    },
+  },
+  {
+    name: "lookup_topic",
+    description:
+      "Verified-data dispatcher used when you would otherwise quote pricing, deposits, incentives, completion, unit counts, floor plans, or availability. Routes to the correct structured tool (get_pricing / get_unit_availability / project_details / get_floor_plans / attach_floorplan) and returns either verified data or `{status:'unavailable', reason, action_for_agent}`. If a draft you produce contains a `{LOOKUP: topic}` placeholder, call this tool to resolve it BEFORE the draft is finalized.",
+    input_schema: {
+      type: "object",
+      properties: {
+        topic: {
+          type: "string",
+          enum: ["pricing", "deposit_structure", "incentives", "availability", "completion_date", "unit_count", "unit_types", "floor_plans", "assignment_rules", "brochure"],
+        },
+        project_slug: { type: "string" },
+        project_id: { type: "string" },
+        project_name: { type: "string", description: "Fuzzy fallback." },
+        contact_id: { type: "string", description: "Optional — logged with the lookup miss if data is stale/missing." },
+      },
+      required: ["topic"],
+    },
+  },
 ];
 
