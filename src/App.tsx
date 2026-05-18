@@ -32,6 +32,7 @@ import { useVisualViewport } from "@/hooks/useVisualViewport";
 import { DialerWidget } from "@/components/crm/dialer/DialerWidget";
 import { NewChatDialog } from "@/components/crm/chats/NewChatDialog";
 import { ComposerMount } from "@/components/crm/composer/ComposerMount";
+import { KillSwitchBanner } from "@/components/crm/zara/KillSwitchBanner";
 import { ViewportDebugOverlay } from "@/components/dev/ViewportDebugOverlay";
 
 // ── Eager-loaded pages ────────────────────────────────────────────────────
