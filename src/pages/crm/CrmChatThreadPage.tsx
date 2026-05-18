@@ -235,6 +235,15 @@ export default function CrmChatThreadPage({ embedded = false }: CrmChatThreadPag
   const snoozeOptions = useMemo(() => snoozePresets(), []);
   // Offline outbox state (filtered by contact later, once thread loads)
   const outbox = useOfflineOutbox();
+
+  // Auto-prune empty-body ghost items left over from older queue versions —
+  // they would otherwise render forever as broken "(empty)" failed bubbles.
+  useEffect(() => {
+    const stale = outbox.items.filter((i) => !i.body || i.body.trim().length === 0);
+    if (stale.length === 0) return;
+    stale.forEach((i) => outbox.remove(i.id));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [outbox.items.length]);
   const isCompact = useIsCompact();
   const dialer = useDialer();
 
@@ -944,6 +953,10 @@ export default function CrmChatThreadPage({ embedded = false }: CrmChatThreadPag
                 className="ml-auto underline underline-offset-2 font-medium"
                 onClick={() => mine.filter((i) => i.status === 'failed').forEach((i) => outbox.retry(i.id))}
               >Retry all</button>
+              <button
+                className="underline underline-offset-2 font-medium opacity-80 hover:opacity-100"
+                onClick={() => mine.filter((i) => i.status === 'failed').forEach((i) => outbox.remove(i.id))}
+              >Discard all</button>
             </div>
           );
         }
@@ -1227,10 +1240,14 @@ export default function CrmChatThreadPage({ embedded = false }: CrmChatThreadPag
           </>
         )}
 
-        {/* Ghost bubbles for offline outbox items not yet on the server */}
+        {/* Ghost bubbles for offline outbox items not yet on the server.
+            Empty-body items are skipped — they would render as "(empty)"
+            placeholders which look broken. The banner above still surfaces
+            the failure count and Retry-all action. */}
         {(conv.channel === 'sms' || conv.channel === 'whatsapp') &&
           outbox.items
             .filter((i) => i.contact_id === contact.id && i.channel === conv.channel)
+            .filter((i) => !!(i.body && i.body.trim().length > 0))
             .map((i) => {
               const state: DeliveryState = i.status === 'failed' ? 'failed' : 'sending';
               return (
@@ -1242,18 +1259,27 @@ export default function CrmChatThreadPage({ embedded = false }: CrmChatThreadPag
                           state === 'failed' ? 'ring-1 ring-destructive/60' : ''
                         }`}
                       >
-                        {i.body || <span className="italic opacity-60">(empty)</span>}
+                        {i.body}
                       </div>
                       <span className="text-[10px] tabular-nums flex items-center gap-1.5 text-muted-foreground justify-end pr-1">
                         <DeliveryIndicator state={state} error={i.last_error} />
                         {state === 'failed' && (
-                          <button
-                            type="button"
-                            onClick={() => outbox.retry(i.id)}
-                            className="underline underline-offset-2 text-destructive hover:opacity-80"
-                          >
-                            Retry
-                          </button>
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => outbox.retry(i.id)}
+                              className="underline underline-offset-2 text-destructive hover:opacity-80"
+                            >
+                              Retry
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => outbox.remove(i.id)}
+                              className="underline underline-offset-2 text-muted-foreground hover:opacity-80"
+                            >
+                              Discard
+                            </button>
+                          </>
                         )}
                       </span>
                     </div>

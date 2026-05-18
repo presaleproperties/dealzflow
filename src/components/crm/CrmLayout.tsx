@@ -24,8 +24,12 @@ export function CrmLayout({ requireRole, children }: CrmLayoutProps) {
   // every viewport, so the outer route container must NOT add a second
   // page-level scrollbar. Without this, mousewheel events anywhere on the
   // chats route bubble up and scroll the whole CRM page instead of the list.
+  // The unified /crm/inbox surface hosts the same 3-pane chat shell as /crm/chats.
+  // Both must be immersive (no page-level scroll) so the composer can sit at the
+  // bottom of the viewport instead of being pushed below the fold by PageTransition.
   const isImmersiveChatsRoute = pathname === '/crm/chats' || pathname === '/crm/chats/new' || /^\/crm\/chats\/[^/]+/.test(pathname);
-  const isImmersiveChatThread = isImmersiveChatsRoute;
+  const isImmersiveInboxRoute = pathname === '/crm/inbox' || /^\/crm\/inbox(\/|$)/.test(pathname);
+  const isImmersiveChatThread = isImmersiveChatsRoute || isImmersiveInboxRoute;
 
   return (
     <CrmRouteGuard requireRole={requireRole}>
