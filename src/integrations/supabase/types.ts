@@ -739,6 +739,7 @@ export type Database = {
         Row: {
           agent_user_id: string | null
           answered_at: string | null
+          connection_id: string | null
           contact_id: string | null
           created_at: string
           direction: string
@@ -747,12 +748,19 @@ export type Database = {
           error_code: string | null
           error_message: string | null
           from_number: string | null
+          hangup_cause: string | null
           id: string
           notes: string | null
           parent_call_sid: string | null
+          price_amount: number | null
+          price_currency: string | null
+          provider: string | null
+          provider_call_id: string | null
+          provider_leg_id: string | null
           recording_duration_sec: number | null
           recording_sid: string | null
           recording_url: string | null
+          recording_urls: string[] | null
           started_at: string
           status: string
           to_number: string | null
@@ -763,6 +771,7 @@ export type Database = {
         Insert: {
           agent_user_id?: string | null
           answered_at?: string | null
+          connection_id?: string | null
           contact_id?: string | null
           created_at?: string
           direction: string
@@ -771,12 +780,19 @@ export type Database = {
           error_code?: string | null
           error_message?: string | null
           from_number?: string | null
+          hangup_cause?: string | null
           id?: string
           notes?: string | null
           parent_call_sid?: string | null
+          price_amount?: number | null
+          price_currency?: string | null
+          provider?: string | null
+          provider_call_id?: string | null
+          provider_leg_id?: string | null
           recording_duration_sec?: number | null
           recording_sid?: string | null
           recording_url?: string | null
+          recording_urls?: string[] | null
           started_at?: string
           status?: string
           to_number?: string | null
@@ -787,6 +803,7 @@ export type Database = {
         Update: {
           agent_user_id?: string | null
           answered_at?: string | null
+          connection_id?: string | null
           contact_id?: string | null
           created_at?: string
           direction?: string
@@ -795,12 +812,19 @@ export type Database = {
           error_code?: string | null
           error_message?: string | null
           from_number?: string | null
+          hangup_cause?: string | null
           id?: string
           notes?: string | null
           parent_call_sid?: string | null
+          price_amount?: number | null
+          price_currency?: string | null
+          provider?: string | null
+          provider_call_id?: string | null
+          provider_leg_id?: string | null
           recording_duration_sec?: number | null
           recording_sid?: string | null
           recording_url?: string | null
+          recording_urls?: string[] | null
           started_at?: string
           status?: string
           to_number?: string | null
@@ -3870,9 +3894,14 @@ export type Database = {
           max_attempts: number
           media_urls: string[]
           message_type: string
+          messaging_profile_id: string | null
           num_segments: number | null
           price: number | null
+          price_amount: number | null
+          price_currency: string | null
           price_unit: string | null
+          provider: string | null
+          provider_message_id: string | null
           scheduled_for: string | null
           sent_at: string
           status: string
@@ -3899,9 +3928,14 @@ export type Database = {
           max_attempts?: number
           media_urls?: string[]
           message_type?: string
+          messaging_profile_id?: string | null
           num_segments?: number | null
           price?: number | null
+          price_amount?: number | null
+          price_currency?: string | null
           price_unit?: string | null
+          provider?: string | null
+          provider_message_id?: string | null
           scheduled_for?: string | null
           sent_at?: string
           status?: string
@@ -3928,9 +3962,14 @@ export type Database = {
           max_attempts?: number
           media_urls?: string[]
           message_type?: string
+          messaging_profile_id?: string | null
           num_segments?: number | null
           price?: number | null
+          price_amount?: number | null
+          price_currency?: string | null
           price_unit?: string | null
+          provider?: string | null
+          provider_message_id?: string | null
           scheduled_for?: string | null
           sent_at?: string
           status?: string
@@ -6991,6 +7030,45 @@ export type Database = {
           updated_at?: string
           updated_by?: string | null
           value?: Json
+        }
+        Relationships: []
+      }
+      telnyx_webhook_events: {
+        Row: {
+          created_at: string
+          event_id: string | null
+          event_type: string
+          id: string
+          payload: Json
+          processed_at: string | null
+          processing_error: string | null
+          resource_id: string | null
+          resource_kind: string | null
+          signature_ok: boolean
+        }
+        Insert: {
+          created_at?: string
+          event_id?: string | null
+          event_type: string
+          id?: string
+          payload: Json
+          processed_at?: string | null
+          processing_error?: string | null
+          resource_id?: string | null
+          resource_kind?: string | null
+          signature_ok?: boolean
+        }
+        Update: {
+          created_at?: string
+          event_id?: string | null
+          event_type?: string
+          id?: string
+          payload?: Json
+          processed_at?: string | null
+          processing_error?: string | null
+          resource_id?: string | null
+          resource_kind?: string | null
+          signature_ok?: boolean
         }
         Relationships: []
       }
