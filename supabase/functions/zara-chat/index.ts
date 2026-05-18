@@ -431,6 +431,184 @@ async function consumeAnthropicStream(
 
 function safeJson(s: string) { try { return JSON.parse(s); } catch { return {}; } }
 
+// ── Lead auto-resolution ───────────────────────────────────────────────
+// Extracts email/phone/name tokens from the user message + recent history,
+// then queries crm_contacts + crm_contact_identities. Returns either a
+// confident single hit (auto-resolved) or up to 4 candidates for the UI to
+// disambiguate. Confidence scoring: email > phone > full name > first name.
+type ResolvedLead = {
+  contact_id: string;
+  display_name: string;
+  email: string | null;
+  phone: string | null;
+  confidence: "high" | "medium" | "low";
+  via: "email" | "phone" | "name";
+};
+
+function extractTokens(text: string): { emails: string[]; phones: string[]; names: string[] } {
+  const emails = Array.from(new Set((text.match(/[\w.+-]+@[\w-]+\.[\w.-]+/g) ?? []).map((s) => s.toLowerCase())));
+  const phones = Array.from(new Set((text.match(/(?:\+?1[-.\s]?)?\(?[0-9]{3}\)?[-.\s]?[0-9]{3}[-.\s]?[0-9]{4}/g) ?? [])
+    .map((s) => s.replace(/\D/g, "").slice(-10)).filter((s) => s.length === 10)));
+  // Capitalized name candidates (2+ chars), filter out common starts
+  const STOP = new Set(["I", "The", "A", "An", "Hey", "Hi", "Hello", "Draft", "Send", "Email", "Sms", "Whatsapp", "Show", "Find", "Search", "Get", "Add", "Update", "Book", "Schedule", "Log", "Zara", "Uzair", "Sarb", "Ravish", "Eden", "Surrey", "Vancouver", "Burnaby", "Langley"]);
+  const tokens = (text.match(/\b[A-Z][a-z]{2,20}(?:\s+[A-Z][a-z]{1,20})?\b/g) ?? [])
+    .filter((t) => !STOP.has(t.split(" ")[0]) || t.includes(" "));
+  return { emails, phones, names: Array.from(new Set(tokens)).slice(0, 4) };
+}
+
+async function resolveLeadFromMessage(message: string, historyText: string): Promise<{ resolved: ResolvedLead | null; candidates: ResolvedLead[] }> {
+  const sb = svc();
+  const t = extractTokens(`${message}\n${historyText}`);
+  const hits = new Map<string, ResolvedLead>();
+
+  // Email — highest confidence
+  for (const e of t.emails) {
+    const { data } = await sb.from("crm_contacts")
+      .select("id, first_name, last_name, email, phone, deleted_at")
+      .or(`email.ilike.${e},email_secondary.ilike.${e}`)
+      .is("deleted_at", null).limit(2);
+    for (const c of data ?? []) {
+      hits.set(c.id, {
+        contact_id: c.id,
+        display_name: [c.first_name, c.last_name].filter(Boolean).join(" ").trim() || c.email || "Unknown",
+        email: c.email, phone: c.phone, confidence: "high", via: "email",
+      });
+    }
+    // Identity vault fallback
+    if (!hits.size) {
+      const { data: idRows } = await sb.from("crm_contact_identities")
+        .select("contact_id, crm_contacts!inner(id, first_name, last_name, email, phone, deleted_at)")
+        .eq("kind", "email").eq("value_normalized", e.toLowerCase()).limit(2);
+      for (const r of idRows ?? []) {
+        const c: any = (r as any).crm_contacts;
+        if (!c || c.deleted_at) continue;
+        hits.set(c.id, {
+          contact_id: c.id,
+          display_name: [c.first_name, c.last_name].filter(Boolean).join(" ").trim() || c.email || "Unknown",
+          email: c.email, phone: c.phone, confidence: "high", via: "email",
+        });
+      }
+    }
+  }
+
+  // Phone — high confidence
+  if (hits.size === 0) {
+    for (const p of t.phones) {
+      const { data } = await sb.rpc("crm_match_contact_by_phone", { p_phone: p });
+      const rows = (data ?? []) as Array<{ contact_id: string }>;
+      for (const r of rows.slice(0, 2)) {
+        const { data: c } = await sb.from("crm_contacts")
+          .select("id, first_name, last_name, email, phone, deleted_at")
+          .eq("id", r.contact_id).is("deleted_at", null).maybeSingle();
+        if (!c) continue;
+        hits.set(c.id, {
+          contact_id: c.id,
+          display_name: [c.first_name, c.last_name].filter(Boolean).join(" ").trim() || c.phone || "Unknown",
+          email: c.email, phone: c.phone, confidence: "high", via: "phone",
+        });
+      }
+    }
+  }
+
+  // Name — medium/low. Only if no email/phone hits.
+  if (hits.size === 0) {
+    for (const n of t.names) {
+      const parts = n.split(/\s+/);
+      const first = parts[0]; const last = parts[1];
+      let query = sb.from("crm_contacts")
+        .select("id, first_name, last_name, email, phone, deleted_at")
+        .is("deleted_at", null);
+      if (last) {
+        query = query.ilike("first_name", `${first}%`).ilike("last_name", `${last}%`);
+      } else {
+        query = query.or(`first_name.ilike.${first}%,last_name.ilike.${first}%`);
+      }
+      const { data } = await query.limit(4);
+      for (const c of data ?? []) {
+        if (hits.has(c.id)) continue;
+        hits.set(c.id, {
+          contact_id: c.id,
+          display_name: [c.first_name, c.last_name].filter(Boolean).join(" ").trim() || "Unknown",
+          email: c.email, phone: c.phone,
+          confidence: last ? "medium" : "low", via: "name",
+        });
+      }
+    }
+  }
+
+  const arr = Array.from(hits.values());
+  // Auto-resolve when: 1 hit, OR exactly 1 high-confidence hit
+  const highs = arr.filter((h) => h.confidence === "high");
+  if (highs.length === 1) return { resolved: highs[0], candidates: [] };
+  if (arr.length === 1 && arr[0].confidence !== "low") return { resolved: arr[0], candidates: [] };
+  return { resolved: null, candidates: arr.slice(0, 4) };
+}
+
+async function buildLeadMemoryBlock(contactId: string): Promise<{ block: string; payload: any } | null> {
+  const sb = svc();
+  const [contactRes, memRes, activityRes] = await Promise.all([
+    sb.from("crm_contacts")
+      .select("id, first_name, last_name, email, phone, status, lead_type, contact_type, language_preference, city, tags, last_touch_at, engagement_score, assigned_to, project, projects")
+      .eq("id", contactId).maybeSingle(),
+    sb.from("zara_lead_memory")
+      .select("summary, signals, facts, relationship_stage, last_topics, continuity_openers, refreshed_at")
+      .eq("contact_id", contactId).maybeSingle(),
+    sb.from("crm_activity_events")
+      .select("type, occurred_at, project_slug, metadata")
+      .eq("contact_id", contactId).order("occurred_at", { ascending: false }).limit(3),
+  ]);
+  const c: any = contactRes.data; if (!c) return null;
+  const m: any = memRes.data ?? {};
+  const recentActs = (activityRes.data ?? []) as any[];
+  const lastAct = recentActs[0];
+  const topProjects = [
+    ...(c.project ? [c.project] : []),
+    ...(Array.isArray(c.projects) ? c.projects : []),
+    ...recentActs.map((a) => a.project_slug).filter(Boolean),
+  ].filter((v, i, arr) => v && arr.indexOf(v) === i).slice(0, 3);
+  const name = [c.first_name, c.last_name].filter(Boolean).join(" ").trim() || c.email || "Unknown";
+
+  const lines: string[] = [];
+  lines.push("<lead_memory>");
+  lines.push(`The conversation is about THIS lead. Use this context silently — never recap it back to Uzair unless he asks.`);
+  lines.push(`Name: ${name} · id=${c.id}`);
+  if (c.email) lines.push(`Email: ${c.email}`);
+  if (c.phone) lines.push(`Phone: ${c.phone}`);
+  if (c.status) lines.push(`Pipeline: ${c.status}${c.lead_type ? ` · ${c.lead_type}` : ""}`);
+  if (c.city) lines.push(`City: ${c.city}`);
+  if (c.language_preference) lines.push(`Language: ${c.language_preference}`);
+  if (Array.isArray(c.tags) && c.tags.length) lines.push(`Tags: ${c.tags.slice(0, 8).join(", ")}`);
+  if (typeof c.engagement_score === "number") lines.push(`Engagement: ${c.engagement_score}/100`);
+  if (c.last_touch_at) lines.push(`Last touch: ${c.last_touch_at}`);
+  if (m.relationship_stage) lines.push(`Relationship stage: ${m.relationship_stage}`);
+  if (Array.isArray(m.last_topics) && m.last_topics.length) lines.push(`Last topics: ${m.last_topics.slice(0, 5).join(" · ")}`);
+  if (Array.isArray(m.continuity_openers) && m.continuity_openers.length) {
+    lines.push(`Possible openers: ${m.continuity_openers.slice(0, 2).map((s: string) => `"${s}"`).join(" / ")}`);
+  }
+  if (topProjects.length) lines.push(`Top projects of interest: ${topProjects.join(" · ")}`);
+  if (lastAct) lines.push(`Last activity: ${lastAct.type} @ ${lastAct.occurred_at}${lastAct.project_slug ? ` · ${lastAct.project_slug}` : ""}`);
+  if (m.summary) lines.push(`Summary: ${String(m.summary).slice(0, 600)}`);
+  lines.push("</lead_memory>");
+
+  return {
+    block: lines.join("\n"),
+    payload: {
+      contact_id: c.id,
+      display_name: name,
+      email: c.email, phone: c.phone, city: c.city,
+      status: c.status, lead_type: c.lead_type,
+      engagement_score: c.engagement_score,
+      relationship_stage: m.relationship_stage ?? null,
+      last_touch_at: c.last_touch_at,
+      summary: m.summary ?? null,
+      last_topics: m.last_topics ?? [],
+      continuity_openers: m.continuity_openers ?? [],
+      top_projects: topProjects,
+      tags: c.tags ?? [],
+    },
+  };
+}
+
 // ── Main handler ───────────────────────────────────────────────────────
 
 Deno.serve(async (req) => {
@@ -495,11 +673,35 @@ Deno.serve(async (req) => {
       ragSources = r.sources;
     }
 
+    // ── Lead auto-resolution + memory ────────────────────────────────────
+    // Priority: explicit page_context.contact_id > resolver hit from message
+    let activeContactId: string | null = pinnedContactId;
+    let resolvedPayload: any = null;
+    let candidatesPayload: any[] = [];
+    if (!activeContactId) {
+      const historyText = history.slice(-6).map((r: any) => typeof r.content === "string" ? r.content : "").join("\n");
+      const { resolved, candidates } = await resolveLeadFromMessage(message, historyText);
+      if (resolved) {
+        activeContactId = resolved.contact_id;
+        resolvedPayload = resolved;
+      } else if (candidates.length > 1) {
+        candidatesPayload = candidates;
+      }
+    }
+    let leadMemoryBlock = "";
+    let leadMemoryPayload: any = null;
+    if (activeContactId) {
+      const lm = await buildLeadMemoryBlock(activeContactId);
+      if (lm) { leadMemoryBlock = lm.block; leadMemoryPayload = lm.payload; }
+    }
+
     // System assembly: <retrieved_context> goes BEFORE addenda; <current_view>
-    // goes after retrieval so the model can use it to resolve pronouns.
+    // and <lead_memory> go after retrieval so the model can use them to
+    // resolve pronouns and ground every draft.
     const currentViewBlock = await buildCurrentViewBlock(page_context);
     const systemParts = [SYSTEM_PROMPT_BASE];
     if (ragBlock) systemParts.push(ragBlock);
+    if (leadMemoryBlock) systemParts.push(leadMemoryBlock);
     if (currentViewBlock) systemParts.push(currentViewBlock);
     for (const a of (addenda ?? [])) systemParts.push((a as any).addendum);
     if (reply_mode === "action") {
@@ -522,6 +724,8 @@ Deno.serve(async (req) => {
         try {
           if (ragWarning) send("warning", { message: ragWarning });
           if (ragSources) send("sources", ragSources);
+          if (leadMemoryPayload) send("resolved_lead", { lead: leadMemoryPayload, resolved_via: resolvedPayload?.via ?? "page_context", confidence: resolvedPayload?.confidence ?? "high" });
+          else if (candidatesPayload.length) send("lead_candidates", { candidates: candidatesPayload });
 
           // Auto-title from first user msg
           const userTurns = history.filter((r) => r.role === "user").length;

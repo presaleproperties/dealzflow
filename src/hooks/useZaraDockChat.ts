@@ -100,6 +100,8 @@ export function useZaraDockChat(conversationId: string | null, pageContext: Zara
   const [streamText, setStreamText] = useState('');
   const [streamTools, setStreamTools] = useState<ToolUiState[]>([]);
   const [streamSources, setStreamSources] = useState<StreamSources>(null);
+  const [resolvedLead, setResolvedLead] = useState<any | null>(null);
+  const [leadCandidates, setLeadCandidates] = useState<any[]>([]);
   const abortRef = useRef<AbortController | null>(null);
 
   const stop = useCallback(() => abortRef.current?.abort(), []);
@@ -113,6 +115,8 @@ export function useZaraDockChat(conversationId: string | null, pageContext: Zara
     setStreamText('');
     setStreamTools([]);
     setStreamSources(null);
+    setLeadCandidates([]);
+    // Keep resolvedLead from prior turn until a new one arrives or stream ends without one.
 
     const { data: sess } = await supabase.auth.getSession();
     const token = sess.session?.access_token;
@@ -163,6 +167,8 @@ export function useZaraDockChat(conversationId: string | null, pageContext: Zara
             qc.invalidateQueries({ queryKey: ['zara-pending-tool-calls', convId] });
           } else if (ev === 'title') qc.invalidateQueries({ queryKey: ['zara-conversations'] });
           else if (ev === 'sources') setStreamSources(payload);
+          else if (ev === 'resolved_lead') setResolvedLead(payload.lead);
+          else if (ev === 'lead_candidates') setLeadCandidates(payload.candidates ?? []);
           else if (ev === 'warning') toast.warning(payload.message ?? 'Zara warning');
           else if (ev === 'error') toast.error(payload.message ?? 'Stream error');
           else if (ev === 'done') qc.invalidateQueries({ queryKey: ['zara-messages', convId] });
@@ -244,7 +250,7 @@ export function useZaraDockChat(conversationId: string | null, pageContext: Zara
     return out;
   }, [messages, pendingByUseId]);
 
-  return { messages, rendered, send, stop, streaming, streamText, streamTools, streamSources, decide, decidingId };
+  return { messages, rendered, send, stop, streaming, streamText, streamTools, streamSources, decide, decidingId, resolvedLead, leadCandidates, clearResolvedLead: () => setResolvedLead(null) };
 }
 
 /** Lightweight conversation CRUD shared by the overlay. */
