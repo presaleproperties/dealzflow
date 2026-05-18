@@ -386,3 +386,38 @@ export function guessIntent(text: string): ZaraIntent {
   if (/\b(hi|hello|hey|namaste|sat sri akal|salaam)\b/.test(t) && t.length < 80) return 'greeting';
   return 'unknown';
 }
+
+// ──────────────────────────────────────────────────────────────────────────
+// {LOOKUP: topic} placeholder convention
+// ──────────────────────────────────────────────────────────────────────────
+// Zara writes `{LOOKUP: pricing}` etc. in a draft when she lacks verified data.
+// Callers (zara-chat / zara-public-chat / draft processors) should:
+//   1. Run extractLookupPlaceholders(draft) to find unresolved gaps.
+//   2. Either auto-resolve them by calling the `lookup_topic` tool, or block
+//      send and surface the missing data to the agent.
+
+export interface LookupPlaceholder {
+  raw: string;       // e.g. "{LOOKUP: pricing}"
+  topic: string;     // e.g. "pricing"
+}
+
+const LOOKUP_RE = /\{\s*LOOKUP\s*:\s*([a-z_][a-z0-9_]*)\s*\}/gi;
+
+export function extractLookupPlaceholders(text: string | null | undefined): LookupPlaceholder[] {
+  if (!text) return [];
+  const out: LookupPlaceholder[] = [];
+  const seen = new Set<string>();
+  let m: RegExpExecArray | null;
+  LOOKUP_RE.lastIndex = 0;
+  while ((m = LOOKUP_RE.exec(text)) !== null) {
+    const topic = m[1].toLowerCase();
+    if (seen.has(topic)) continue;
+    seen.add(topic);
+    out.push({ raw: m[0], topic });
+  }
+  return out;
+}
+
+export function hasUnresolvedLookups(text: string | null | undefined): boolean {
+  return extractLookupPlaceholders(text).length > 0;
+}
