@@ -48,7 +48,8 @@ Deno.serve(async (req) => {
         channel,
         inboundText: transcript,
         inboundAt: new Date().toISOString(),
-        inboundEventId: `voice:${Date.now()}`,
+        // inbound_event_id is a uuid column; voice notes don't have one — let suggest-reply default to null.
+        inboundEventId: null,
       }),
     });
     const srBody = await sr.json().catch(() => null);
