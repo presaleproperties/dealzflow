@@ -32,15 +32,30 @@ function buildRows(f: ZaraLeadFacts): Row[] {
   const budget = budgetRange(f);
   if (budget) rows.push({ label: 'Budget', value: budget });
   if (f.timeline) rows.push({ label: 'Timeline', value: f.timeline });
+  if (f.timing_concerns) rows.push({ label: 'Timing', value: f.timing_concerns });
   if (f.financing_status) rows.push({ label: 'Financing', value: f.financing_status });
-  if (f.preferred_neighborhoods?.length) rows.push({ label: 'Areas', value: f.preferred_neighborhoods.join(', ') });
+  if (f.investor_vs_enduser) rows.push({ label: 'Buyer', value: f.investor_vs_enduser === 'investor' ? 'Investor' : f.investor_vs_enduser === 'end_user' ? 'End-user' : 'Mixed' });
+  if (f.preferred_property_type) rows.push({ label: 'Type', value: f.preferred_property_type });
+  if (f.preferred_cities?.length) rows.push({ label: 'Cities', value: f.preferred_cities.join(', ') });
+  else if (f.preferred_neighborhoods?.length) rows.push({ label: 'Areas', value: f.preferred_neighborhoods.join(', ') });
   if (f.project_interest) rows.push({ label: 'Project', value: f.project_interest });
+  if (f.projects_compared?.length) rows.push({ label: 'Comparing', value: f.projects_compared.slice(0, 4).join(', ') });
+  if (f.viewed_projects?.length) rows.push({ label: 'Viewed', value: f.viewed_projects.slice(0, 4).join(', ') });
+  if (f.downloaded_floorplans?.length) rows.push({ label: 'Floorplans', value: f.downloaded_floorplans.slice(0, 4).join(', ') });
+  if (f.school_preferences) rows.push({ label: 'Schools', value: f.school_preferences });
+  if (f.commute_concerns) rows.push({ label: 'Commute', value: f.commute_concerns });
   if (f.must_haves?.length) rows.push({ label: 'Must-haves', value: f.must_haves.join(', ') });
   if (f.dealbreakers?.length) rows.push({ label: 'Dealbreakers', value: f.dealbreakers.join(', ') });
   if (f.motivations?.length) rows.push({ label: 'Why', value: f.motivations.join(', ') });
   if (f.decision_makers?.length) rows.push({ label: 'Decision', value: f.decision_makers.join(', ') });
   if (f.family_situation) rows.push({ label: 'Family', value: f.family_situation });
+  if (f.emotional_hesitation) rows.push({ label: 'Hesitation', value: f.emotional_hesitation });
+  if (f.emotional_objections?.length) rows.push({ label: 'Concerns', value: f.emotional_objections.join(' · ') });
   if (f.last_objection) rows.push({ label: 'Objection', value: f.last_objection });
+  if (f.appointment_history?.length) {
+    const a = f.appointment_history.slice(0, 3).map(x => `${x.kind ?? 'visit'}${x.project ? ` @ ${x.project}` : ''}${x.when ? ` (${x.when})` : ''}`).join(' · ');
+    rows.push({ label: 'Visits', value: a });
+  }
   if (f.next_steps?.length) rows.push({ label: 'Next', value: f.next_steps.join(' · ') });
   return rows;
 }
