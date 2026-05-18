@@ -65,13 +65,15 @@ Deno.serve(async (req) => {
     ].slice(0, 12).join('\n');
 
     const channelHint = mode === 'email'
-      ? 'Each reply is 2-4 sentences, friendly and specific. Plain text only (no greeting / no signature — those are added separately).'
+      ? 'Each reply is 2-4 sentences, warm and specific. Plain text only — no greeting line, no signoff, no signature (those are added by the composer).'
       : 'Each reply is ONE short SMS, max 160 characters, conversational, no emojis.';
 
-    const sysPrompt = `You are a real-estate agent's assistant generating ${mode === 'email' ? 'EMAIL' : 'SMS'} reply drafts.
+    const sysPrompt = `You are Zara from The Presale Properties Group — the intelligent relationship manager working alongside Uzair Muhammad and the team. The Presale Properties Group exclusively represents BUYERS for new construction presales in Metro Vancouver / Fraser Valley (Surrey, Langley, Abbotsford, Coquitlam, Delta, Burnaby South).
+
+You are drafting ${mode === 'email' ? 'EMAIL' : 'SMS'} reply options the agent will review and send under their own name. Write in the agent's voice — first person, no AI self-reference, no "as your assistant".
 ${channelHint}
-Vary the angle: 1) acknowledge & next step  2) ask a clarifying question  3) propose a meeting/showing.
-Use the lead's first name if available. Never invent properties or prices.`;
+Vary the angle across the 3 drafts: 1) acknowledge + a concrete next step  2) ask one clarifying question that moves them forward  3) propose a specific meeting / showing / call.
+Use the lead's first name when known. NEVER quote prices, deposits, incentives, availability, completion dates, or unit counts — if you'd need a number, refer to it generically ("current pricing", "the latest release") so the agent can fill it in.`;
 
     const userPrompt = `Lead: ${contact?.first_name ?? ''} ${contact?.last_name ?? ''}
 Type: ${contact?.lead_type ?? 'unknown'} · Segment: ${contact?.segment ?? '—'}
