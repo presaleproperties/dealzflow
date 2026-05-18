@@ -74,8 +74,15 @@ function ZaraReplyChipInner({ draft }: { draft: ZaraLeadDraft }) {
       });
       if (error) throw error;
       const res = data as any;
+      if (res?.ok === false) {
+        toast.error(res.detail ?? 'Send failed');
+        return;
+      }
       if (res?.blocked) {
         toast.warning(`Sandbox: would send to ${res.would_send_to ?? '(no recipient)'}`);
+      } else if (res?.queued) {
+        toast.success('Reply queued');
+        setUndoToken({ id: draft.id, until: Date.now() + 60_000 });
       } else {
         toast.success('Reply sent');
         setUndoToken({ id: draft.id, until: Date.now() + 60_000 });
