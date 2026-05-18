@@ -7,10 +7,10 @@
  * Mirrors the actions on /crm/needs-review but scoped to one contact and
  * adds "Send now" for already-approved-but-scheduled rows.
  */
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { formatDistanceToNow } from 'date-fns';
-import { Check, X, Send, Mail, ChevronDown, ChevronRight, Loader2, Clock, AlertCircle, Pencil, Save } from 'lucide-react';
+import { Check, X, Send, Mail, ChevronDown, ChevronRight, Loader2, Clock, AlertCircle, Pencil, Save, Code2, Type } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -35,12 +35,15 @@ export function ZaraQueuedEmailsPanel({ contactId }: { contactId: string }) {
   const [openId, setOpenId] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [editId, setEditId] = useState<string | null>(null);
+  const [editMode, setEditMode] = useState<'rich' | 'html'>('rich');
   const [draftSubject, setDraftSubject] = useState('');
   const [draftHtml, setDraftHtml] = useState('');
+  const richRef = useRef<HTMLDivElement | null>(null);
 
   const startEdit = (row: Row) => {
     setEditId(row.id);
     setOpenId(row.id);
+    setEditMode('rich');
     setDraftSubject(row.subject ?? '');
     setDraftHtml(row.body_html ?? '');
   };
@@ -209,18 +212,43 @@ export function ZaraQueuedEmailsPanel({ contactId }: { contactId: string }) {
                           />
                         </div>
                         <div>
-                          <label className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-                            Body HTML
-                          </label>
-                          <Textarea
-                            value={draftHtml}
-                            onChange={(e) => setDraftHtml(e.target.value)}
-                            rows={10}
-                            className="mt-1 font-mono text-xs"
-                            placeholder="<p>Hi {{first_name}}, …</p>"
-                          />
+                          <div className="flex items-center justify-between">
+                            <label className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                              Body
+                            </label>
+                            <div className="inline-flex rounded border border-border overflow-hidden">
+                              <button
+                                type="button"
+                                onClick={() => setEditMode('rich')}
+                                className={`px-2 py-0.5 text-[10px] inline-flex items-center gap-1 ${editMode === 'rich' ? 'bg-muted text-foreground' : 'text-muted-foreground hover:bg-muted/50'}`}
+                              ><Type className="h-3 w-3" /> Rich</button>
+                              <button
+                                type="button"
+                                onClick={() => setEditMode('html')}
+                                className={`px-2 py-0.5 text-[10px] inline-flex items-center gap-1 border-l border-border ${editMode === 'html' ? 'bg-muted text-foreground' : 'text-muted-foreground hover:bg-muted/50'}`}
+                              ><Code2 className="h-3 w-3" /> HTML</button>
+                            </div>
+                          </div>
+                          {editMode === 'rich' ? (
+                            <div
+                              ref={richRef}
+                              contentEditable
+                              suppressContentEditableWarning
+                              onInput={(e) => setDraftHtml((e.target as HTMLDivElement).innerHTML)}
+                              dangerouslySetInnerHTML={{ __html: draftHtml }}
+                              className="mt-1 min-h-[200px] max-h-[360px] overflow-y-auto rounded border border-border bg-background p-3 text-sm focus:outline-none focus:ring-1 focus:ring-primary/30 prose prose-sm max-w-none dark:prose-invert"
+                            />
+                          ) : (
+                            <Textarea
+                              value={draftHtml}
+                              onChange={(e) => setDraftHtml(e.target.value)}
+                              rows={10}
+                              className="mt-1 font-mono text-xs"
+                              placeholder="<p>Hi {{first_name}}, …</p>"
+                            />
+                          )}
                           <p className="mt-1 text-[10px] text-muted-foreground">
-                            Edit the HTML directly. Preview below updates live.
+                            {editMode === 'rich' ? 'Type to edit. Branded template + signature are re-applied on send.' : 'Edit raw HTML. Preview updates live.'}
                           </p>
                         </div>
                       </div>
@@ -254,15 +282,15 @@ export function ZaraQueuedEmailsPanel({ contactId }: { contactId: string }) {
                         </>
                       ) : (
                         <>
+                          <Button size="sm" disabled={busy} onClick={() => sendNow(row)} className="h-7 gap-1.5">
+                            {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
+                            {row.needs_review ? 'Approve & send' : 'Send now'}
+                          </Button>
                           {row.needs_review && (
-                            <Button size="sm" disabled={busy} onClick={() => approve(row)} className="h-7 gap-1.5">
-                              {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
-                              Approve
+                            <Button size="sm" variant="outline" disabled={busy} onClick={() => approve(row)} className="h-7 gap-1.5">
+                              <Check className="h-3.5 w-3.5" /> Approve only
                             </Button>
                           )}
-                          <Button size="sm" variant="outline" disabled={busy} onClick={() => sendNow(row)} className="h-7 gap-1.5">
-                            <Send className="h-3.5 w-3.5" /> Send now
-                          </Button>
                           <Button size="sm" variant="outline" disabled={busy} onClick={() => startEdit(row)} className="h-7 gap-1.5">
                             <Pencil className="h-3.5 w-3.5" /> Edit
                           </Button>

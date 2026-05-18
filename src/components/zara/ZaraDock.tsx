@@ -14,6 +14,7 @@ import { useZaraDock } from '@/stores/useZaraDock';
 import { useZaraPageContext } from '@/hooks/useZaraPageContext';
 import { useZaraDockChat, useZaraConversations, type Conv } from '@/hooks/useZaraDockChat';
 import { getChipsForSurface } from '@/lib/zaraDockChips';
+import { ZaraQueuedEmailsPanel } from '@/components/crm/leads/ZaraQueuedEmailsPanel';
 
 const HIDDEN_PATTERNS: RegExp[] = [
   /^\/crm\/zara\/?$/, // cockpit
@@ -580,6 +581,9 @@ export function ZaraDock() {
 
             {/* Body */}
             <div ref={scrollerRef} className="flex-1 min-h-0 overflow-y-auto px-3 py-3 space-y-2.5">
+              {pageContext.contact_id && (
+                <ZaraQueuedEmailsPanel contactId={pageContext.contact_id} />
+              )}
               {rendered.length === 0 && !streaming && (
                 <div className="text-center pt-16 pb-6 px-2">
                   <div className="text-[13px] text-muted-foreground/80 tracking-tight">
