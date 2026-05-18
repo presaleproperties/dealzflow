@@ -104,7 +104,7 @@ export function useZaraDockChat(conversationId: string | null, pageContext: Zara
 
   const stop = useCallback(() => abortRef.current?.abort(), []);
 
-  const send = useCallback(async (text: string, convIdOverride?: string | null) => {
+  const send = useCallback(async (text: string, convIdOverride?: string | null, opts?: { replyMode?: 'normal' | 'action' }) => {
     const trimmed = text.trim();
     const convId = convIdOverride ?? conversationId;
     if (!trimmed || streaming || !convId) return;
@@ -129,6 +129,7 @@ export function useZaraDockChat(conversationId: string | null, pageContext: Zara
           conversation_id: convId,
           message: trimmed,
           page_context: pageContext,
+          reply_mode: opts?.replyMode ?? 'normal',
         }),
         signal: abort.signal,
       });
