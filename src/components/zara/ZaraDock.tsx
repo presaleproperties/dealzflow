@@ -154,13 +154,22 @@ function SourcesPill({ sources }: { sources: any }) {
 }
 
 // Parse a trailing `###NEXT### ... ###/NEXT###` block out of assistant text.
-// Returns { body, nextActions } so MessageBubble can render the actions as chips.
+// Returns { body, nextActions } — only keeps chips that would change CRM state
+// (drafting, sending, booking, scheduling, logging, updating, etc.).
+// Read-only chips (show/list/explain/summarize/open) are filtered out so the
+// chip rail is reserved for one-tap actions, not navigation.
+const STATE_CHANGE_VERBS = /^(draft|send|reply|book|reschedule|schedule|log|add|update|change|set|assign|tag|untag|create|remind|follow[- ]?up|move|mark|note|invite|share project|email|text|call|whatsapp)\b/i;
+const READ_ONLY_PREFIXES = /^(show|list|view|see|open|tell|explain|summari[sz]e|what|who|when|where|why|how|recap|find|search|describe)\b/i;
 function splitNextBlock(text: string): { body: string; nextActions: string[] } {
   const re = /###NEXT###\s*([\s\S]*?)\s*###\/NEXT###\s*$/i;
   const m = text.match(re);
   if (!m) return { body: text, nextActions: [] };
   const body = text.slice(0, m.index).trimEnd();
-  const lines = m[1].split('\n').map((l) => l.replace(/^[-*]\s*/, '').trim()).filter(Boolean);
+  const lines = m[1]
+    .split('\n')
+    .map((l) => l.replace(/^[-*]\s*/, '').trim())
+    .filter(Boolean)
+    .filter((l) => STATE_CHANGE_VERBS.test(l) && !READ_ONLY_PREFIXES.test(l));
   return { body, nextActions: lines.slice(0, 3) };
 }
 
