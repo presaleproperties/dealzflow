@@ -320,14 +320,19 @@ export function validateNeverQuote(draftText: string, rules: NeverQuoteRules | n
 
 export function buildZaraSystemPrompt(
   intent: ZaraIntent | null | undefined,
-  opts?: { neverQuote?: NeverQuoteRules | null; mode?: 'discovery' | 'transaction_support' | null },
+  opts?: {
+    neverQuote?: NeverQuoteRules | null;
+    mode?: 'discovery' | 'transaction_support' | null;
+    scenario?: ZaraScenario | null;
+  },
 ): string {
   const intentBlock = intent && INTENT_BLOCKS[intent] ? INTENT_BLOCKS[intent] : '';
+  const scenarioBlock = buildScenarioBlock(opts?.scenario ?? null);
   const nq = buildNeverQuoteBlock(opts?.neverQuote);
   const modeBlock = opts?.mode === 'transaction_support'
     ? 'CURRENT MODE: transaction support. Lead has an active deal. Tone shifts to logistics, document follow-ups, milestone reminders, NO new pitching. Keep replies short and operational.'
     : '';
-  return [ZARA_BASE_PROMPT, intentBlock, modeBlock, nq].filter(Boolean).join('\n\n---\n');
+  return [ZARA_BASE_PROMPT, intentBlock, scenarioBlock, modeBlock, nq].filter(Boolean).join('\n\n---\n');
 }
 
 /** Backwards-compat export — equals BASE prompt. New code should use buildZaraSystemPrompt(). */
