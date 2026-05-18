@@ -161,6 +161,8 @@ Deno.serve(async (req) => {
     const events = engRes.data ?? [];
     const activity = actRes.data ?? [];
     const showings = (showRes as any).data ?? [];
+    const noteIntel = intelRes.data ?? [];
+    const recentNotes = notesRes.data ?? [];
 
     // Pre-compute structured signals so the LLM has clean evidence
     const viewed = uniq(activity.filter(a => /view|page|return_visit/i.test(a.type) && a.project_slug).map(a => a.project_slug as string));
@@ -180,6 +182,29 @@ Deno.serve(async (req) => {
         city: contact.city,
         notes: (contact.notes || "").slice(0, 1500),
       },
+      // HIGHEST-PRIORITY EVIDENCE — agent-written notes + their AI extractions.
+      manual_notes_highest_priority: recentNotes.map((n: any) => ({
+        when: (n.event_at || n.created_at)?.slice(0, 10),
+        type: n.note_type,
+        text: (n.content || "").slice(0, 1500),
+      })),
+      note_intelligence_rollup: noteIntel.map((r: any) => ({
+        when: r.analyzed_at?.slice(0, 10),
+        summary: r.summary,
+        emotional_state: r.emotional_state,
+        trust: r.trust_level,
+        readiness: r.buying_readiness,
+        objections: r.objections,
+        motivations: r.motivations,
+        financial_concerns: r.financial_concerns,
+        family: r.family_context,
+        timing: r.timing_signals,
+        areas: r.preferred_areas,
+        escalation: r.escalation_signals,
+        key_quote: r.key_quote,
+        recommended_style: r.recommended_style,
+        recommended_next_step: r.recommended_next_step,
+      })),
       existing_facts: existingMemory?.facts ?? {},
       existing_summary: existingMemory?.summary ?? null,
       derived: {
