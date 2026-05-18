@@ -209,23 +209,54 @@ async function buildRollingSummaryBlock(convId: string): Promise<string> {
   return `<rolling_summary>\nThe ${olderCount} earlier message(s) in this thread are summarised below. Use them silently for continuity; do not recap them back.\n${lines.join("\n")}\n</rolling_summary>`;
 }
 
-// Convert our persisted messages to Anthropic format.
+// Convert our persisted messages to Anthropic format. Anthropic requires every
+// tool_result block to be in ONE user message immediately after the assistant
+// message that introduced the matching tool_use. Approval callbacks can arrive
+// later, so orphaned tool rows are downgraded to plain user text instead of
+// being sent as invalid tool_result blocks.
 function toAnthropicMessages(rows: any[]) {
   const out: any[] = [];
-  for (const r of rows) {
+  for (let i = 0; i < rows.length; i++) {
+    const r = rows[i];
     if (r.role === "user") {
       out.push({ role: "user", content: r.content ?? "" });
     } else if (r.role === "assistant") {
       const content: any[] = [];
+      const validToolIds = new Set<string>();
       if (r.content) content.push({ type: "text", text: r.content });
-      if (Array.isArray(r.tool_calls)) for (const tc of r.tool_calls)
-        content.push({ type: "tool_use", id: tc.id, name: tc.name, input: tc.input });
+      if (Array.isArray(r.tool_calls)) for (const tc of r.tool_calls) {
+        if (!tc?.id || !tc?.name) continue;
+        validToolIds.add(tc.id);
+        content.push({ type: "tool_use", id: tc.id, name: tc.name, input: tc.input ?? {} });
+      }
+      if (!content.length) continue;
       out.push({ role: "assistant", content });
+
+      const toolResults: any[] = [];
+      const usedToolIds = new Set<string>();
+      while (i + 1 < rows.length && rows[i + 1]?.role === "tool") {
+        const tr = rows[++i];
+        const id = tr.tool_call_id;
+        if (id && validToolIds.has(id) && !usedToolIds.has(id)) {
+          usedToolIds.add(id);
+          toolResults.push({ type: "tool_result", tool_use_id: id, content: JSON.stringify(tr.tool_result ?? {}) });
+        } else {
+          const summary = stringifyToolRowForModel(tr);
+          if (summary) out.push({ role: "user", content: summary });
+        }
+      }
+      if (toolResults.length) out.push({ role: "user", content: toolResults });
     } else if (r.role === "tool") {
-      out.push({ role: "user", content: [{ type: "tool_result", tool_use_id: r.tool_call_id, content: JSON.stringify(r.tool_result) }] });
+      const summary = stringifyToolRowForModel(r);
+      if (summary) out.push({ role: "user", content: summary });
     }
   }
   return out;
+}
+
+function stringifyToolRowForModel(r: any) {
+  if (!r?.tool_result) return "";
+  return `Tool result from ${r.tool_name ?? "tool"}: ${JSON.stringify(r.tool_result).slice(0, 3000)}`;
 }
 
 async function runTool(name: string, input: unknown, ctx: ToolCtx) {
