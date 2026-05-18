@@ -95,11 +95,11 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   try {
-    if (!isAuthorized(req)) return json({ error: "Unauthorized" }, 401);
-
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, serviceKey, { auth: { persistSession: false } });
+
+    if (!(await isAuthorized(req, supabase))) return json({ error: "Unauthorized" }, 401);
 
     const nowIso = new Date().toISOString();
     const staleIso = new Date(Date.now() - 10 * 60_000).toISOString();
