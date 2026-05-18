@@ -581,6 +581,29 @@ async function attach_floorplan(args: any, ctx: Ctx) {
   return ok({ project_name: p?.name ?? c?.name, floor_plans_url: floor_url, floor_plans_filename: floor_filename, brochure_url, draft_id });
 }
 
+async function send_brochure(args: any, ctx: Ctx) {
+  const sb = svc();
+  const r = await resolveProject(sb, args);
+  if (!r || (!r.presale && !r.crm)) return fail("project not found (pass project_slug, project_id, or project_name)");
+  const c = r.crm; const p = r.presale;
+  const brochure_url =
+    c?.brochure_url ??
+    p?.brochure_url ??
+    p?.pitch_deck_url ??
+    p?.first_brochure_url ??
+    null;
+  const brochure_filename = c?.brochure_filename ?? null;
+  if (!brochure_url) return fail("No brochure on file for this project yet");
+  await logAction(ctx, "send_brochure", { project: p?.slug ?? c?.slug }, "ok", args.contact_id ?? null);
+  return ok({
+    project_name: p?.name ?? c?.name,
+    slug: p?.slug ?? c?.slug,
+    brochure_url,
+    brochure_filename,
+    source: c?.brochure_url ? "manual" : "presale",
+  });
+}
+
 async function schedule_follow_up_smart(args: any, ctx: Ctx) {
   if (!args?.contact_id) return fail("contact_id required");
   const sb = svc();
@@ -881,7 +904,7 @@ const REGISTRY: Record<string, (args: any, ctx: Ctx) => Promise<unknown>> = {
   // Phase 4
   book_calendly, get_pricing, attach_floorplan, schedule_follow_up_smart, enrich_lead,
   // Public-site
-  capture_lead, get_unit_availability, escalate_to_human, get_floor_plans,
+  capture_lead, get_unit_availability, escalate_to_human, get_floor_plans, send_brochure,
 };
 
 

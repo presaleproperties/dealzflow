@@ -38,10 +38,11 @@ const PUBLIC_TOOL_ALLOWLIST = new Set<string>([
   "get_unit_availability",
   "escalate_to_human",
   "get_floor_plans",
+  "send_brochure",
 ]);
 
 // Tools that count toward the outbound-send rate limit (10/hr).
-const SEND_TOOLS = new Set<string>(["book_calendly", "attach_floorplan", "escalate_to_human"]);
+const SEND_TOOLS = new Set<string>(["book_calendly", "attach_floorplan", "escalate_to_human", "send_brochure"]);
 
 const SYSTEM_PROMPT_PUBLIC = `You are speaking to a PUBLIC VISITOR on presaleproperties.com, not to an internal agent.
 
@@ -304,10 +305,10 @@ Deno.serve(async (req) => {
     }
     const latestUserMsg = latestUserMsgRaw;
 
-    // Rate limit (message side) — 30 msg / hr per presale_user_id
+    // Rate limit (message side) — 60 msg / hr per presale_user_id
     const sb = svc();
     const { data: rl } = await sb.rpc("zara_public_rate_check", {
-      _presale_user_id: presale_user_id, _is_send: false, _msg_limit: 30, _send_limit: 10,
+      _presale_user_id: presale_user_id, _is_send: false, _msg_limit: 60, _send_limit: 10,
     });
     const rlRow = Array.isArray(rl) ? rl[0] : rl;
     if (rlRow && rlRow.allowed === false) {
@@ -383,7 +384,7 @@ Deno.serve(async (req) => {
               // Send-side rate limit for outbound tools
               if (SEND_TOOLS.has(tu.name)) {
                 const { data: rl2 } = await sb.rpc("zara_public_rate_check", {
-                  _presale_user_id: presale_user_id, _is_send: true, _msg_limit: 30, _send_limit: 10,
+                  _presale_user_id: presale_user_id, _is_send: true, _msg_limit: 60, _send_limit: 10,
                 });
                 const row = Array.isArray(rl2) ? rl2[0] : rl2;
                 if (row && row.allowed === false) {
