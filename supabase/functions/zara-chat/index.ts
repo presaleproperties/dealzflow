@@ -836,7 +836,9 @@ Deno.serve(async (req) => {
     // and <lead_memory> go after retrieval so the model can use them to
     // resolve pronouns and ground every draft.
     const currentViewBlock = await buildCurrentViewBlock(page_context);
+    const rollingSummaryBlock = await buildRollingSummaryBlock(conversation_id);
     const systemParts = [SYSTEM_PROMPT_BASE];
+    if (rollingSummaryBlock) systemParts.push(rollingSummaryBlock);
     if (ragBlock) systemParts.push(ragBlock);
     if (leadMemoryBlock) systemParts.push(leadMemoryBlock);
     if (currentViewBlock) systemParts.push(currentViewBlock);
