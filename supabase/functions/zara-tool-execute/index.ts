@@ -692,11 +692,16 @@ async function schedule_follow_up_smart(args: any, ctx: Ctx) {
 async function enrich_lead(args: any, _ctx: Ctx) {
   if (!args?.contact_id) return fail("contact_id required");
   const sb = svc();
-  const [contactRes, idsRes, actsRes, memRes] = await Promise.all([
+  const [contactRes, idsRes, actsRes, memRes, callsRes] = await Promise.all([
     sb.from("crm_contacts").select("*").eq("id", args.contact_id).maybeSingle(),
     sb.from("crm_contact_identities").select("kind,value,is_primary,created_at").eq("contact_id", args.contact_id),
     sb.from("crm_activity_events").select("event_type,description,occurred_at").eq("contact_id", args.contact_id).order("occurred_at", { ascending: false }).limit(15),
     sb.from("zara_lead_memory").select("facts,updated_at").eq("contact_id", args.contact_id).maybeSingle(),
+    sb.from("crm_call_log")
+      .select("direction,status,started_at,duration_sec,notes,recording_url")
+      .eq("contact_id", args.contact_id)
+      .order("started_at", { ascending: false })
+      .limit(5),
   ]);
   if (!contactRes.data) return fail("lead not found");
   const c: any = contactRes.data;
@@ -712,6 +717,11 @@ async function enrich_lead(args: any, _ctx: Ctx) {
     identities: idsRes.data ?? [],
     engagement: { score, tier },
     recent_activity: actsRes.data ?? [],
+    recent_calls: (callsRes.data ?? []).map((r: any) => ({
+      direction: r.direction, status: r.status, started_at: r.started_at,
+      duration_sec: r.duration_sec, has_recording: !!r.recording_url,
+      notes: r.notes ? String(r.notes).slice(0, 240) : null,
+    })),
     memory_facts: (memRes.data as any)?.facts ?? null,
     memory_updated_at: (memRes.data as any)?.updated_at ?? null,
   });
