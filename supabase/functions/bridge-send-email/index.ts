@@ -133,6 +133,25 @@ Deno.serve(async (req) => {
     const ccStr = Array.isArray(body.cc) ? body.cc.join(",") : (body.cc ?? null);
     const bccStr = Array.isArray(body.bcc) ? body.bcc.join(",") : (body.bcc ?? null);
 
+    // Fetch sender brand settings up-front so the unified brand shell can use
+    // the agent's logo when present. This runs for both queued + immediate
+    // paths so the queued worker doesn't have to re-resolve it.
+    const { data: brandSettings } = await supabase
+      .from("crm_email_settings")
+      .select("sender_name,reply_to,signature_html,brand_logo_url,brand_logo_alt,brand_logo_enabled")
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    // Unified brand shell — applied to EVERY outbound CRM email except
+    // project templates from Presale (caller passes skip_brand_wrapper:true).
+    // wrapInBrandShell is idempotent and skips full <html> docs automatically.
+    const brandedHtml = body.skip_brand_wrapper || isAlreadyBranded(body.html)
+      ? body.html
+      : wrapInBrandShell(body.html, {
+          brandLogoUrl: brandSettings?.brand_logo_enabled ? brandSettings?.brand_logo_url : null,
+          brandLogoAlt: brandSettings?.brand_logo_alt ?? brandSettings?.sender_name ?? null,
+        });
+
     // ── Queue path: scheduled emails and immediate sends both go through the
     // worker so Gmail/bridge outages retry instead of producing edge errors.
     if (body.send_at || body.queue_only) {
@@ -143,7 +162,7 @@ Deno.serve(async (req) => {
         cc: ccStr,
         bcc: bccStr,
         subject: body.subject,
-        body_html: body.html,
+        body_html: brandedHtml,
         send_at: body.send_at ?? new Date().toISOString(),
         status: "pending",
         created_by: userId,
