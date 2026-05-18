@@ -639,7 +639,10 @@ export function ZaraDock() {
                     el.style.height = Math.min(el.scrollHeight, 160) + 'px';
                   }}
                   onKeyDown={(e) => {
-                    if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') { e.preventDefault(); onSend(); }
+                    if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
+                      e.preventDefault();
+                      onSend();
+                    }
                   }}
                   rows={1}
                   placeholder={streaming ? 'Zara is replying…' : 'Ask Zara…'}
