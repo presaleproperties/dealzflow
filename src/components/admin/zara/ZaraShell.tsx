@@ -40,13 +40,7 @@ export function ZaraShell({ title, subtitle, actions, children }: {
           </div>
           <nav className="flex lg:flex-col overflow-x-auto lg:overflow-visible px-2 lg:px-3 py-2 gap-0.5 scrollbar-none">
             {NAV.map((item) => (
-              <NavLink
-                key={item.to}
-                to={item.to}
-                end={item.end}
-                className={({ isActive }) => 'zara-rail__item whitespace-nowrap'}
-                data-active={undefined}
-              >
+              <NavLink key={item.to} to={item.to} end={item.end} className="block">
                 {({ isActive }) => (
                   <span
                     className="zara-rail__item whitespace-nowrap w-full"
@@ -57,6 +51,7 @@ export function ZaraShell({ title, subtitle, actions, children }: {
                 )}
               </NavLink>
             ))}
+
           </nav>
         </aside>
 
