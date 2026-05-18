@@ -74,6 +74,9 @@ export function RightSidebar({
         onAddShowing={onAddShowing}
       />
 
+      {/* Engage Zara — primary in-lead command surface */}
+      <ZaraEngagePanel contact={contact} />
+
       {/* Zara remembers — structured facts from rolling memory */}
       <ZaraRemembersCard contactId={contact.id} />
 
