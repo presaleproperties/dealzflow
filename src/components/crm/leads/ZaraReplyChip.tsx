@@ -68,8 +68,9 @@ function ZaraReplyChipInner({ draft }: { draft: ZaraLeadDraft }) {
   const approve = async (finalText: string) => {
     setSending(true);
     try {
+      const { data: u } = await supabase.auth.getUser();
       const { data, error } = await supabase.functions.invoke('zara-execute-send', {
-        body: { draftId: draft.id, finalText },
+        body: { draftId: draft.id, finalText, decidedBy: u.user?.id, decidedVia: 'inline_reply_chip' },
       });
       if (error) throw error;
       const res = data as any;
