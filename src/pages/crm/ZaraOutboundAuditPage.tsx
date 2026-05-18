@@ -123,8 +123,9 @@ export default function ZaraOutboundAuditPage() {
             No audit rows yet. They appear here as soon as Zara evaluates a lead.
           </div>
         ) : (
-          <div className="rounded-lg border border-border overflow-hidden">
-            <table className="w-full text-sm">
+          <div className="rounded-lg border border-border overflow-x-auto">
+            <table className="w-full text-sm min-w-[640px]">
+
               <thead className="bg-muted/50 text-left crm-meta">
                 <tr>
                   <th className="px-3 py-2 font-medium">When</th>
