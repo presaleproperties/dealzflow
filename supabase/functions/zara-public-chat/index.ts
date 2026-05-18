@@ -15,11 +15,31 @@ import { ZARA_TOOLS } from "../_shared/zara-tool-defs.ts";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY")!;
+const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
 const PRESALE_SITE_TOKEN = Deno.env.get("PRESALE_SITE_TOKEN") ?? "";
 const FUNCTIONS_BASE = `${SUPABASE_URL}/functions/v1`;
 
 const ANTHROPIC_MODEL = "claude-haiku-4-5-20251001";
 const MAX_TOOL_TURNS = 8;
+const HISTORY_WINDOW = 80;
+
+// RAG thresholds — mirror zara-chat so the two surfaces ground in the same brain.
+const RAG_CHUNK_THRESHOLD = 0.5;
+const RAG_CHUNK_COUNT = 4;
+const RAG_WIN_THRESHOLD = 0.55;
+const RAG_WIN_COUNT = 2;
+const RAG_PROJECT_THRESHOLD = 0.55;
+const RAG_PROJECT_COUNT = 2;
+
+// Tools that require a captured contact (email or phone on file) BEFORE running.
+// If the visitor has not handed over identity yet, we refuse the tool and tell
+// Claude to ask for email via capture_lead first.
+const REQUIRES_CAPTURE = new Set<string>([
+  "send_brochure",
+  "attach_floorplan",
+  "get_floor_plans",
+  "book_calendly",
+]);
 
 // Public-mode tool allowlist. Everything else from the 30+ tool set is stripped
 // before we hand the tool list to Claude.
