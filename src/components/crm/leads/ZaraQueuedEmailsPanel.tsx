@@ -7,10 +7,10 @@
  * Mirrors the actions on /crm/needs-review but scoped to one contact and
  * adds "Send now" for already-approved-but-scheduled rows.
  */
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { formatDistanceToNow } from 'date-fns';
-import { Check, X, Send, Mail, ChevronDown, ChevronRight, Loader2, Clock, AlertCircle, Pencil, Save } from 'lucide-react';
+import { Check, X, Send, Mail, ChevronDown, ChevronRight, Loader2, Clock, AlertCircle, Pencil, Save, Code2, Type } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
