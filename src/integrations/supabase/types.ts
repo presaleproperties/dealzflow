@@ -8567,6 +8567,7 @@ export type Database = {
           model: string
           name: string
           prompt_text: string
+          surface: string
           version: string
         }
         Insert: {
@@ -8578,6 +8579,7 @@ export type Database = {
           model?: string
           name?: string
           prompt_text: string
+          surface?: string
           version: string
         }
         Update: {
@@ -8589,6 +8591,7 @@ export type Database = {
           model?: string
           name?: string
           prompt_text?: string
+          surface?: string
           version?: string
         }
         Relationships: []
@@ -9712,6 +9715,10 @@ export type Database = {
       zara_request_memory_rebuild: {
         Args: { _contact_id: string }
         Returns: undefined
+      }
+      zara_retrieve_context: {
+        Args: { _contact_id: string; _query?: string; _trigger?: string }
+        Returns: Json
       }
     }
     Enums: {
