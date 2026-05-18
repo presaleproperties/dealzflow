@@ -375,6 +375,7 @@ function ToolPill({ tool, onDecide, deciding }: {
 
           {isPending && isMessage && !empty && (
             <>
+              <LeadIntelligenceSummary contactId={tool.input?.contact_id} />
               <EditableMessagePreview
                 toolName={tool.name}
                 input={tool.input}
