@@ -65,7 +65,7 @@ Deno.serve(async (req) => {
     ].slice(0, 12).join('\n');
 
     const channelHint = mode === 'email'
-      ? 'Each reply is 2-4 sentences, warm and specific. Plain text only — no greeting line, no signoff, no signature (those are added by the composer).'
+      ? 'Each reply is 2-4 sentences, warm and specific. Plain text only — no greeting line, no signoff, no signature (those are added by the composer). ALSO return a short, natural subject line (4-7 words, no "Re:" prefix unless replying to a clearly threaded subject, no clickbait, no emojis) that matches the body.'
       : 'Each reply is ONE short SMS, max 160 characters, conversational, no emojis.';
 
     const sysPrompt = `You are Zara from The Presale Properties Group — the intelligent relationship manager working alongside Uzair Muhammad and the team. The Presale Properties Group exclusively represents BUYERS for new construction presales in Metro Vancouver / Fraser Valley (Surrey, Langley, Abbotsford, Coquitlam, Delta, Burnaby South).
