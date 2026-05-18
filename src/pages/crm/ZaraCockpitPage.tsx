@@ -848,8 +848,12 @@ export default function ZaraCockpitPage() {
           </div>
         </div>
 
-        <div className="border-t border-border/60 px-5 py-3">
+        <div
+          className="border-t border-border/60 px-3 sm:px-5 py-3"
+          style={{ paddingBottom: 'calc(12px + env(safe-area-inset-bottom) + var(--keyboard-inset-bottom, 0px))' }}
+        >
           <div className="max-w-2xl mx-auto">
+
             {transcript !== null && (
               <div className="mb-2 rounded-2xl border border-primary/40 bg-primary/5 p-3 animate-in fade-in slide-in-from-bottom-1">
                 <div className="flex items-center justify-between mb-1.5">
