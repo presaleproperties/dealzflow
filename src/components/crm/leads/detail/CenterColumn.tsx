@@ -27,6 +27,7 @@ import { SystemActivityCluster, isSystemishNote } from './SystemActivityCluster'
 import { EmailThreadStack, SmsRunStack, normalizeSubject } from './ThreadStack';
 import { Pin } from 'lucide-react';
 import { ZaraReplyChip } from '@/components/crm/leads/ZaraReplyChip';
+import { ZaraQueuedEmailsPanel } from '@/components/crm/leads/ZaraQueuedEmailsPanel';
 import { HandoffBriefBanner } from '@/components/crm/zara/HandoffBriefBanner';
 
 
@@ -350,9 +351,10 @@ export function CenterColumn({ contact, onCall, onText, onEmail, onTask, onShowi
           <QuickActionBar contact={contact} />
         </div>
 
-        <div className="px-3 md:px-0">
+        <div className="px-3 md:px-0 space-y-2.5">
           <HandoffBriefBanner contactId={contact.id} />
           <ZaraReplyChip contactId={contact.id} />
+          <ZaraQueuedEmailsPanel contactId={contact.id} />
         </div>
 
         <div className="px-3 md:px-0">
