@@ -1,1 +1,4 @@
 project_id = "svbilqvudkkdhslxebce"
+
+[functions.zara-public-chat]
+verify_jwt = false
