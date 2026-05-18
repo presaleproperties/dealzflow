@@ -489,10 +489,10 @@ export function ZaraDock() {
           it sits above any preview/native chrome at the bottom. */}
       {!open && (
         <div
-          className="fixed z-40 zara-halo"
+          className="fixed z-[60] zara-halo"
           style={{
-            bottom: 'calc(max(28px, env(safe-area-inset-bottom)) + var(--bottom-nav-pad, 0px))',
-            right: 28,
+            bottom: 'calc(max(24px, env(safe-area-inset-bottom)) + var(--bottom-nav-pad, 0px))',
+            right: 24,
             borderRadius: 9999,
           }}
         >
