@@ -3,6 +3,7 @@
 // All writes are logged into zara_actions_log.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { presaleBridge } from "../_shared/presale-bridge.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
