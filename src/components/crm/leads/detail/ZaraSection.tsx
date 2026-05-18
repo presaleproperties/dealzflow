@@ -10,9 +10,9 @@
  */
 import { useEffect, useState } from 'react';
 import {
-  Sparkles, Send, Clock, RefreshCw, CalendarDays, Loader2,
-  AlertCircle, ChevronDown, Trophy,
+  Loader2, AlertCircle, ChevronDown,
 } from 'lucide-react';
+
 import { formatDistanceToNow } from 'date-fns';
 import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
