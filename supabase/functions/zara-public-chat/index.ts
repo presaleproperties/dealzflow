@@ -37,6 +37,7 @@ const PUBLIC_TOOL_ALLOWLIST = new Set<string>([
   "capture_lead",
   "get_unit_availability",
   "escalate_to_human",
+  "get_floor_plans",
 ]);
 
 // Tools that count toward the outbound-send rate limit (10/hr).
