@@ -441,7 +441,7 @@ Deno.serve(async (req) => {
     const user = userData?.user;
     if (!user) return new Response("Unauthorized", { status: 401, headers: corsHeaders });
 
-    const { conversation_id, message, page_context } = await req.json();
+    const { conversation_id, message, page_context, reply_mode } = await req.json();
     if (!conversation_id || !message) return new Response("conversation_id and message required", { status: 400, headers: corsHeaders });
 
     // Check mode
