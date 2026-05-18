@@ -233,6 +233,7 @@ function toAnthropicMessages(rows: any[]) {
       out.push({ role: "assistant", content });
 
       const toolResults: any[] = [];
+      const orphanSummaries: string[] = [];
       const usedToolIds = new Set<string>();
       while (i + 1 < rows.length && rows[i + 1]?.role === "tool") {
         const tr = rows[++i];
@@ -242,10 +243,11 @@ function toAnthropicMessages(rows: any[]) {
           toolResults.push({ type: "tool_result", tool_use_id: id, content: JSON.stringify(tr.tool_result ?? {}) });
         } else {
           const summary = stringifyToolRowForModel(tr);
-          if (summary) out.push({ role: "user", content: summary });
+          if (summary) orphanSummaries.push(summary);
         }
       }
       if (toolResults.length) out.push({ role: "user", content: toolResults });
+      for (const summary of orphanSummaries) out.push({ role: "user", content: summary });
     } else if (r.role === "tool") {
       const summary = stringifyToolRowForModel(r);
       if (summary) out.push({ role: "user", content: summary });
