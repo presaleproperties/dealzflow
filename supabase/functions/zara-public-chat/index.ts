@@ -64,9 +64,15 @@ const SYSTEM_PROMPT_BASE = `You are Zara, an AI assistant for Presale Properties
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "content-type, x-presale-site-token",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-presale-site-token",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
+
+function errJson(error: string, message: string, status: number, extra: Record<string, unknown> = {}) {
+  return new Response(JSON.stringify({ error, message, ...extra }), {
+    status, headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+}
 
 function svc() {
   return createClient(SUPABASE_URL, SERVICE_ROLE, { auth: { persistSession: false, autoRefreshToken: false } });
