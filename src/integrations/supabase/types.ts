@@ -1448,6 +1448,8 @@ export type Database = {
           id: string
           last_attempt_at: string | null
           max_attempts: number
+          needs_review: boolean
+          review_reason: string | null
           send_at: string
           sent_at: string | null
           status: string
@@ -1468,6 +1470,8 @@ export type Database = {
           id?: string
           last_attempt_at?: string | null
           max_attempts?: number
+          needs_review?: boolean
+          review_reason?: string | null
           send_at: string
           sent_at?: string | null
           status?: string
@@ -1488,6 +1492,8 @@ export type Database = {
           id?: string
           last_attempt_at?: string | null
           max_attempts?: number
+          needs_review?: boolean
+          review_reason?: string | null
           send_at?: string
           sent_at?: string | null
           status?: string
@@ -5436,6 +5442,48 @@ export type Database = {
           timezone?: string
           weekly_send_cap_per_lead?: number
           workspace_daily_cap?: number
+        }
+        Relationships: []
+      }
+      crm_zara_trigger_map: {
+        Row: {
+          ab_subjects: string[]
+          created_at: string
+          description: string | null
+          fallback_template_slug: string | null
+          is_active: boolean
+          preferred_hour_end: number | null
+          preferred_hour_start: number | null
+          preferred_template_slug: string | null
+          preferred_tz: string
+          trigger_kind: string
+          updated_at: string
+        }
+        Insert: {
+          ab_subjects?: string[]
+          created_at?: string
+          description?: string | null
+          fallback_template_slug?: string | null
+          is_active?: boolean
+          preferred_hour_end?: number | null
+          preferred_hour_start?: number | null
+          preferred_template_slug?: string | null
+          preferred_tz?: string
+          trigger_kind: string
+          updated_at?: string
+        }
+        Update: {
+          ab_subjects?: string[]
+          created_at?: string
+          description?: string | null
+          fallback_template_slug?: string | null
+          is_active?: boolean
+          preferred_hour_end?: number | null
+          preferred_hour_start?: number | null
+          preferred_template_slug?: string | null
+          preferred_tz?: string
+          trigger_kind?: string
+          updated_at?: string
         }
         Relationships: []
       }
