@@ -1254,6 +1254,7 @@ Deno.serve(async (req) => {
       "show_engagement_score", "search_knowledge", "get_winning_pattern",
       "get_project_deep_dive", "get_market_context", "get_pricing", "enrich_lead",
       "send_briefing_summary", "get_unit_availability", "get_floor_plans",
+      "get_lead_website_behavior", "search_website_content", "lookup_topic",
     ]);
     if (READ_ONLY.has(tool)) {
       await logAction(ctx, tool, args ?? {}, result, args?.contact_id ?? null);
