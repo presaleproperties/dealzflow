@@ -212,18 +212,43 @@ export function ZaraQueuedEmailsPanel({ contactId }: { contactId: string }) {
                           />
                         </div>
                         <div>
-                          <label className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-                            Body HTML
-                          </label>
-                          <Textarea
-                            value={draftHtml}
-                            onChange={(e) => setDraftHtml(e.target.value)}
-                            rows={10}
-                            className="mt-1 font-mono text-xs"
-                            placeholder="<p>Hi {{first_name}}, …</p>"
-                          />
+                          <div className="flex items-center justify-between">
+                            <label className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                              Body
+                            </label>
+                            <div className="inline-flex rounded border border-border overflow-hidden">
+                              <button
+                                type="button"
+                                onClick={() => setEditMode('rich')}
+                                className={`px-2 py-0.5 text-[10px] inline-flex items-center gap-1 ${editMode === 'rich' ? 'bg-muted text-foreground' : 'text-muted-foreground hover:bg-muted/50'}`}
+                              ><Type className="h-3 w-3" /> Rich</button>
+                              <button
+                                type="button"
+                                onClick={() => setEditMode('html')}
+                                className={`px-2 py-0.5 text-[10px] inline-flex items-center gap-1 border-l border-border ${editMode === 'html' ? 'bg-muted text-foreground' : 'text-muted-foreground hover:bg-muted/50'}`}
+                              ><Code2 className="h-3 w-3" /> HTML</button>
+                            </div>
+                          </div>
+                          {editMode === 'rich' ? (
+                            <div
+                              ref={richRef}
+                              contentEditable
+                              suppressContentEditableWarning
+                              onInput={(e) => setDraftHtml((e.target as HTMLDivElement).innerHTML)}
+                              dangerouslySetInnerHTML={{ __html: draftHtml }}
+                              className="mt-1 min-h-[200px] max-h-[360px] overflow-y-auto rounded border border-border bg-background p-3 text-sm focus:outline-none focus:ring-1 focus:ring-primary/30 prose prose-sm max-w-none dark:prose-invert"
+                            />
+                          ) : (
+                            <Textarea
+                              value={draftHtml}
+                              onChange={(e) => setDraftHtml(e.target.value)}
+                              rows={10}
+                              className="mt-1 font-mono text-xs"
+                              placeholder="<p>Hi {{first_name}}, …</p>"
+                            />
+                          )}
                           <p className="mt-1 text-[10px] text-muted-foreground">
-                            Edit the HTML directly. Preview below updates live.
+                            {editMode === 'rich' ? 'Type to edit. Branded template + signature are re-applied on send.' : 'Edit raw HTML. Preview updates live.'}
                           </p>
                         </div>
                       </div>
