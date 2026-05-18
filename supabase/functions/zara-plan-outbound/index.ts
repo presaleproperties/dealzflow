@@ -382,10 +382,47 @@ Deno.serve(async (req) => {
 
     const channel = pickChannel(lead);
     const fullName = [lead.first_name, lead.last_name].filter(Boolean).join(' ') || 'Lead';
+
+    // Layered retrieval (Layers 2/3/5/6) — keeps Layer 1 prompt slim
+    let layeredCtx = '';
+    try {
+      const { data: ctx } = await admin.rpc('zara_retrieve_context', {
+        _contact_id: lead.id, _trigger: trigger, _query: null,
+      });
+      const c: any = ctx ?? {};
+      const parts: string[] = [];
+      if (c.playbook?.name) {
+        parts.push(`PLAYBOOK — ${c.playbook.name}\n${c.playbook.description ?? ''}`.trim());
+      }
+      if (Array.isArray(c.principles) && c.principles.length) {
+        parts.push(
+          'FOUNDER PRINCIPLES (apply, don\'t quote):\n' +
+          c.principles.slice(0, 5).map((p: any) => `• [${p.module_slug ?? 'gen'}] ${p.title}: ${(p.body ?? '').slice(0, 220)}`).join('\n')
+        );
+      }
+      if (c.memory?.summary || c.memory?.continuity_openers?.length) {
+        parts.push(
+          'LEAD MEMORY:\n' +
+          (c.memory.summary ? `Summary: ${String(c.memory.summary).slice(0, 400)}\n` : '') +
+          (c.memory.relationship_stage ? `Stage: ${c.memory.relationship_stage}\n` : '') +
+          (c.memory.continuity_openers?.length ? `Natural openers: ${c.memory.continuity_openers.slice(0,3).join(' | ')}` : '')
+        );
+      }
+      if (Array.isArray(c.winning) && c.winning.length) {
+        parts.push(
+          'WINNING CONVERSATION REFERENCES (style only, do not copy):\n' +
+          c.winning.slice(0, 2).map((w: any) => `• ${w.lead_profile ?? ''} → ${(w.turning_message ?? '').slice(0,180)}`).join('\n')
+        );
+      }
+      if (parts.length) layeredCtx = '\n\n' + parts.join('\n\n');
+    } catch (e) {
+      console.warn('zara_retrieve_context failed', e);
+    }
+
     const userMsg = `Trigger: ${trigger}
 Channel: ${channel}
 Contact: ${fullName} (internal note — lead also speaks: ${lead.language || 'en'}; STILL reply in English)
-Context: ${context}
+Context: ${context}${layeredCtx}
 
 Draft the outbound message per the system rules. Strict JSON only.`;
 
