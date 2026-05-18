@@ -520,6 +520,51 @@ function ToolPill({ tool, onDecide, deciding }: {
                   input={tool.input}
                   onChange={setOverrides}
                 />
+                <div className="flex items-center gap-2 flex-wrap text-[11px]">
+                  <span className="text-muted-foreground">Preview:</span>
+                  <div className="inline-flex rounded-md border border-border/60 overflow-hidden bg-background">
+                    {(Object.keys(DEVICE_SPECS) as DeviceKey[]).map((key) => {
+                      const DIcon = DEVICE_SPECS[key].icon;
+                      const active = previewDevice === key;
+                      return (
+                        <button
+                          key={key}
+                          type="button"
+                          onClick={() => setPreviewDevice((d) => (d === key ? null : key))}
+                          aria-pressed={active}
+                          title={`${DEVICE_SPECS[key].label} preview`}
+                          className={`inline-flex items-center gap-1 px-2 py-1 text-[11px] transition-colors ${
+                            active
+                              ? 'bg-primary/15 text-primary'
+                              : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground'
+                          }`}
+                        >
+                          <DIcon className="w-3 h-3" />
+                          <span className="hidden sm:inline">{DEVICE_SPECS[key].label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {previewDevice && (
+                    <button
+                      type="button"
+                      onClick={() => setPreviewDevice(null)}
+                      className="text-muted-foreground hover:text-foreground underline-offset-2 hover:underline"
+                    >
+                      Hide preview
+                    </button>
+                  )}
+                </div>
+                {previewDevice && (
+                  <DevicePreview
+                    toolName={tool.name}
+                    subject={mergedSubject}
+                    body={mergedBody}
+                    ctaText={((overrides.cta_text ?? tool.input?.cta_text) ?? '').toString()}
+                    ctaUrl={((overrides.cta_url ?? tool.input?.cta_url) ?? '').toString()}
+                    device={previewDevice}
+                  />
+                )}
                 {blocked && (
                   <div className="rounded-md border border-destructive/40 bg-destructive/5 p-2.5 text-[11.5px] text-destructive space-y-1">
                     <div className="font-semibold text-[11px] uppercase tracking-wider">Fix before sending</div>
