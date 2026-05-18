@@ -415,6 +415,13 @@ export function ZaraDock() {
   const [input, setInput] = useState('');
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const scrollerRef = useRef<HTMLDivElement>(null);
+  const [actionOnly, setActionOnly] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    return window.localStorage.getItem('zara-dock:action-only') === '1';
+  });
+  useEffect(() => {
+    try { window.localStorage.setItem('zara-dock:action-only', actionOnly ? '1' : '0'); } catch {}
+  }, [actionOnly]);
 
   const { data: settings } = useQuery({
     queryKey: ['zara-settings'],
