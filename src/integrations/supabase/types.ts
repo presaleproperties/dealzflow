@@ -2991,6 +2991,51 @@ export type Database = {
         }
         Relationships: []
       }
+      crm_project_floorplans: {
+        Row: {
+          bathrooms: number | null
+          bedrooms: number | null
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          price_from: number | null
+          project_slug: string
+          sort_order: number
+          sqft: number | null
+          storage_path: string
+          updated_at: string
+        }
+        Insert: {
+          bathrooms?: number | null
+          bedrooms?: number | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          price_from?: number | null
+          project_slug: string
+          sort_order?: number
+          sqft?: number | null
+          storage_path: string
+          updated_at?: string
+        }
+        Update: {
+          bathrooms?: number | null
+          bedrooms?: number | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          price_from?: number | null
+          project_slug?: string
+          sort_order?: number
+          sqft?: number | null
+          storage_path?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       crm_projects: {
         Row: {
           aliases: string[] | null

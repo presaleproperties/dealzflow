@@ -821,6 +821,52 @@ async function escalate_to_human(args: any, ctx: any) {
   return ok({ notified: true, assigned_to, contact_id, urgency });
 }
 
+async function get_floor_plans(args: any, _ctx: any) {
+  const sb = svc();
+  const slug = String(args?.project_slug ?? "").trim();
+  if (!slug) return fail("project_slug required");
+
+  const max = Math.min(Math.max(Number(args?.max ?? 12), 1), 50);
+  const ttl = Math.min(Math.max(Number(args?.ttl_seconds ?? 300), 60), 3600);
+
+  let q = sb.from("crm_project_floorplans")
+    .select("id,name,storage_path,bedrooms,bathrooms,sqft,price_from,sort_order")
+    .eq("project_slug", slug)
+    .eq("is_active", true)
+    .order("sort_order", { ascending: true })
+    .order("bedrooms", { ascending: true, nullsFirst: false })
+    .limit(max);
+  if (args?.bedrooms != null) q = q.eq("bedrooms", Number(args.bedrooms));
+
+  const { data, error } = await q;
+  if (error) return fail(error.message);
+  if (!data?.length) return ok({ project_slug: slug, count: 0, floor_plans: [], note: "No private floor plans on file for this project." });
+
+  const plans: any[] = [];
+  for (const row of data) {
+    const { data: signed, error: sErr } = await sb.storage
+      .from("presale-floorplans")
+      .createSignedUrl(row.storage_path, ttl);
+    if (sErr || !signed?.signedUrl) {
+      console.warn("get_floor_plans sign failed:", row.storage_path, sErr?.message);
+      continue;
+    }
+    plans.push({
+      id: row.id,
+      name: row.name,
+      bedrooms: row.bedrooms,
+      bathrooms: row.bathrooms,
+      sqft: row.sqft,
+      price_from: row.price_from,
+      url: signed.signedUrl,
+      expires_in: ttl,
+      filename: row.storage_path.split("/").pop(),
+    });
+  }
+
+  return ok({ project_slug: slug, count: plans.length, ttl_seconds: ttl, floor_plans: plans });
+}
+
 // ── Dispatch ───────────────────────────────────────────────────────────
 
 const REGISTRY: Record<string, (args: any, ctx: Ctx) => Promise<unknown>> = {
@@ -835,7 +881,7 @@ const REGISTRY: Record<string, (args: any, ctx: Ctx) => Promise<unknown>> = {
   // Phase 4
   book_calendly, get_pricing, attach_floorplan, schedule_follow_up_smart, enrich_lead,
   // Public-site
-  capture_lead, get_unit_availability, escalate_to_human,
+  capture_lead, get_unit_availability, escalate_to_human, get_floor_plans,
 };
 
 
@@ -854,7 +900,7 @@ Deno.serve(async (req) => {
       "project_details", "recommend_projects_for_lead", "web_research",
       "show_engagement_score", "search_knowledge", "get_winning_pattern",
       "get_project_deep_dive", "get_market_context", "get_pricing", "enrich_lead",
-      "send_briefing_summary", "get_unit_availability",
+      "send_briefing_summary", "get_unit_availability", "get_floor_plans",
     ]);
     if (READ_ONLY.has(tool)) {
       await logAction(ctx, tool, args ?? {}, result, args?.contact_id ?? null);
