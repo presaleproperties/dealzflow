@@ -442,6 +442,7 @@ function ToolPill({ tool, onDecide, deciding }: {
   const [open, setOpen] = useState(tool.status === 'pending');
   const [showRaw, setShowRaw] = useState(false);
   const [showIntel, setShowIntel] = useState(false);
+  const [previewDevice, setPreviewDevice] = useState<DeviceKey | null>(null);
   const [overrides, setOverrides] = useState<MessageOverrides>({});
   const Icon = tool.status === 'running' ? Loader2 : Wrench;
   const tone =
