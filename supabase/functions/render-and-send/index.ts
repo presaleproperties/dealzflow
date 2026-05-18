@@ -119,13 +119,49 @@ function findFirstCtaTableIdx(html: string): number {
   return -1;
 }
 
+/** Find the END (just after </table>) of the first top-level <table> that
+ *  contains an <img> — i.e., the project hero/details card. Returns -1 if
+ *  not found. */
+function findHeroTableEndIdx(html: string): number {
+  const lower = html.toLowerCase();
+  let cursor = 0;
+  while (cursor < lower.length) {
+    const tOpen = lower.indexOf("<table", cursor);
+    if (tOpen < 0) return -1;
+    let depth = 0;
+    let i = tOpen;
+    let end = -1;
+    while (i < lower.length) {
+      const nextOpen = lower.indexOf("<table", i + 1);
+      const nextClose = lower.indexOf("</table>", i + 1);
+      if (nextClose < 0) break;
+      if (nextOpen >= 0 && nextOpen < nextClose) { depth++; i = nextOpen; }
+      else {
+        if (depth === 0) { end = nextClose + "</table>".length; break; }
+        depth--; i = nextClose;
+      }
+    }
+    if (end < 0) return -1;
+    if (html.slice(tOpen, end).toLowerCase().includes("<img")) return end;
+    cursor = end;
+  }
+  return -1;
+}
+
 function injectPersonalNote(html: string, noteHtml: string): string {
   if (!noteHtml) return html;
+  // Preferred: insert AFTER the project hero card so the note reads as a
+  // body section beneath the project.
+  const heroEnd = findHeroTableEndIdx(html);
+  if (heroEnd > 0) {
+    return html.slice(0, heroEnd) + noteHtml + html.slice(heroEnd);
+  }
+  // Fallback: before first CTA table.
   const ctaIdx = findFirstCtaTableIdx(html);
   if (ctaIdx > 0) {
     return html.slice(0, ctaIdx) + noteHtml + html.slice(ctaIdx);
   }
-  // Fallback: before first table inside <body> (legacy behavior).
+  // Last-resort fallback: before first table inside <body>.
   const bodyOpen = html.search(/<body[^>]*>/i);
   if (bodyOpen >= 0) {
     const afterBodyOpen = html.indexOf(">", bodyOpen) + 1;
