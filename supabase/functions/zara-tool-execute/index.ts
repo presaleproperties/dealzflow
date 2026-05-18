@@ -609,6 +609,8 @@ async function get_pricing(args: any, _ctx: Ctx) {
     price_range_high: p?.price_range_high ?? c?.price_to ?? null,
     starting_psf: p?.starting_psf ?? null,
     deposit_structure: p?.deposit_structure ?? null,
+    incentives: (p?.incentives ?? c?.incentives ?? []) as any[],
+    assignment_rules: p?.assignment_rules ?? c?.assignment_rules ?? null,
     pricing_url: c?.pricing_url ?? null,
     pricing_filename: c?.pricing_filename ?? null,
     status: p?.status ?? c?.status ?? null,
