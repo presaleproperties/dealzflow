@@ -197,7 +197,10 @@ ${eventLines}
 INBOUND MESSAGE (channel=${channel}, at=${inboundAt}):
 """${inboundText}"""
 
-Draft Zara's reply now. Return ONLY the JSON object.`;
+${toneSample ? `TONE SAMPLE (recent inbound messages from this lead — match their register, length, formality, emoji use, and language. Do not copy phrasing verbatim; mirror the cadence):
+${toneSample}
+
+` : ''}Draft Zara's reply now. Return ONLY the JSON object.`;
 
     // 6. Two-tier model routing.
     // Pass 1: heuristic intent + Haiku with intent-specific system prompt.
