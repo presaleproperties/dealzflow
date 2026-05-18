@@ -153,11 +153,6 @@ ${priceRange ? `<div style="color:#14181F;font-size:16px;margin-bottom:10px;">${
     `Worth me sending the deposit structures and comparable sold prices on any of these? Reply with the project name and I'll have it back in your inbox today.`;
 
   // ── Load Project Showcase scaffold ───────────────────────────────────
-  const prefs = await getZaraEmailPrefs(sb);
-  let { data: tpl } = await sb.from("crm_email_templates")
-    .select("id, body_html, subject")
-    .eq("slug", "project-showcase-zara").maybeSingle();
-  // ── Load Project Showcase scaffold ───────────────────────────────────
   // 1) Try the registry (crm_zara_trigger_map → preferred/fallback slug,
   //    agent-scoped first). 2) Legacy slug. 3) prefs.fallback_template_id.
   const prefs = await getZaraEmailPrefs(sb);
