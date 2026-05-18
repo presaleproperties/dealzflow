@@ -636,6 +636,106 @@ async function enrich_lead(args: any, _ctx: Ctx) {
   });
 }
 
+// ── Public-site tools ─────────────────────────────────────────────────
+
+async function capture_lead(args: any, ctx: any) {
+  const email = args?.email ? String(args.email).trim().toLowerCase() : null;
+  const phone = args?.phone ? String(args.phone).trim() : null;
+  if (!email && !phone) return fail("email or phone required");
+
+  const payload: any = {
+    lead: {
+      email: email ?? `${args?.presale_user_id ?? "anon"}@no-email.presaleproperties.com`,
+      first_name: args?.first_name ?? null,
+      last_name: args?.last_name ?? null,
+      phone,
+      presale_user_id: args?.presale_user_id ?? null,
+      source: "PresaleProperties.com",
+      project: args?.project_slug ?? null,
+      projects: args?.project_slug ? [args.project_slug] : [],
+      intent: args?.intent ?? null,
+      timeframe: args?.timeframe ?? null,
+      budget_max: args?.budget_max ?? null,
+      bedrooms_preferred: args?.bedrooms_preferred ?? null,
+      language: args?.language ?? null,
+      tags: ["presale-website", "zara-public-chat", ...(args?.intent ? [`intent:${args.intent}`] : [])],
+      marketing_consent: true,
+      signup_completed_at: new Date().toISOString(),
+    },
+    forms: [{
+      form_type: "zara_public_chat",
+      form_name: "Zara website chat capture",
+      property_id: args?.project_slug ?? null,
+      payload: { message: args?.message ?? null, conversation_id: ctx?.conversation_id ?? null },
+      submitted_at: new Date().toISOString(),
+    }],
+  };
+
+  const res = await fetch(`${FUNCTIONS_BASE}/bridge-ingest-lead`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "Authorization": `Bearer ${SERVICE_ROLE}` },
+    body: JSON.stringify(payload),
+  });
+  const out = await res.json().catch(() => ({}));
+  if (!res.ok) return fail(`capture failed: ${out?.error ?? res.status}`);
+  return ok({ contact_id: out?.contact_id ?? out?.id ?? null, created: out?.created ?? false, matched: out?.matched ?? false });
+}
+
+async function get_unit_availability(args: any, _ctx: any) {
+  const sb = svc();
+  let q = sb.from("presale_projects").select("id,slug,name,status,unit_types,unit_count,completion_year,completion_quarter,city,price_range_low,price_range_high,starting_psf").limit(1);
+  if (args?.project_id) q = q.eq("id", args.project_id);
+  else if (args?.project_slug) q = q.eq("slug", args.project_slug);
+  else return fail("project_slug or project_id required");
+  const { data, error } = await q.maybeSingle();
+  if (error) return fail(error.message);
+  if (!data) return fail("project not found");
+  const human_status: Record<string, string> = {
+    pre_launch: "Pre-launch — VIP list now",
+    selling: "Actively selling",
+    sold_out: "Sold out",
+    completed: "Completed",
+  };
+  return ok({ ...data, status_label: human_status[data.status] ?? data.status });
+}
+
+async function escalate_to_human(args: any, ctx: any) {
+  const sb = svc();
+  const reason = String(args?.reason ?? "").slice(0, 500);
+  const snippet = String(args?.transcript_snippet ?? "").slice(0, 800);
+  const urgency = (args?.urgency ?? "medium") as "low" | "medium" | "high";
+
+  // Resolve assigned agent (if a contact exists)
+  let assigned_to: string | null = null;
+  let contact_id: string | null = args?.contact_id ?? ctx?.public_contact_id ?? null;
+  if (contact_id) {
+    const { data } = await sb.from("crm_contacts").select("assigned_to").eq("id", contact_id).maybeSingle();
+    assigned_to = (data as any)?.assigned_to ?? null;
+    // Log an activity event so the timeline shows it
+    await sb.from("crm_activity_events").insert({
+      contact_id, event_type: "zara_escalation",
+      description: `Zara escalation (${urgency}): ${reason}\n\n${snippet}`,
+      occurred_at: new Date().toISOString(),
+      metadata: { source: "zara-public-chat", urgency, conversation_id: ctx?.conversation_id ?? null },
+    });
+  }
+
+  // Route notification to assigned agent (or owner+admins if unassigned)
+  try {
+    await sb.rpc("crm_send_notification", {
+      _assigned_to: assigned_to ?? "",
+      _title: `Zara escalation — ${urgency}`,
+      _body: reason.slice(0, 200),
+      _category: "zara_escalation",
+      _payload: { contact_id, reason, snippet, urgency, conversation_id: ctx?.conversation_id ?? null },
+      _dedupe_key: `zara_escalation:${ctx?.conversation_id ?? "anon"}:${Date.now()}`,
+    } as any);
+  } catch (e) {
+    console.warn("escalate notification failed", (e as Error).message);
+  }
+  return ok({ notified: true, assigned_to, contact_id, urgency });
+}
+
 // ── Dispatch ───────────────────────────────────────────────────────────
 
 const REGISTRY: Record<string, (args: any, ctx: Ctx) => Promise<unknown>> = {
@@ -649,7 +749,10 @@ const REGISTRY: Record<string, (args: any, ctx: Ctx) => Promise<unknown>> = {
   search_knowledge, get_winning_pattern, get_project_deep_dive, get_market_context,
   // Phase 4
   book_calendly, get_pricing, attach_floorplan, schedule_follow_up_smart, enrich_lead,
+  // Public-site
+  capture_lead, get_unit_availability, escalate_to_human,
 };
+
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
