@@ -105,6 +105,7 @@ Deno.serve(async (req) => {
     const body = await req.json().catch(() => ({}));
     let {
       draft_id,
+      public_message_id,
       original_subject,
       original_body,
       final_subject,
@@ -130,6 +131,25 @@ Deno.serve(async (req) => {
         channel = d.channel;
         trigger_kind = d.trigger_kind;
         contact_id = d.contact_id;
+      }
+    }
+
+    // Public-chat learning loop: allow review of a Zara reply made on
+    // presaleproperties.com by passing public_message_id (zara_messages.id).
+    // We treat the persisted assistant content as the "original" — the
+    // reviewer (Uzair / admin) supplies the rewritten version as final_body.
+    if (!original_body && public_message_id) {
+      const { data: m } = await svc
+        .from("zara_messages")
+        .select("content, conversation_id, metadata, zara_conversations:conversation_id(presale_contact_id)")
+        .eq("id", public_message_id)
+        .eq("role", "assistant")
+        .maybeSingle();
+      if (m) {
+        original_body = (m as any).content ?? "";
+        channel = channel ?? "public_chat";
+        trigger_kind = trigger_kind ?? "public_site_reply";
+        contact_id = contact_id ?? (m as any).zara_conversations?.presale_contact_id ?? null;
       }
     }
 
