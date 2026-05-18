@@ -436,9 +436,21 @@ Deno.serve(async (req) => {
     });
     await sb.from("zara_conversations").update({ last_message_at: new Date().toISOString() }).eq("id", conversation_id);
 
-    // Build system
-    const cv = await buildCurrentViewBlock(page_context, ident.contact_id);
-    const system = [SYSTEM_PROMPT_BASE, SYSTEM_PROMPT_PUBLIC, cv].filter(Boolean).join("\n\n");
+    // Build system — same brain as zara-chat: RAG + lead memory + current view.
+    const [cv, rag, leadMemoryBlock] = await Promise.all([
+      buildCurrentViewBlock(page_context, ident.contact_id),
+      retrieveContext(latestUserMsg),
+      ident.contact_id ? buildLeadMemoryBlock(ident.contact_id) : Promise.resolve(""),
+    ]);
+    const systemParts = [SYSTEM_PROMPT_BASE, SYSTEM_PROMPT_PUBLIC];
+    if (rag.block) systemParts.push(rag.block);
+    if (leadMemoryBlock) systemParts.push(leadMemoryBlock);
+    if (cv) systemParts.push(cv);
+    const system = systemParts.join("\n\n");
+    const ragSources = rag.sources;
+
+    // Capture state — for gating PII/file-sharing tools.
+    const hasCapturedIdentity = !!(ident.contact_id || known_email || known_phone);
 
     // Tool list: allowlisted only, approval-required tools stripped.
     const tools = ZARA_TOOLS
