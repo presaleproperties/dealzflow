@@ -10,9 +10,11 @@
 import { useMemo, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { formatDistanceToNow } from 'date-fns';
-import { Check, X, Send, Mail, ChevronDown, ChevronRight, Loader2, Clock, AlertCircle } from 'lucide-react';
+import { Check, X, Send, Mail, ChevronDown, ChevronRight, Loader2, Clock, AlertCircle, Pencil, Save } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Pill } from '@/components/crm/shared/Pill';
 import { toast } from 'sonner';
 
@@ -32,6 +34,46 @@ export function ZaraQueuedEmailsPanel({ contactId }: { contactId: string }) {
   const qc = useQueryClient();
   const [openId, setOpenId] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [editId, setEditId] = useState<string | null>(null);
+  const [draftSubject, setDraftSubject] = useState('');
+  const [draftHtml, setDraftHtml] = useState('');
+
+  const startEdit = (row: Row) => {
+    setEditId(row.id);
+    setOpenId(row.id);
+    setDraftSubject(row.subject ?? '');
+    setDraftHtml(row.body_html ?? '');
+  };
+  const cancelEdit = () => { setEditId(null); setDraftSubject(''); setDraftHtml(''); };
+
+  const saveEdits = async (row: Row, opts: { approve?: boolean; sendNow?: boolean } = {}) => {
+    setBusyId(row.id);
+    const patch: Record<string, unknown> = {
+      subject: draftSubject.trim() || row.subject,
+      body_html: draftHtml,
+    };
+    if (opts.approve || opts.sendNow) {
+      patch.needs_review = false;
+      patch.review_reason = null;
+    }
+    if (opts.sendNow) patch.send_at = new Date().toISOString();
+    const { error } = await supabase.from('crm_email_schedule').update(patch).eq('id', row.id);
+    if (error) {
+      setBusyId(null);
+      return toast.error(error.message);
+    }
+    if (opts.sendNow) {
+      supabase.functions.invoke('process-scheduled-emails', { body: { source: 'lead_panel_edit', rowId: row.id } })
+        .catch(() => { /* cron will pick it up */ });
+    }
+    setBusyId(null);
+    setEditId(null);
+    toast.success(
+      opts.sendNow ? 'Saved & sending now' : opts.approve ? 'Saved & approved' : 'Changes saved',
+    );
+    invalidate();
+  };
+
 
   const { data: rows = [], isLoading } = useQuery({
     queryKey: ['lead-queued-emails', contactId],
@@ -148,32 +190,91 @@ export function ZaraQueuedEmailsPanel({ contactId }: { contactId: string }) {
                 </div>
               </div>
 
-              {isOpen && (
-                <div className="mt-2 ml-5 space-y-2">
-                  <div className="rounded border border-border bg-background overflow-hidden">
-                    <iframe
-                      title={`preview-${row.id}`}
-                      srcDoc={row.body_html}
-                      sandbox=""
-                      className="w-full h-[420px] bg-white"
-                    />
-                  </div>
-                  <div className="flex flex-wrap gap-1.5">
-                    {row.needs_review && (
-                      <Button size="sm" disabled={busy} onClick={() => approve(row)} className="h-7 gap-1.5">
-                        {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
-                        Approve
-                      </Button>
+              {isOpen && (() => {
+                const isEditing = editId === row.id;
+                const previewHtml = isEditing ? draftHtml : row.body_html;
+                return (
+                  <div className="mt-2 ml-5 space-y-2">
+                    {isEditing && (
+                      <div className="space-y-2">
+                        <div>
+                          <label className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                            Subject
+                          </label>
+                          <Input
+                            value={draftSubject}
+                            onChange={(e) => setDraftSubject(e.target.value)}
+                            className="h-8 mt-1 text-sm"
+                            placeholder="Email subject"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                            Body HTML
+                          </label>
+                          <Textarea
+                            value={draftHtml}
+                            onChange={(e) => setDraftHtml(e.target.value)}
+                            rows={10}
+                            className="mt-1 font-mono text-xs"
+                            placeholder="<p>Hi {{first_name}}, …</p>"
+                          />
+                          <p className="mt-1 text-[10px] text-muted-foreground">
+                            Edit the HTML directly. Preview below updates live.
+                          </p>
+                        </div>
+                      </div>
                     )}
-                    <Button size="sm" variant="outline" disabled={busy} onClick={() => sendNow(row)} className="h-7 gap-1.5">
-                      <Send className="h-3.5 w-3.5" /> Send now
-                    </Button>
-                    <Button size="sm" variant="ghost" disabled={busy} onClick={() => cancel(row)} className="h-7 gap-1.5 text-muted-foreground">
-                      <X className="h-3.5 w-3.5" /> Cancel
-                    </Button>
+
+                    <div className="rounded border border-border bg-background overflow-hidden">
+                      <iframe
+                        title={`preview-${row.id}`}
+                        srcDoc={previewHtml}
+                        sandbox=""
+                        className="w-full h-[420px] bg-white"
+                      />
+                    </div>
+
+                    <div className="flex flex-wrap gap-1.5">
+                      {isEditing ? (
+                        <>
+                          <Button size="sm" disabled={busy} onClick={() => saveEdits(row, { approve: true })} className="h-7 gap-1.5">
+                            {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
+                            Save &amp; approve
+                          </Button>
+                          <Button size="sm" variant="outline" disabled={busy} onClick={() => saveEdits(row, { sendNow: true })} className="h-7 gap-1.5">
+                            <Send className="h-3.5 w-3.5" /> Save &amp; send now
+                          </Button>
+                          <Button size="sm" variant="outline" disabled={busy} onClick={() => saveEdits(row)} className="h-7 gap-1.5">
+                            <Save className="h-3.5 w-3.5" /> Save only
+                          </Button>
+                          <Button size="sm" variant="ghost" disabled={busy} onClick={cancelEdit} className="h-7 gap-1.5 text-muted-foreground">
+                            <X className="h-3.5 w-3.5" /> Discard
+                          </Button>
+                        </>
+                      ) : (
+                        <>
+                          {row.needs_review && (
+                            <Button size="sm" disabled={busy} onClick={() => approve(row)} className="h-7 gap-1.5">
+                              {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
+                              Approve
+                            </Button>
+                          )}
+                          <Button size="sm" variant="outline" disabled={busy} onClick={() => sendNow(row)} className="h-7 gap-1.5">
+                            <Send className="h-3.5 w-3.5" /> Send now
+                          </Button>
+                          <Button size="sm" variant="outline" disabled={busy} onClick={() => startEdit(row)} className="h-7 gap-1.5">
+                            <Pencil className="h-3.5 w-3.5" /> Edit
+                          </Button>
+                          <Button size="sm" variant="ghost" disabled={busy} onClick={() => cancel(row)} className="h-7 gap-1.5 text-muted-foreground">
+                            <X className="h-3.5 w-3.5" /> Cancel
+                          </Button>
+                        </>
+                      )}
+                    </div>
                   </div>
-                </div>
-              )}
+                );
+              })()}
             </li>
           );
         })}
