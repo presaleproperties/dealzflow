@@ -56,7 +56,7 @@ Deno.serve(async (req) => {
     let emailQueued = false;
     let emailQueueId: string | null = null;
 
-    const queueEmail = async (to: string, subject: string, html: string, reason: string) => {
+    const queueEmail = async (to: string, subject: string, html: string, reason: string, opts: { sendAt?: string; needsReview?: boolean } = {}) => {
       const senderUserId = decidedBy ?? draft.assigned_to ?? null;
       if (!senderUserId) throw new Error(`email_sender_missing; original=${reason}`);
       const { data: queued, error: queueErr } = await admin
@@ -67,8 +67,10 @@ Deno.serve(async (req) => {
           to_emails: [to],
           subject,
           body_html: html,
-          send_at: new Date().toISOString(),
+          send_at: opts.sendAt ?? new Date().toISOString(),
           status: 'pending',
+          needs_review: !!opts.needsReview,
+          review_reason: opts.needsReview ? reason : null,
           created_by: senderUserId,
         })
         .select('id')
@@ -76,11 +78,14 @@ Deno.serve(async (req) => {
       if (queueErr) throw new Error(`email_queue_failed: ${queueErr.message}; original=${reason}`);
       emailQueued = true;
       emailQueueId = queued?.id ?? null;
-      fetch(`${SUPABASE_URL}/functions/v1/process-scheduled-emails`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${SERVICE_KEY}` },
-        body: JSON.stringify({ source: 'zara-execute-send', draftId }),
-      }).catch((e) => console.warn('[zara-execute-send] email queue kick failed', e));
+      // Only kick the processor if it can actually go now
+      if (!opts.sendAt && !opts.needsReview) {
+        fetch(`${SUPABASE_URL}/functions/v1/process-scheduled-emails`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${SERVICE_KEY}` },
+          body: JSON.stringify({ source: 'zara-execute-send', draftId }),
+        }).catch((e) => console.warn('[zara-execute-send] email queue kick failed', e));
+      }
     };
 
     // Channel switch
