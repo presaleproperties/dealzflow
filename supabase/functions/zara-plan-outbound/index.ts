@@ -268,6 +268,15 @@ Deno.serve(async (req) => {
       continue;
     }
 
+    // ── Registry lookup: trigger → template (slug + id) ────────────────
+    // Replaces hardcoded template_key=trigger. Falls back to trigger string
+    // when no registry row exists so audits/dedupe keep working.
+    const resolvedTpl = await resolveTemplateForTrigger(admin, trigger, null);
+    const templateKey: string = resolvedTpl?.slug ?? trigger;
+    const templateId: string | null = resolvedTpl?.id ?? null;
+    ruleEval.resolved_template_slug = resolvedTpl?.slug ?? null;
+    ruleEval.resolved_template_id = templateId;
+
     // ── Auto multi-project showcase branch ──────────────────────────────
     // When the matched trigger is configured for auto-showcase AND autonomous
     // sending is enabled (and not sandbox-blocked), invoke zara-send-project-details
