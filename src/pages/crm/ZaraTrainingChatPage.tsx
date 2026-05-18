@@ -371,10 +371,10 @@ export default function ZaraTrainingChatPage() {
             <Textarea
               value={composer}
               onChange={(e) => setComposer(e.target.value)}
-              placeholder={activeSessionId ? "Reply to Zara… (Cmd/Ctrl+Enter to send)" : "Type to start a new session, or pick a scenario drill →"}
+              placeholder={activeSessionId ? "Reply to Zara… (Enter to send, Shift+Enter for newline)" : "Type to start a new session, or pick a scenario drill →"}
               className="min-h-[60px] resize-none"
               onKeyDown={(e) => {
-                if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+                if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
                   e.preventDefault();
                   if (composer.trim()) sendMut.mutate({ message: composer.trim() });
                 }
