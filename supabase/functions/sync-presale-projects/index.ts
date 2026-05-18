@@ -113,6 +113,7 @@ Deno.serve(async (req) => {
   // We extract the trailing project slug after `presale-(condos|townhomes|homes|duplexes|land)-`
   // and use it to resolve the bridge slug `eden` → full SEO path.
   const seoBySlug = new Map<string, string>();
+  let sitemapProjectCount = 0;
   try {
     const sitemapRes = await fetch(
       "https://thvlisplwqhtjpzpedhq.supabase.co/functions/v1/generate-sitemap?type=projects",
@@ -124,7 +125,17 @@ Deno.serve(async (req) => {
       for (const m of xml.matchAll(re)) {
         const fullSlug = m[1];
         const sm = fullSlug.match(slugRe);
-        if (sm) seoBySlug.set(sm[1], fullSlug);
+        if (sm) {
+          const shortSlug = sm[1];
+          sitemapProjectCount++;
+          seoBySlug.set(shortSlug, fullSlug);
+          // The search endpoint is capped/ranked, so some valid projects never
+          // appear in query sweeps. Seed every sitemap project so records like
+          // Salton are still fetched by bridge-get-project and linked locally.
+          if (!singleSlug && !bySlug.has(shortSlug)) {
+            bySlug.set(shortSlug, { slug: shortSlug, project_slug: shortSlug, name: shortSlug });
+          }
+        }
       }
     }
   } catch (e) {
@@ -309,6 +320,7 @@ Deno.serve(async (req) => {
       run_id: runId,
       mode: singleSlug ? "single" : "full",
       slug: singleSlug,
+      sitemap_projects: sitemapProjectCount,
       sweep_queries: singleSlug ? 0 : SWEEP_QUERIES.length,
       unique_projects: bySlug.size,
       inserted,
