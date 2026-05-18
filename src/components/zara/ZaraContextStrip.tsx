@@ -57,18 +57,18 @@ export function ZaraContextStrip({
   return (
     <div
       className={cn(
-        'px-3 py-2 border-t border-border/40 space-y-1.5 bg-muted/20',
+        'px-3 py-2.5 rounded-2xl bg-foreground/[0.03] space-y-1.5',
         className,
       )}
     >
       {pb && (
         <div className="flex items-start gap-2">
-          <Layers className="w-3 h-3 mt-0.5 text-primary shrink-0" />
+          <Layers className="w-3 h-3 mt-0.5 text-primary/80 shrink-0" />
           <div className="min-w-0">
             <div className="text-[10px] uppercase tracking-wider text-muted-foreground leading-tight">
               Playbook
             </div>
-            <div className="text-[11.5px] text-foreground/85 leading-snug truncate">
+            <div className="text-[12px] text-foreground/85 leading-snug truncate">
               {pb.name || pb.scenario || 'Matched scenario'}
             </div>
           </div>
@@ -76,7 +76,7 @@ export function ZaraContextStrip({
       )}
       {principle && (
         <div className="flex items-start gap-2">
-          <BookOpen className="w-3 h-3 mt-0.5 text-primary shrink-0" />
+          <BookOpen className="w-3 h-3 mt-0.5 text-primary/80 shrink-0" />
           <div className="min-w-0">
             <div className="text-[10px] uppercase tracking-wider text-muted-foreground leading-tight">
               Founder lens
@@ -86,7 +86,7 @@ export function ZaraContextStrip({
                 </span>
               )}
             </div>
-            <div className="text-[11.5px] text-foreground/85 leading-snug">
+            <div className="text-[12px] text-foreground/85 leading-snug">
               {principle.statement || principle.title}
             </div>
           </div>
