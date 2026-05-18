@@ -145,7 +145,9 @@ export default function ZaraQueuePage() {
     });
     if (error) { toast.error(error.message); return; }
     const res = data as any;
+    if (res?.ok === false) { toast.error(res.detail ?? 'Send failed'); return; }
     if (res?.blocked) toast.warning(`Sandbox: would send to ${res.would_send_to ?? '(no phone)'}`);
+    else if (res?.queued) toast.success('Queued for sending');
     else toast.success('Sent');
     qc.invalidateQueries({ queryKey: ['zara-drafts'] });
   };
