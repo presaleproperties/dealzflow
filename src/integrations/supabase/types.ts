@@ -7182,9 +7182,12 @@ export type Database = {
           last_message_at: string | null
           last_message_snippet: string | null
           pinned: boolean
+          presale_contact_id: string | null
+          presale_user_id: string | null
+          source: string
           title: string
           title_regenerated_at_turn: number
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           archived?: boolean
@@ -7193,9 +7196,12 @@ export type Database = {
           last_message_at?: string | null
           last_message_snippet?: string | null
           pinned?: boolean
+          presale_contact_id?: string | null
+          presale_user_id?: string | null
+          source?: string
           title?: string
           title_regenerated_at_turn?: number
-          user_id: string
+          user_id?: string | null
         }
         Update: {
           archived?: boolean
@@ -7204,11 +7210,22 @@ export type Database = {
           last_message_at?: string | null
           last_message_snippet?: string | null
           pinned?: boolean
+          presale_contact_id?: string | null
+          presale_user_id?: string | null
+          source?: string
           title?: string
           title_regenerated_at_turn?: number
-          user_id?: string
+          user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "zara_conversations_presale_contact_id_fkey"
+            columns: ["presale_contact_id"]
+            isOneToOne: false
+            referencedRelation: "crm_contacts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       zara_cta_preferences: {
         Row: {
@@ -8109,6 +8126,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      zara_public_rate_limits: {
+        Row: {
+          message_count: number
+          presale_user_id: string
+          send_count: number
+          updated_at: string
+          window_start: string
+        }
+        Insert: {
+          message_count?: number
+          presale_user_id: string
+          send_count?: number
+          updated_at?: string
+          window_start?: string
+        }
+        Update: {
+          message_count?: number
+          presale_user_id?: string
+          send_count?: number
+          updated_at?: string
+          window_start?: string
+        }
+        Relationships: []
       }
       zara_research_cache: {
         Row: {
@@ -9695,6 +9736,20 @@ export type Database = {
           similarity: number
           turning_message: string
           why_it_worked: string
+        }[]
+      }
+      zara_public_rate_check: {
+        Args: {
+          _is_send?: boolean
+          _msg_limit?: number
+          _presale_user_id: string
+          _send_limit?: number
+        }
+        Returns: {
+          allowed: boolean
+          message_count: number
+          retry_after_seconds: number
+          send_count: number
         }[]
       }
       zara_recent_high_edits: {
