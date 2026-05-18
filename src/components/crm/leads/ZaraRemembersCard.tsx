@@ -111,19 +111,35 @@ export function ZaraRemembersCard({ contactId }: Props) {
       }}
     >
       {/* Header */}
-      <div className="flex items-center justify-between px-3 pt-3 pb-2">
-        <div className="flex items-center gap-1.5">
-          <Sparkles className="w-3.5 h-3.5 text-primary" />
-          <span className="text-[10.5px] uppercase tracking-[0.14em] font-semibold text-primary/90">
+      <div className="flex items-center justify-between px-3 pt-3 pb-2 gap-2">
+        <div className="flex items-center gap-1.5 min-w-0">
+          <Sparkles className="w-3.5 h-3.5 text-primary shrink-0" />
+          <span className="text-[10.5px] uppercase tracking-[0.14em] font-semibold text-primary/90 truncate">
             Zara remembers
           </span>
+          {stage && (
+            <span className="text-[9.5px] uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-primary/10 text-primary/90 border border-primary/20 whitespace-nowrap">
+              {stage.replace(/-/g, ' ')}
+            </span>
+          )}
         </div>
-        <span
-          className="text-[10px] text-muted-foreground tabular-nums"
-          title={`Refreshed ${new Date(memory.refreshed_at).toLocaleString()} · ${memory.turn_count} turns`}
-        >
-          {formatDistanceToNow(new Date(memory.refreshed_at), { addSuffix: true })}
-        </span>
+        <div className="flex items-center gap-1.5 shrink-0">
+          <span
+            className="text-[10px] text-muted-foreground tabular-nums hidden sm:inline"
+            title={`Refreshed ${new Date(memory.refreshed_at).toLocaleString()} · ${memory.turn_count} turns`}
+          >
+            {formatDistanceToNow(new Date(memory.refreshed_at), { addSuffix: true })}
+          </span>
+          <button
+            type="button"
+            onClick={refreshContinuity}
+            disabled={refreshing}
+            title="Rebuild Zara's memory of this lead"
+            className="p-1 rounded hover:bg-muted/60 text-muted-foreground hover:text-foreground disabled:opacity-50"
+          >
+            <RefreshCw className={cn('w-3 h-3', refreshing && 'animate-spin')} />
+          </button>
+        </div>
       </div>
 
       {/* Urgency strip */}
@@ -131,6 +147,25 @@ export function ZaraRemembersCard({ contactId }: Props) {
         <div className="px-3 pb-2 flex items-center gap-1.5">
           <span className={cn('w-1.5 h-1.5 rounded-full', urgency.dot)} />
           <span className="text-[11.5px] text-foreground/85 leading-tight">{urgency.label}</span>
+        </div>
+      )}
+
+      {/* Continuity openers — natural references Zara can drop into next message */}
+      {openers.length > 0 && (
+        <div className="px-3 pb-2.5 border-b border-border/30 mb-1">
+          <div className="flex items-center gap-1.5 mb-1.5">
+            <Quote className="w-3 h-3 text-primary/70" />
+            <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">
+              Pick up where you left off
+            </span>
+          </div>
+          <ul className="space-y-1">
+            {openers.slice(0, 4).map((o, i) => (
+              <li key={i} className="text-[12px] leading-snug text-foreground/85 pl-3 border-l-2 border-primary/30 italic">
+                {o}
+              </li>
+            ))}
+          </ul>
         </div>
       )}
 
