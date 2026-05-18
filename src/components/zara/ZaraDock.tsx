@@ -497,7 +497,7 @@ export function ZaraDock() {
     const id = await ensureConv();
     if (!id) return;
     setInput('');
-    send(text, id);
+    send(text, id, { replyMode: actionOnly ? 'action' : 'normal' });
   };
 
   const onChip = async (prompt: string, needsContact: boolean) => {
