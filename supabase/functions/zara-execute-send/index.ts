@@ -93,13 +93,26 @@ Deno.serve(async (req) => {
       } else if (draft.channel === 'email') {
         const to = (contact.email ?? '').trim();
         if (!to) throw new Error('contact_email_missing');
-        let html: string =
-          (draft as any).draft_html && String((draft as any).draft_html).trim().length > 0
-            ? String((draft as any).draft_html)
-            : `<p style="font-family:Inter,system-ui,sans-serif;white-space:pre-wrap;">${
-                finalText.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-              }</p>`;
-        let subject = draft.draft_subject ?? '(no subject)';
+
+        // ALWAYS re-render through branded scaffold so every Zara email
+        // carries the Presale template + the sending agent's signature.
+        // (Raw <p>…</p> wraps looked like spam — see playbook + memory rule
+        // "Email Template Styles Rule".)
+        const senderUserId = decidedBy ?? draft.assigned_to ?? null;
+        const rendered = await renderBrandedEmail(admin, {
+          userId: senderUserId ?? '',
+          contactId: draft.contact_id,
+          intent: (draft as any).intent ?? null,
+          bodyText: finalText,
+          subject: draft.draft_subject ?? null,
+          cta_text: (draft as any).cta_text ?? null,
+          cta_url: (draft as any).cta_url ?? null,
+        });
+        let html: string = rendered.html;
+        let subject = rendered.subject ?? draft.draft_subject ?? '(no subject)';
+        if (rendered.template_id_used) {
+          (draft as any).template_id_used = rendered.template_id_used;
+        }
 
         // Never-quote → strip quoted history + redact phrases
         html = applyNeverQuote(html, (settings as any)?.never_quote ?? null);
