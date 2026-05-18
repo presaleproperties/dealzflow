@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react';
-import { StickyNote, Sparkles } from 'lucide-react';
+import { useMemo, useState, useEffect } from 'react';
+import { StickyNote, Sparkles, ChevronDown } from 'lucide-react';
 import { toast } from 'sonner';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { useAuth } from '@/hooks/useAuth';
