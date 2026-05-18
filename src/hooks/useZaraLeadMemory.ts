@@ -2,6 +2,12 @@ import { useQuery } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
+export interface ZaraAppointmentRef {
+  kind?: string | null;        // booked | showed | missed | completed
+  when?: string | null;        // YYYY-MM-DD
+  project?: string | null;
+}
+
 export interface ZaraLeadFacts {
   budget_min?: number | null;
   budget_max?: number | null;
@@ -22,6 +28,19 @@ export interface ZaraLeadFacts {
   project_interest?: string | null;
   current_neighborhood?: string | null;
   key_quotes?: string[] | null;
+  // ── Relationship Memory Continuity (Phase 7)
+  investor_vs_enduser?: 'investor' | 'end_user' | 'mixed' | null;
+  preferred_cities?: string[] | null;
+  preferred_property_type?: string | null;
+  school_preferences?: string | null;
+  commute_concerns?: string | null;
+  timing_concerns?: string | null;
+  emotional_objections?: string[] | null;
+  emotional_hesitation?: string | null;
+  projects_compared?: string[] | null;
+  viewed_projects?: string[] | null;
+  downloaded_floorplans?: string[] | null;
+  appointment_history?: ZaraAppointmentRef[] | null;
 }
 
 export interface ZaraLeadMemory {
@@ -31,6 +50,10 @@ export interface ZaraLeadMemory {
   refreshed_at: string;
   turn_count: number;
   version: number;
+  continuity_openers?: string[] | null;
+  relationship_stage?: string | null;
+  last_topics?: string[] | null;
+  continuity_refreshed_at?: string | null;
 }
 
 export function useZaraLeadMemory(contactId: string | undefined) {
