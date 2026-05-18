@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
-import { Sparkles, X, History, Maximize2, Send, Plus, Pin, Search, Loader2, ChevronDown, Copy, Check, Trash2, Archive, Edit2, Download, MoreVertical } from 'lucide-react';
+import { Sparkles, X, History, Maximize2, Send, Plus, Pin, Search, Loader2, ChevronDown, Copy, Check, Trash2, Archive, Edit2, Download, MoreVertical, Eraser } from 'lucide-react';
 import { formatDistanceToNow, format } from 'date-fns';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
