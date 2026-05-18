@@ -54,6 +54,12 @@ export interface ZaraLeadMemory {
   relationship_stage?: string | null;
   last_topics?: string[] | null;
   continuity_refreshed_at?: string | null;
+  // Lead Intelligence rollup (from agent notes)
+  intelligence_summary?: string | null;
+  recommended_style?: string | null;
+  recommended_next_step?: string | null;
+  intelligence_priority?: number | null;
+  intelligence_refreshed_at?: string | null;
 }
 
 export function useZaraLeadMemory(contactId: string | undefined) {
@@ -64,7 +70,7 @@ export function useZaraLeadMemory(contactId: string | undefined) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('zara_lead_memory')
-        .select('contact_id, summary, facts, refreshed_at, turn_count, version, continuity_openers, relationship_stage, last_topics, continuity_refreshed_at')
+        .select('contact_id, summary, facts, refreshed_at, turn_count, version, continuity_openers, relationship_stage, last_topics, continuity_refreshed_at, intelligence_summary, recommended_style, recommended_next_step, intelligence_priority, intelligence_refreshed_at')
         .eq('contact_id', contactId!)
         .maybeSingle();
       if (error && error.code !== 'PGRST116') throw error;
