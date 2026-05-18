@@ -18,6 +18,7 @@ import {
   Plus, Send, Sparkles, MessageSquare, Bookmark, ThumbsDown, CheckCircle2,
   XCircle, AlertCircle, Loader2, Wand2, Trash2, Library, HelpCircle,
 } from "lucide-react";
+import { useKeyboardInset } from "@/hooks/useKeyboardInset";
 
 // ─────────────────────────────────────────────────────────
 type Session = {
