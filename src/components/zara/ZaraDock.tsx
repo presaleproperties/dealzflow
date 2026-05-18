@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
-import { Sparkles, X, History, Maximize2, Send, Plus, Pin, Search, Loader2, ChevronDown, Copy, Check, Trash2, Archive, Edit2, Download, MoreVertical, Eraser } from 'lucide-react';
+import { Sparkles, X, History, Maximize2, Send, Plus, Pin, Search, Loader2, ChevronDown, Copy, Check, Trash2, Archive, Edit2, Download, MoreVertical, Eraser, Zap } from 'lucide-react';
 import { formatDistanceToNow, format } from 'date-fns';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -415,6 +415,13 @@ export function ZaraDock() {
   const [input, setInput] = useState('');
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const scrollerRef = useRef<HTMLDivElement>(null);
+  const [actionOnly, setActionOnly] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    return window.localStorage.getItem('zara-dock:action-only') === '1';
+  });
+  useEffect(() => {
+    try { window.localStorage.setItem('zara-dock:action-only', actionOnly ? '1' : '0'); } catch {}
+  }, [actionOnly]);
 
   const { data: settings } = useQuery({
     queryKey: ['zara-settings'],
@@ -490,7 +497,7 @@ export function ZaraDock() {
     const id = await ensureConv();
     if (!id) return;
     setInput('');
-    send(text, id);
+    send(text, id, { replyMode: actionOnly ? 'action' : 'normal' });
   };
 
   const onChip = async (prompt: string, needsContact: boolean) => {
@@ -549,6 +556,12 @@ export function ZaraDock() {
               <Pill size="sm" tone={modePill.tone}>{modePill.label}</Pill>
             </div>
             <div className="flex items-center gap-0.5">
+              <button
+                onClick={() => setActionOnly((v) => !v)}
+                className={`p-2 rounded-full transition-colors ${actionOnly ? 'bg-primary/15 text-primary' : 'hover:bg-foreground/5 text-foreground/70'}`}
+                title={actionOnly ? 'Action-only mode on — click to turn off' : 'Action-only mode: click-to-send actions + one question'}
+                aria-pressed={actionOnly}
+              ><Zap className="w-4 h-4" /></button>
               <button onClick={clearChat} disabled={rendered.length === 0 && !streaming} className="p-2 rounded-full hover:bg-foreground/5 disabled:opacity-30 disabled:hover:bg-transparent" title="Clear chat"><Eraser className="w-4 h-4" /></button>
               <button onClick={() => navigate('/crm/zara')} className="p-2 rounded-full hover:bg-foreground/5" title="Open full cockpit"><Maximize2 className="w-4 h-4" /></button>
               <button onClick={() => setShowHistory(true)} className="p-2 rounded-full hover:bg-foreground/5" title="Conversations (/)"><History className="w-4 h-4" /></button>

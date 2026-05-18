@@ -441,7 +441,7 @@ Deno.serve(async (req) => {
     const user = userData?.user;
     if (!user) return new Response("Unauthorized", { status: 401, headers: corsHeaders });
 
-    const { conversation_id, message, page_context } = await req.json();
+    const { conversation_id, message, page_context, reply_mode } = await req.json();
     if (!conversation_id || !message) return new Response("conversation_id and message required", { status: 400, headers: corsHeaders });
 
     // Check mode
@@ -496,6 +496,15 @@ Deno.serve(async (req) => {
     if (ragBlock) systemParts.push(ragBlock);
     if (currentViewBlock) systemParts.push(currentViewBlock);
     for (const a of (addenda ?? [])) systemParts.push((a as any).addendum);
+    if (reply_mode === "action") {
+      systemParts.push(
+        `ACTION-ONLY MODE (strict):
+- Output AT MOST one short follow-up question (≤12 words). No greetings, no explanations, no recaps, no markdown headings, no bullet lists in the body.
+- Then ALWAYS append a ###NEXT### block with 1–3 click-to-send actions (write-verbs only — Draft, Send, Book, Schedule, Log, Add, Update, Assign, Tag, Create, Remind).
+- If you would otherwise return prose, compress it into a single chip in the ###NEXT### block instead.
+- Never narrate what you're about to do — just propose the chips.`
+      );
+    }
     const system = systemParts.join("\n\n");
 
     // SSE response
