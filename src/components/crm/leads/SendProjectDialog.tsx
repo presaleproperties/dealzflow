@@ -607,7 +607,7 @@ export function SendProjectDialog({ contact, open, onOpenChange }: Props) {
                 className="resize-none text-sm"
               />
               <div className="flex items-center justify-between mt-1.5 text-[11px] text-muted-foreground">
-                <span>Appears above the Presale project card. Plain text — links auto-styled.</span>
+                <span>Appears as a body section beneath the project card. Plain text — links auto-styled.</span>
                 <button
                   type="button"
                   onClick={saveNoteAsDefault}

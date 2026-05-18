@@ -47,13 +47,11 @@ function escapeHtml(s: string) {
     .replace(/'/g, "&#39;");
 }
 
-/** Render the agent's personal note as a styled block. Returns "" if blank.
- *  Email-safe layout: outer 100% table for background, inner 600px table for
- *  consistent alignment with the Presale hero card (which is also 600px
- *  centered). Avoids negative margins (Outlook ignores them) so the note
- *  reliably "docks" 12px above the hero at every viewport.
+/** Render the agent's personal note as a plain body section. Returns "" if
+ *  blank. Styled to read as part of the email body copy (not a separate
+ *  callout), so it docks naturally beneath the project card.
  */
-function renderPersonalNoteBlock(note: string | null | undefined, agentFirstName?: string | null): string {
+function renderPersonalNoteBlock(note: string | null | undefined, _agentFirstName?: string | null): string {
   const clean = (note ?? "").trim();
   if (!clean) return "";
   const stripped = clean
@@ -64,18 +62,14 @@ function renderPersonalNoteBlock(note: string | null | undefined, agentFirstName
   const parts = stripped.split(/\n{2,}/);
   const paragraphs = parts
     .map((p, i) => {
-      const mb = i === parts.length - 1 ? "0" : "10px";
-      return `<p style="margin:0 0 ${mb};line-height:1.6;color:#1f2937;font-size:15px;">${escapeHtml(p).replace(/\n/g, "<br/>")}</p>`;
+      const mb = i === parts.length - 1 ? "0" : "12px";
+      return `<p style="margin:0 0 ${mb};line-height:1.65;color:#1f2937;font-size:15px;font-family:Helvetica,Arial,sans-serif;">${escapeHtml(p).replace(/\n/g, "<br/>")}</p>`;
     })
     .join("");
-  const eyebrow = agentFirstName
-    ? `A note from ${escapeHtml(agentFirstName)}`
-    : `A personal note`;
   return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0;padding:0;border-collapse:collapse;">
-    <tr><td align="center" style="padding:0 0 12px;">
+    <tr><td align="center" style="padding:20px 0 8px;">
       <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:600px;border-collapse:separate;">
-        <tr><td style="background:#FBF8F2;border:1px solid #EFE6D2;border-radius:10px;padding:18px 22px;font-family:Helvetica,Arial,sans-serif;">
-          <div style="font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:#9A7A2E;font-weight:600;margin:0 0 8px;">${eyebrow}</div>
+        <tr><td style="padding:0 24px;font-family:Helvetica,Arial,sans-serif;">
           ${paragraphs}
         </td></tr>
       </table>
@@ -83,11 +77,11 @@ function renderPersonalNoteBlock(note: string | null | undefined, agentFirstName
   </table>`;
 }
 
-/** Inject the personal-note block into the rendered email HTML.
- *  Placement contract: after the project hero + body copy, immediately
- *  before the first CTA-bearing table (View Project Details / Call Now /
- *  Brochure / Floor Plans / Pricing / Calendly / Book). Falls back to the
- *  legacy "before first table" behavior if no CTA table is found. */
+/** Inject the personal-note block AFTER the project hero/details card so it
+ *  reads as a body section under the project, immediately before the CTA
+ *  buttons. We find the first table that contains an <img> (the hero card),
+ *  walk to its matching </table> at depth 0, and insert the note after it.
+ *  Falls back to "before first CTA table" then "before first table". */
 const CTA_HREF_RE = /(?:^tel:|presaleproperties\.com\/projects?\/|calendly\.com|\/(brochure|floor[-_ ]?plan|pricing|book)|\.pdf(?:$|\?))/i;
 const CTA_LABEL_RE = /(view\s+project\s+details?|call\s+now|view\s+brochure|view\s+floor\s*plans?|view\s+pricing|book\s+(a\s+)?(call|tour|meeting)|schedule)/i;
 
@@ -125,13 +119,49 @@ function findFirstCtaTableIdx(html: string): number {
   return -1;
 }
 
+/** Find the END (just after </table>) of the first top-level <table> that
+ *  contains an <img> — i.e., the project hero/details card. Returns -1 if
+ *  not found. */
+function findHeroTableEndIdx(html: string): number {
+  const lower = html.toLowerCase();
+  let cursor = 0;
+  while (cursor < lower.length) {
+    const tOpen = lower.indexOf("<table", cursor);
+    if (tOpen < 0) return -1;
+    let depth = 0;
+    let i = tOpen;
+    let end = -1;
+    while (i < lower.length) {
+      const nextOpen = lower.indexOf("<table", i + 1);
+      const nextClose = lower.indexOf("</table>", i + 1);
+      if (nextClose < 0) break;
+      if (nextOpen >= 0 && nextOpen < nextClose) { depth++; i = nextOpen; }
+      else {
+        if (depth === 0) { end = nextClose + "</table>".length; break; }
+        depth--; i = nextClose;
+      }
+    }
+    if (end < 0) return -1;
+    if (html.slice(tOpen, end).toLowerCase().includes("<img")) return end;
+    cursor = end;
+  }
+  return -1;
+}
+
 function injectPersonalNote(html: string, noteHtml: string): string {
   if (!noteHtml) return html;
+  // Preferred: insert AFTER the project hero card so the note reads as a
+  // body section beneath the project.
+  const heroEnd = findHeroTableEndIdx(html);
+  if (heroEnd > 0) {
+    return html.slice(0, heroEnd) + noteHtml + html.slice(heroEnd);
+  }
+  // Fallback: before first CTA table.
   const ctaIdx = findFirstCtaTableIdx(html);
   if (ctaIdx > 0) {
     return html.slice(0, ctaIdx) + noteHtml + html.slice(ctaIdx);
   }
-  // Fallback: before first table inside <body> (legacy behavior).
+  // Last-resort fallback: before first table inside <body>.
   const bodyOpen = html.search(/<body[^>]*>/i);
   if (bodyOpen >= 0) {
     const afterBodyOpen = html.indexOf(">", bodyOpen) + 1;
