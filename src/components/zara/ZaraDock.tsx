@@ -408,7 +408,7 @@ export function ZaraDock() {
   const navigate = useNavigate();
   const pageContext = useZaraPageContext();
   const { open, setOpen, conversationId, setConversationId, showHistory, setShowHistory } = useZaraDock();
-  const { create } = useZaraConversations();
+  const { create, archive, data: convs = [] } = useZaraConversations();
   const { rendered, send, stop, streaming, streamText, streamTools, streamSources, decide } =
     useZaraDockChat(conversationId, pageContext);
 
