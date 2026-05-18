@@ -77,21 +77,46 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Approve → execute tool
+    // Approve → execute tool. Merge user-edited overrides (subject/body/cta) for draft tools.
+    const DRAFT_TOOLS = new Set(["draft_email", "draft_sms", "draft_whatsapp"]);
+    const ALLOWED_OVERRIDE_KEYS = new Set(["subject", "body", "cta_text", "cta_url"]);
+    let mergedInput = row.tool_input ?? {};
+    let edited = false;
+    if (overrides && typeof overrides === "object" && DRAFT_TOOLS.has(row.tool_name)) {
+      const clean: Record<string, unknown> = {};
+      for (const [k, v] of Object.entries(overrides)) {
+        if (!ALLOWED_OVERRIDE_KEYS.has(k)) continue;
+        if (typeof v !== "string") continue;
+        const trimmed = v.trim();
+        if (trimmed.length === 0) continue;
+        if (k === "subject" && trimmed.length > 300) continue;
+        if (k === "body" && trimmed.length > 20000) continue;
+        if ((k === "cta_text" || k === "cta_url") && trimmed.length > 500) continue;
+        clean[k] = v;
+      }
+      if (Object.keys(clean).length > 0) {
+        mergedInput = { ...mergedInput, ...clean };
+        edited = true;
+      }
+    }
+
     const ctx = { user_id: user.id, conversation_id: row.conversation_id, zara_enabled: true, test_phones: [] };
     const execResp = await fetch(`${FUNCTIONS_BASE}/zara-tool-execute`, {
       method: "POST",
       headers: { "Content-Type": "application/json", "Authorization": `Bearer ${SERVICE_ROLE}` },
-      body: JSON.stringify({ tool: row.tool_name, args: row.tool_input, ctx }),
+      body: JSON.stringify({ tool: row.tool_name, args: mergedInput, ctx }),
     });
     const result = await execResp.json();
 
     await svc.from("zara_pending_tool_calls").update({
-      status: "approved", result, decided_by: user.id, decided_at: new Date().toISOString(),
+      status: "approved", result,
+      tool_input: edited ? mergedInput : row.tool_input,
+      decided_by: user.id, decided_at: new Date().toISOString(),
     }).eq("id", pending_id);
     await svc.from("zara_messages").insert({
       conversation_id: row.conversation_id, role: "tool",
-      tool_call_id: row.tool_use_id, tool_name: row.tool_name, tool_result: result,
+      tool_call_id: row.tool_use_id, tool_name: row.tool_name,
+      tool_result: edited ? { ...result, _edited_by_user: true } : result,
     });
 
     return new Response(JSON.stringify({ ok: true, status: "approved", result }), {
