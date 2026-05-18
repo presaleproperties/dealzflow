@@ -253,7 +253,7 @@ export default function ZaraQueuePage() {
         )}
       </div>
 
-      <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-3">
+      <div className="flex-1 min-h-0 overflow-y-auto p-3 sm:p-4 space-y-3" style={{ paddingBottom: 'calc(16px + env(safe-area-inset-bottom) + var(--bottom-nav-pad, 0px))' }}>
         {pending.length === 0 ? (
           <div className="text-center text-muted-foreground py-16 text-sm">Zara is watching. No drafts pending.</div>
         ) : (
