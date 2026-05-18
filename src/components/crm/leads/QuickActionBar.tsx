@@ -332,6 +332,9 @@ export function QuickActionBar({ contact }: Props) {
                     type="button"
                     onClick={() => {
                       setBody(r.body);
+                      if (mode === 'email' && r.subject && !subject.trim()) {
+                        setSubject(r.subject);
+                      }
                       setTimeout(() => taRef.current?.focus(), 0);
                     }}
                     title={r.body}
