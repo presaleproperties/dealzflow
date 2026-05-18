@@ -1,8 +1,11 @@
 import { useState } from 'react';
-import { Sparkles, ChevronDown, AlertCircle } from 'lucide-react';
+import { Sparkles, ChevronDown, AlertCircle, Quote, RefreshCw } from 'lucide-react';
 import { useZaraLeadMemory, isMemoryStale, type ZaraLeadFacts } from '@/hooks/useZaraLeadMemory';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface Props {
   contactId: string;
