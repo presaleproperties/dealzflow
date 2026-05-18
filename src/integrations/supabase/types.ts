@@ -8098,6 +8098,7 @@ export type Database = {
           payload: Json
           resolved_at: string | null
           scheduled_for: string | null
+          snoozed_until: string | null
           title: string
         }
         Insert: {
@@ -8112,6 +8113,7 @@ export type Database = {
           payload?: Json
           resolved_at?: string | null
           scheduled_for?: string | null
+          snoozed_until?: string | null
           title: string
         }
         Update: {
@@ -8126,6 +8128,7 @@ export type Database = {
           payload?: Json
           resolved_at?: string | null
           scheduled_for?: string | null
+          snoozed_until?: string | null
           title?: string
         }
         Relationships: [
@@ -8535,6 +8538,7 @@ export type Database = {
           approved_at: string | null
           approved_by: string | null
           assigned_to: string | null
+          booked_at: string | null
           channel: string
           citations: Json
           confidence: number | null
@@ -8560,8 +8564,10 @@ export type Database = {
           intent: string | null
           latency_ms: number | null
           model: string
+          outcome: string | null
           output_tokens: number | null
           reasoning: string | null
+          replied_at: string | null
           sent_at: string | null
           status: string
           template_id_used: string | null
@@ -8571,6 +8577,7 @@ export type Database = {
           approved_at?: string | null
           approved_by?: string | null
           assigned_to?: string | null
+          booked_at?: string | null
           channel: string
           citations?: Json
           confidence?: number | null
@@ -8596,8 +8603,10 @@ export type Database = {
           intent?: string | null
           latency_ms?: number | null
           model?: string
+          outcome?: string | null
           output_tokens?: number | null
           reasoning?: string | null
+          replied_at?: string | null
           sent_at?: string | null
           status?: string
           template_id_used?: string | null
@@ -8607,6 +8616,7 @@ export type Database = {
           approved_at?: string | null
           approved_by?: string | null
           assigned_to?: string | null
+          booked_at?: string | null
           channel?: string
           citations?: Json
           confidence?: number | null
@@ -8632,8 +8642,10 @@ export type Database = {
           intent?: string | null
           latency_ms?: number | null
           model?: string
+          outcome?: string | null
           output_tokens?: number | null
           reasoning?: string | null
+          replied_at?: string | null
           sent_at?: string | null
           status?: string
           template_id_used?: string | null
@@ -9100,6 +9112,26 @@ export type Database = {
           total_sends: number | null
         }
         Relationships: []
+      }
+      zara_draft_outcomes_v1: {
+        Row: {
+          agent_user_id: string | null
+          avg_edit_distance: number | null
+          booked: number | null
+          edited: number | null
+          replied: number | null
+          sent: number | null
+          week: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "zara_suggested_replies_assigned_to_fkey"
+            columns: ["agent_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       zara_metrics_by_intent: {
         Row: {
@@ -9776,6 +9808,10 @@ export type Database = {
           weight: number
         }[]
       }
+      zara_mark_handoff_read: {
+        Args: { p_brief_id: string }
+        Returns: undefined
+      }
       zara_match_knowledge_chunks: {
         Args: {
           match_count?: number
@@ -9881,9 +9917,26 @@ export type Database = {
         Args: { _contact_id: string }
         Returns: undefined
       }
+      zara_resolve_nudge: {
+        Args: { p_action: string; p_hours?: number; p_nudge_id: string }
+        Returns: undefined
+      }
       zara_retrieve_context: {
         Args: { _contact_id: string; _query?: string; _trigger?: string }
         Returns: Json
+      }
+      zara_today_feed: {
+        Args: { p_user?: string }
+        Returns: {
+          body: string
+          contact_id: string
+          created_at: string
+          item_id: string
+          kind: string
+          payload: Json
+          priority: number
+          title: string
+        }[]
       }
     }
     Enums: {
