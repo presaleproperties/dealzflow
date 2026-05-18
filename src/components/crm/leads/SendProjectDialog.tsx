@@ -58,17 +58,24 @@ export function SendProjectDialog({ contact, open, onOpenChange }: Props) {
   const { data: projects = [] } = useQuery<Project[]>({
     queryKey: ['send-project.projects'],
     queryFn: async () => {
+      // Show ALL active projects. We previously filtered to rows that already
+      // had a `presale_slug` populated, but the sync sometimes leaves that
+      // column null even for valid Presale projects. The render-and-send
+      // edge fn falls back to the local slug when no presale_slug exists,
+      // so it's safe (and far more complete) to surface every active project.
       const { data } = await supabase
         .from('crm_projects')
         .select('slug, name, city, status, presale_slug')
-        .not('presale_slug', 'is', null)
         .eq('is_active', true)
-        .order('name');
+        .not('slug', 'is', null)
+        .order('name')
+        .limit(1000);
       return (data ?? []) as Project[];
     },
     staleTime: 5 * 60 * 1000,
     enabled: open,
   });
+
 
   const { data: templates = [], refetch: refetchTemplates, dataUpdatedAt: templatesFetchedAt } = useQuery<Template[]>({
     queryKey: ['send-project.templates'],
