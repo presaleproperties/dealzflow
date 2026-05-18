@@ -10,6 +10,7 @@ import { RecentCallsCard } from '@/components/crm/leads/RecentCallsCard';
 import type { CrmContact } from '@/hooks/useCrmContacts';
 import type { LeadScore } from './types';
 import { ZaraSection } from './ZaraSection';
+import { ZaraLeadIntelligenceCard } from './ZaraLeadIntelligenceCard';
 
 interface Props {
   contact: CrmContact;
@@ -74,6 +75,11 @@ export function RightSidebar({
 
       {/* Zara — unified memory + actions + composer */}
       <ZaraSection contact={contact} />
+
+      {/* Lead Intelligence — extracted from agent notes (highest-priority signal) */}
+      <ZaraLeadIntelligenceCard contactId={contact.id} />
+
+
 
 
       {/* ③ Engagement (Emails / Behavior) */}

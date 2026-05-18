@@ -56,15 +56,26 @@ Deno.serve(async (req) => {
       return json({ error: 'anthropic_key_missing', message: 'Add ANTHROPIC_API_KEY to project secrets.' }, 500);
     }
 
-    // 3. Context
-    const [{ data: memoryRow }, { data: events }] = await Promise.all([
-      admin.from('zara_lead_memory').select('summary, signals, facts, turn_count, version, last_rolled_at').eq('contact_id', contactId).maybeSingle(),
+    // 3. Context — including agent-note intelligence (HIGHEST-priority signal)
+    const [{ data: memoryRow }, { data: events }, { data: noteIntel }, { data: recentNotes }] = await Promise.all([
+      admin.from('zara_lead_memory').select('summary, signals, facts, turn_count, version, last_rolled_at, intelligence_summary, recommended_style, recommended_next_step').eq('contact_id', contactId).maybeSingle(),
       admin
         .from('crm_engagement_events')
         .select('event_type, source, direction, occurred_at, metadata')
         .eq('contact_id', contactId)
         .order('occurred_at', { ascending: false })
         .limit(10),
+      admin.from('zara_note_intelligence')
+        .select('emotional_state, trust_level, buying_readiness, objections, motivations, financial_concerns, family_context, timing_signals, recommended_style, recommended_next_step, key_quote, summary, analyzed_at')
+        .eq('contact_id', contactId)
+        .order('analyzed_at', { ascending: false })
+        .limit(5),
+      admin.from('crm_notes')
+        .select('content, note_type, event_at, created_at')
+        .eq('contact_id', contactId)
+        .not('note_type', 'in', '(import_archive,ai_summary,system,website_behavior)')
+        .order('created_at', { ascending: false })
+        .limit(3),
     ]);
 
     // 3b. Tone sample — last 1-2 inbound messages so the draft matches the
@@ -172,6 +183,28 @@ Deno.serve(async (req) => {
         })
         .join('\n') || '(no prior events)';
 
+    const noteBlock = (recentNotes ?? []).length
+      ? (recentNotes as any[]).map((n, i) => `[${i + 1}] (${(n.event_at || n.created_at)?.slice(0, 10)}, ${n.note_type}) ${String(n.content || '').slice(0, 600)}`).join('\n')
+      : '(no agent notes)';
+    const intelBlock = (noteIntel ?? []).length
+      ? (noteIntel as any[]).map((r) => {
+          const parts: string[] = [];
+          if (r.summary) parts.push(r.summary);
+          if (r.emotional_state) parts.push(`emotion: ${r.emotional_state}`);
+          if (r.trust_level != null) parts.push(`trust ${r.trust_level}/5`);
+          if (r.buying_readiness != null) parts.push(`readiness ${r.buying_readiness}/5`);
+          if (r.objections?.length) parts.push(`objections: ${r.objections.join(', ')}`);
+          if (r.motivations?.length) parts.push(`motivations: ${r.motivations.join(', ')}`);
+          if (r.financial_concerns?.length) parts.push(`money: ${r.financial_concerns.join(', ')}`);
+          if (r.family_context) parts.push(`family: ${r.family_context}`);
+          if (r.timing_signals?.length) parts.push(`timing: ${r.timing_signals.join(', ')}`);
+          if (r.key_quote) parts.push(`quote: "${r.key_quote}"`);
+          return `- (${r.analyzed_at?.slice(0, 10)}) ${parts.join(' · ')}`;
+        }).join('\n')
+      : '(no analyzed intelligence yet)';
+    const recStyle = (memoryRow as any)?.recommended_style || (noteIntel ?? []).find((r: any) => r.recommended_style)?.recommended_style;
+    const recNext  = (memoryRow as any)?.recommended_next_step || (noteIntel ?? []).find((r: any) => r.recommended_next_step)?.recommended_next_step;
+
     const userPrompt = `LEAD:
 - name: ${[contact.first_name, contact.last_name].filter(Boolean).join(' ') || '(unknown)'}
 - pipeline stage: ${contact.status ?? 'unknown'}
@@ -182,10 +215,19 @@ Deno.serve(async (req) => {
 - languages: ${(contact.languages ?? []).join(', ') || 'unknown'}
 - detected inbound language: ${detectedLang}
 
+╔══ AGENT-WRITTEN NOTES (HIGHEST PRIORITY — these come from the human who actually spoke to this buyer; outweigh tags, scoring, and website behavior) ══╗
+${noteBlock}
+╚════════════════════════════════════════════════╝
+
+LEAD INTELLIGENCE (extracted from those notes — use to guide tone, pacing, and next step):
+${intelBlock}
+${recStyle ? `\nRECOMMENDED TONE: ${recStyle}` : ''}
+${recNext  ? `\nRECOMMENDED NEXT STEP: ${recNext}`  : ''}
+
 MEMORY SUMMARY (rolling, ${memoryRow?.turn_count ?? 0} turns merged):
 ${memoryRow?.summary ?? '(no memory yet)'}
 
-MEMORY FACTS (durable deal context — trust these unless the inbound contradicts them):
+MEMORY FACTS (durable deal context — trust unless inbound contradicts them, but the AGENT NOTES block above wins over any conflict here):
 ${memoryRow?.facts && Object.keys(memoryRow.facts).length > 0 ? JSON.stringify(memoryRow.facts, null, 2) : '(no facts captured yet)'}
 
 RELEVANT PROJECT KNOWLEDGE (retrieved via vector search — use these facts, do not invent others. Each project is prefixed with a [N] tag; when you state a project-specific fact (price, deposit, completion year, location, pitch line) append the matching [N] marker inline, e.g. "completing 2027 [1]". Use markers sparingly — at most one per sentence, only for facts pulled from the knowledge block below. Do NOT cite memory, events, or general knowledge.):
@@ -200,7 +242,7 @@ INBOUND MESSAGE (channel=${channel}, at=${inboundAt}):
 ${toneSample ? `TONE SAMPLE (recent inbound messages from this lead — match their register, length, formality, emoji use, and language. Do not copy phrasing verbatim; mirror the cadence):
 ${toneSample}
 
-` : ''}Draft Zara's reply now. Return ONLY the JSON object.`;
+` : ''}Draft Zara's reply now. Honor RECOMMENDED TONE if present (e.g. if the lead is "nervous about rates", do not use aggressive urgency — be calm and trust-building). Reference prior context naturally if it fits, never as surveillance. Return ONLY the JSON object.`;
 
     // 6. Two-tier model routing.
     // Pass 1: heuristic intent + Haiku with intent-specific system prompt.

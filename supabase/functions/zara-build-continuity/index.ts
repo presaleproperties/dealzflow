@@ -25,6 +25,14 @@ function json(b: unknown, s = 200) {
 
 const SYSTEM_PROMPT = `You are building Zara's RELATIONSHIP MEMORY for a real-estate lead.
 
+CRITICAL PRIORITY ORDER (apply in this order, never reversed):
+  1. MANUAL AGENT NOTES + note_intelligence rollup — highest-quality evidence. These are observations from the founder/agent who actually spoke to this buyer. Trust them over everything else.
+  2. Appointments, showings, calls — direct relationship events.
+  3. Website behavior + activity events — supporting context only.
+  4. Tags and automation flags — weakest signal.
+
+If a manual note says "buyer is nervous about rates" and a website tag says "hot", the buyer is nervous — period. Tone, next step, and stage MUST reflect the human-observed reality, not the automation.
+
 Zara is the relationship manager on Uzair's team at The Presale Properties Group. The point of this memory is to make future conversations feel like ONE ongoing relationship — never like a cold sales blast.
 
 Your job: from the lead's history below, produce a compact JSON memory that captures:
@@ -118,7 +126,7 @@ Deno.serve(async (req) => {
     // Mine history via service role
     const svc = createClient(SUPABASE_URL, SERVICE_KEY, { auth: { persistSession: false, autoRefreshToken: false } });
 
-    const [memRes, engRes, actRes, showRes] = await Promise.all([
+    const [memRes, engRes, actRes, showRes, intelRes, notesRes] = await Promise.all([
       svc.from("zara_lead_memory").select("*").eq("contact_id", contactId).maybeSingle(),
       svc.from("crm_engagement_events")
         .select("event_type, source, direction, occurred_at, metadata")
@@ -136,12 +144,25 @@ Deno.serve(async (req) => {
         .order("scheduled_at", { ascending: false })
         .limit(20)
         .then(r => r, () => ({ data: [] as any[] })),
+      svc.from("zara_note_intelligence")
+        .select("summary, emotional_state, trust_level, buying_readiness, objections, motivations, financial_concerns, family_context, timing_signals, preferred_areas, escalation_signals, key_quote, recommended_style, recommended_next_step, analyzed_at")
+        .eq("contact_id", contactId)
+        .order("analyzed_at", { ascending: false })
+        .limit(10),
+      svc.from("crm_notes")
+        .select("id, content, note_type, event_at, created_at")
+        .eq("contact_id", contactId)
+        .not("note_type", "in", "(import_archive,ai_summary,system,website_behavior)")
+        .order("created_at", { ascending: false })
+        .limit(8),
     ]);
 
     const existingMemory = memRes.data;
     const events = engRes.data ?? [];
     const activity = actRes.data ?? [];
     const showings = (showRes as any).data ?? [];
+    const noteIntel = intelRes.data ?? [];
+    const recentNotes = notesRes.data ?? [];
 
     // Pre-compute structured signals so the LLM has clean evidence
     const viewed = uniq(activity.filter(a => /view|page|return_visit/i.test(a.type) && a.project_slug).map(a => a.project_slug as string));
@@ -161,6 +182,29 @@ Deno.serve(async (req) => {
         city: contact.city,
         notes: (contact.notes || "").slice(0, 1500),
       },
+      // HIGHEST-PRIORITY EVIDENCE — agent-written notes + their AI extractions.
+      manual_notes_highest_priority: recentNotes.map((n: any) => ({
+        when: (n.event_at || n.created_at)?.slice(0, 10),
+        type: n.note_type,
+        text: (n.content || "").slice(0, 1500),
+      })),
+      note_intelligence_rollup: noteIntel.map((r: any) => ({
+        when: r.analyzed_at?.slice(0, 10),
+        summary: r.summary,
+        emotional_state: r.emotional_state,
+        trust: r.trust_level,
+        readiness: r.buying_readiness,
+        objections: r.objections,
+        motivations: r.motivations,
+        financial_concerns: r.financial_concerns,
+        family: r.family_context,
+        timing: r.timing_signals,
+        areas: r.preferred_areas,
+        escalation: r.escalation_signals,
+        key_quote: r.key_quote,
+        recommended_style: r.recommended_style,
+        recommended_next_step: r.recommended_next_step,
+      })),
       existing_facts: existingMemory?.facts ?? {},
       existing_summary: existingMemory?.summary ?? null,
       derived: {

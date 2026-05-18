@@ -7818,8 +7818,13 @@ export type Database = {
           continuity_openers: string[] | null
           continuity_refreshed_at: string | null
           facts: Json
+          intelligence_priority: number | null
+          intelligence_refreshed_at: string | null
+          intelligence_summary: string | null
           last_rolled_at: string | null
           last_topics: string[] | null
+          recommended_next_step: string | null
+          recommended_style: string | null
           refresh_reason: string | null
           refreshed_at: string
           relationship_stage: string | null
@@ -7833,8 +7838,13 @@ export type Database = {
           continuity_openers?: string[] | null
           continuity_refreshed_at?: string | null
           facts?: Json
+          intelligence_priority?: number | null
+          intelligence_refreshed_at?: string | null
+          intelligence_summary?: string | null
           last_rolled_at?: string | null
           last_topics?: string[] | null
+          recommended_next_step?: string | null
+          recommended_style?: string | null
           refresh_reason?: string | null
           refreshed_at?: string
           relationship_stage?: string | null
@@ -7848,8 +7858,13 @@ export type Database = {
           continuity_openers?: string[] | null
           continuity_refreshed_at?: string | null
           facts?: Json
+          intelligence_priority?: number | null
+          intelligence_refreshed_at?: string | null
+          intelligence_summary?: string | null
           last_rolled_at?: string | null
           last_topics?: string[] | null
+          recommended_next_step?: string | null
+          recommended_style?: string | null
           refresh_reason?: string | null
           refreshed_at?: string
           relationship_stage?: string | null
@@ -7967,6 +7982,102 @@ export type Database = {
             columns: ["conversation_id"]
             isOneToOne: false
             referencedRelation: "zara_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      zara_note_intelligence: {
+        Row: {
+          analyzed_at: string
+          buying_readiness: number | null
+          commitment_level: string | null
+          contact_id: string
+          created_at: string
+          emotional_state: string | null
+          escalation_signals: string[] | null
+          family_context: string | null
+          financial_concerns: string[] | null
+          id: string
+          investor_vs_enduser: string | null
+          key_quote: string | null
+          model: string | null
+          motivations: string[] | null
+          note_id: string
+          objections: string[] | null
+          preferred_areas: string[] | null
+          priority_delta: number | null
+          raw: Json | null
+          recommended_next_step: string | null
+          recommended_style: string | null
+          summary: string | null
+          timing_signals: string[] | null
+          trust_level: number | null
+        }
+        Insert: {
+          analyzed_at?: string
+          buying_readiness?: number | null
+          commitment_level?: string | null
+          contact_id: string
+          created_at?: string
+          emotional_state?: string | null
+          escalation_signals?: string[] | null
+          family_context?: string | null
+          financial_concerns?: string[] | null
+          id?: string
+          investor_vs_enduser?: string | null
+          key_quote?: string | null
+          model?: string | null
+          motivations?: string[] | null
+          note_id: string
+          objections?: string[] | null
+          preferred_areas?: string[] | null
+          priority_delta?: number | null
+          raw?: Json | null
+          recommended_next_step?: string | null
+          recommended_style?: string | null
+          summary?: string | null
+          timing_signals?: string[] | null
+          trust_level?: number | null
+        }
+        Update: {
+          analyzed_at?: string
+          buying_readiness?: number | null
+          commitment_level?: string | null
+          contact_id?: string
+          created_at?: string
+          emotional_state?: string | null
+          escalation_signals?: string[] | null
+          family_context?: string | null
+          financial_concerns?: string[] | null
+          id?: string
+          investor_vs_enduser?: string | null
+          key_quote?: string | null
+          model?: string | null
+          motivations?: string[] | null
+          note_id?: string
+          objections?: string[] | null
+          preferred_areas?: string[] | null
+          priority_delta?: number | null
+          raw?: Json | null
+          recommended_next_step?: string | null
+          recommended_style?: string | null
+          summary?: string | null
+          timing_signals?: string[] | null
+          trust_level?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "zara_note_intelligence_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "crm_contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "zara_note_intelligence_note_id_fkey"
+            columns: ["note_id"]
+            isOneToOne: true
+            referencedRelation: "crm_notes"
             referencedColumns: ["id"]
           },
         ]
