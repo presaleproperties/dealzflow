@@ -142,15 +142,10 @@ Deno.serve(async (req) => {
       .eq("user_id", userId)
       .maybeSingle();
 
-    // Unified brand shell — applied to EVERY outbound CRM email except
-    // project templates from Presale (caller passes skip_brand_wrapper:true).
-    // wrapInBrandShell is idempotent and skips full <html> docs automatically.
-    const brandedHtml = body.skip_brand_wrapper || isAlreadyBranded(body.html)
-      ? body.html
-      : wrapInBrandShell(body.html, {
-          brandLogoUrl: brandSettings?.brand_logo_enabled ? brandSettings?.brand_logo_url : null,
-          brandLogoAlt: brandSettings?.brand_logo_alt ?? brandSettings?.sender_name ?? null,
-        });
+    // No brand shell — emails go out as plain composer HTML (body + signature),
+    // matching the main ComposeEmailDialog look. Project templates from Presale
+    // remain untouched as before.
+    const brandedHtml = body.html;
 
     // ── Queue path: scheduled emails and immediate sends both go through the
     // worker so Gmail/bridge outages retry instead of producing edge errors.
