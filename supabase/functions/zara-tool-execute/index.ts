@@ -678,7 +678,92 @@ async function capture_lead(args: any, ctx: any) {
   });
   const out = await res.json().catch(() => ({}));
   if (!res.ok) return fail(`capture failed: ${out?.error ?? res.status}`);
-  return ok({ contact_id: out?.contact_id ?? out?.id ?? null, created: out?.created ?? false, matched: out?.matched ?? false });
+  const contact_id: string | null = out?.contact_id ?? out?.id ?? null;
+
+  // Auto-create a CRM follow-up task so the assigned agent has a next step
+  let follow_up_task_id: string | null = null;
+  let follow_up_due_at: string | null = null;
+  if (contact_id) {
+    try {
+      const sb = svc();
+      const intent = String(args?.intent ?? "").toLowerCase();
+      const timeframe = String(args?.timeframe ?? "").toLowerCase();
+      // Hot → 2h, ready/0-3mo → 24h, default → 48h
+      const isHot = intent.includes("buy") || intent.includes("hot") || /0-?3|asap|now|immediate/.test(timeframe);
+      const isWarm = /3-?6|soon|this year/.test(timeframe);
+      const hours = isHot ? 2 : isWarm ? 24 : 48;
+      const dueAt = new Date(Date.now() + hours * 3600 * 1000).toISOString();
+      const titleBits = [
+        "Zara website lead",
+        args?.project_slug ? `· ${args.project_slug}` : "",
+        intent ? `· ${intent}` : "",
+      ].filter(Boolean).join(" ");
+      const desc = [
+        args?.message ? `Visitor said: ${args.message}` : null,
+        args?.project_slug ? `Project: ${args.project_slug}` : null,
+        intent ? `Intent: ${intent}` : null,
+        timeframe ? `Timeframe: ${timeframe}` : null,
+        args?.budget_max ? `Budget max: ${args.budget_max}` : null,
+        args?.bedrooms_preferred ? `Beds: ${args.bedrooms_preferred}` : null,
+      ].filter(Boolean).join("\n");
+
+      const { data: task, error: tErr } = await sb.from("crm_tasks").insert({
+        contact_id,
+        due_date: dueAt,
+        title: titleBits.slice(0, 120),
+        description: desc || "Follow up on website chat capture",
+        task_type: "follow_up",
+        status: "pending",
+      }).select("id").single();
+      if (!tErr && task) {
+        follow_up_task_id = (task as any).id;
+        follow_up_due_at = dueAt;
+      } else if (tErr) {
+        console.warn("capture_lead follow-up insert failed:", tErr.message);
+      }
+
+      // Timeline entry + assigned-agent notification
+      const { data: contactRow } = await sb.from("crm_contacts").select("assigned_to").eq("id", contact_id).maybeSingle();
+      const assigned_to: string | null = (contactRow as any)?.assigned_to ?? null;
+
+      await sb.from("crm_activity_events").insert({
+        contact_id,
+        event_type: "zara_capture",
+        description: `Zara captured lead via website chat${args?.project_slug ? ` (${args.project_slug})` : ""}. Follow-up due ${follow_up_due_at ?? "soon"}.`,
+        occurred_at: new Date().toISOString(),
+        metadata: {
+          source: "zara-public-chat",
+          conversation_id: ctx?.conversation_id ?? null,
+          intent, timeframe,
+          project_slug: args?.project_slug ?? null,
+          follow_up_task_id, follow_up_due_at,
+        },
+      });
+
+      try {
+        await sb.rpc("crm_send_notification", {
+          _assigned_to: assigned_to ?? "",
+          _title: `New website lead — ${args?.first_name ?? email ?? phone ?? "visitor"}`,
+          _body: (args?.message ?? `Captured by Zara${args?.project_slug ? ` · ${args.project_slug}` : ""}`).slice(0, 200),
+          _category: "zara_capture",
+          _payload: { contact_id, follow_up_task_id, follow_up_due_at, project_slug: args?.project_slug ?? null, intent, timeframe },
+          _dedupe_key: `zara_capture:${contact_id}:${ctx?.conversation_id ?? "anon"}`,
+        } as any);
+      } catch (e) {
+        console.warn("capture_lead notification failed:", (e as Error).message);
+      }
+    } catch (e) {
+      console.warn("capture_lead post-processing error:", (e as Error).message);
+    }
+  }
+
+  return ok({
+    contact_id,
+    created: out?.created ?? false,
+    matched: out?.matched ?? false,
+    follow_up_task_id,
+    follow_up_due_at,
+  });
 }
 
 async function get_unit_availability(args: any, _ctx: any) {
