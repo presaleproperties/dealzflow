@@ -45,7 +45,7 @@ Deno.serve(async (req) => {
     }
 
     const admin = createClient(SUPABASE_URL, SERVICE_KEY);
-    const [contactRes, lastTouchRes, eventsRes] = await Promise.all([
+    const [contactRes, lastTouchRes, eventsRes, memoryRes, intelRes, recentNotesRes] = await Promise.all([
       admin.from("crm_contacts").select("*").eq("id", contactId).maybeSingle(),
       admin.from("crm_contact_last_touch").select("*").eq("contact_id", contactId).maybeSingle(),
       admin
@@ -54,6 +54,18 @@ Deno.serve(async (req) => {
         .eq("contact_id", contactId)
         .order("occurred_at", { ascending: false })
         .limit(20),
+      admin.from("zara_lead_memory").select("*").eq("contact_id", contactId).maybeSingle(),
+      admin.from("zara_note_intelligence")
+        .select("*")
+        .eq("contact_id", contactId)
+        .order("analyzed_at", { ascending: false })
+        .limit(10),
+      admin.from("crm_notes")
+        .select("id, content, note_type, event_at, created_at, user_id")
+        .eq("contact_id", contactId)
+        .not("note_type", "in", "(import_archive,ai_summary,system,website_behavior)")
+        .order("created_at", { ascending: false })
+        .limit(6),
     ]);
 
     return new Response(
@@ -61,6 +73,10 @@ Deno.serve(async (req) => {
         contact: contactRes.data ?? null,
         lastTouch: lastTouchRes.data ?? null,
         recentEvents: eventsRes.data ?? [],
+        // Lead Intelligence Memory — manual agent notes are the highest-priority signal.
+        leadMemory: memoryRes.data ?? null,
+        noteIntelligence: intelRes.data ?? [],
+        recentNotes: recentNotesRes.data ?? [],
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
