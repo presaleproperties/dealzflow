@@ -163,17 +163,17 @@ export function ZaraSection({ contact }: { contact: CrmContact }) {
             <span className="zara-eyebrow">Zara</span>
             {refreshedLabel && (
               <span
-                className="text-[10.5px] text-muted-foreground/80 tabular-nums"
+                className="zara-meta"
                 title={`Refreshed ${new Date(memory!.refreshed_at).toLocaleString()} · ${memory!.turn_count} turns`}
               >
-                · {refreshedLabel}
+                refreshed {refreshedLabel}
               </span>
             )}
           </div>
           <button
             type="button"
             onClick={() => setExpanded((v) => !v)}
-            className="text-[10.5px] text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
+            className="zara-meta hover:text-foreground transition-colors flex items-center gap-1"
           >
             {expanded ? 'Less' : 'More'}
             <ChevronDown className={cn('w-3 h-3 transition-transform', expanded && 'rotate-180')} />
@@ -181,44 +181,41 @@ export function ZaraSection({ contact }: { contact: CrmContact }) {
         </div>
 
         {/* The single whisper line */}
-        <p className="text-[13px] leading-relaxed text-foreground/90">{whisper}</p>
+        <p className="text-[13.5px] leading-relaxed text-foreground/90 tracking-[-0.005em]">
+          {busy === 'summarize_lead'
+            ? <span className="zara-shimmer">Refreshing memory…</span>
+            : whisper}
+        </p>
 
-        {/* Two-button primary lane — always visible, no chrome */}
-        <div className="mt-3 flex items-center gap-1 -mx-2">
+        {/* Primary lane — text-only links with middot separators */}
+        <div className="mt-3 zara-dot-row text-[12.5px] text-foreground/80">
           <button
             type="button"
             onClick={() => run('follow_up_now')}
             disabled={busy !== null}
-            className="zara-quiet-action disabled:opacity-50"
+            className="zara-link disabled:opacity-40"
           >
-            {busy === 'follow_up_now'
-              ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
-              : <Send className="w-3.5 h-3.5" />}
-            Follow up
+            {busy === 'follow_up_now' ? <Loader2 className="w-3 h-3 inline animate-spin -mt-0.5" /> : 'Follow up'}
           </button>
           <button
             type="button"
             onClick={() => run('summarize_lead')}
             disabled={busy !== null}
-            className="zara-quiet-action disabled:opacity-50"
+            className="zara-link disabled:opacity-40"
           >
-            {busy === 'summarize_lead'
-              ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
-              : <RefreshCw className="w-3.5 h-3.5" />}
-            Refresh
+            Refresh memory
           </button>
           <button
             type="button"
             onClick={() => setShowing(true)}
-            className="zara-quiet-action"
+            className="zara-link"
           >
-            <CalendarDays className="w-3.5 h-3.5" />
-            Showing
+            Book showing
           </button>
         </div>
 
         {stale && !expanded && (
-          <div className="mt-2 flex items-center gap-1.5 text-[10.5px] text-amber-600 dark:text-amber-400">
+          <div className="mt-2 flex items-center gap-1.5 zara-meta text-amber-600 dark:text-amber-400/90">
             <AlertCircle className="w-3 h-3" />
             <span>Memory hasn't refreshed in 60+ days.</span>
           </div>
@@ -226,77 +223,80 @@ export function ZaraSection({ contact }: { contact: CrmContact }) {
 
         {/* ── Expanded surface ── */}
         {expanded && (
-          <div className="mt-4 space-y-4 animate-fade-in">
-            {/* Retrieval intelligence (playbook + founder lens) — no border */}
-            <ZaraContextStrip contactId={contactId} className="!bg-transparent !border-0 px-0" />
+          <div className="mt-5 space-y-5 animate-fade-in">
+            {/* Retrieval intelligence — flat, no card */}
+            <ZaraContextStrip contactId={contactId} className="!bg-transparent !p-0" />
 
-            {/* Facts grid */}
             {rows.length > 0 && (
-              <dl className="space-y-1">
-                {rows.map((r) => (
-                  <div key={r.label} className="grid grid-cols-[72px_1fr] gap-2 items-baseline">
-                    <dt className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">{r.label}</dt>
-                    <dd className="text-[12px] text-foreground/90 leading-snug">{r.value}</dd>
-                  </div>
-                ))}
-              </dl>
+              <div>
+                <div className="zara-section-head">What Zara knows</div>
+                <dl className="space-y-1.5">
+                  {rows.map((r) => (
+                    <div key={r.label} className="grid grid-cols-[88px_1fr] gap-3 items-baseline">
+                      <dt className="text-[10.5px] uppercase tracking-[0.12em] text-muted-foreground/90 font-medium">{r.label}</dt>
+                      <dd className="text-[12.5px] text-foreground/90 leading-snug">{r.value}</dd>
+                    </div>
+                  ))}
+                </dl>
+              </div>
             )}
 
-            {/* Schedule + channel row */}
-            <div className="flex flex-wrap items-center justify-between gap-3 text-[10.5px]">
-              <div className="flex items-center gap-1.5">
-                <span className="uppercase tracking-wider text-muted-foreground">Channel</span>
-                {(['email', 'sms', 'whatsapp'] as const).map((c) => {
-                  const isEnabled = c === 'email' ? !!contact.email : !!contact.phone;
-                  return (
-                    <button
-                      key={c}
-                      onClick={() => isEnabled && setChannel(c)}
-                      disabled={!isEnabled}
-                      className={cn(
-                        'px-2 py-0.5 rounded-full transition-colors',
-                        channel === c
-                          ? 'bg-primary/15 text-primary'
-                          : 'text-muted-foreground hover:text-foreground disabled:opacity-30',
-                      )}
-                    >
-                      {c === 'whatsapp' ? 'wa' : c}
-                    </button>
-                  );
-                })}
+            <hr className="zara-rule" />
+
+            {/* Channel + Schedule */}
+            <div className="space-y-3">
+              <div className="flex items-baseline justify-between gap-3">
+                <span className="zara-section-head !mb-0">Channel</span>
+                <div className="flex items-center gap-1">
+                  {(['email', 'sms', 'whatsapp'] as const).map((c) => {
+                    const isEnabled = c === 'email' ? !!contact.email : !!contact.phone;
+                    return (
+                      <button
+                        key={c}
+                        onClick={() => isEnabled && setChannel(c)}
+                        disabled={!isEnabled}
+                        data-active={channel === c}
+                        className="zara-chip disabled:opacity-30"
+                      >
+                        {c === 'whatsapp' ? 'WhatsApp' : c.toUpperCase()}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
-              <div className="flex items-center gap-1.5">
-                <span className="uppercase tracking-wider text-muted-foreground">Schedule</span>
-                {SCHEDULE_PRESETS.map((p) => (
+
+              <div className="flex items-baseline justify-between gap-3">
+                <span className="zara-section-head !mb-0">Schedule</span>
+                <div className="flex items-center gap-1">
+                  {SCHEDULE_PRESETS.map((p) => (
+                    <button
+                      key={p.v}
+                      onClick={() => setSched(p.v)}
+                      data-active={scheduleHours === p.v}
+                      className="zara-chip"
+                    >
+                      {p.l}
+                    </button>
+                  ))}
                   <button
-                    key={p.v}
-                    onClick={() => setSched(p.v)}
-                    className={cn(
-                      'px-2 py-0.5 rounded-full transition-colors',
-                      scheduleHours === p.v
-                        ? 'bg-primary/15 text-primary'
-                        : 'text-muted-foreground hover:text-foreground',
-                    )}
+                    type="button"
+                    onClick={() => run('schedule_followup', { in_hours: scheduleHours })}
+                    disabled={busy !== null}
+                    className="zara-link ml-2 text-[11.5px]"
                   >
-                    {p.l}
+                    {busy === 'schedule_followup'
+                      ? <Loader2 className="w-3 h-3 inline animate-spin" />
+                      : 'Set'}
                   </button>
-                ))}
-                <button
-                  type="button"
-                  onClick={() => run('schedule_followup', { in_hours: scheduleHours })}
-                  disabled={busy !== null}
-                  className="zara-quiet-action !py-0.5"
-                >
-                  {busy === 'schedule_followup'
-                    ? <Loader2 className="w-3 h-3 animate-spin" />
-                    : <Clock className="w-3 h-3" />}
-                  Schedule
-                </button>
+                </div>
               </div>
             </div>
 
-            {/* Ask box — no border, just a faint base */}
-            <div className="rounded-2xl bg-foreground/[0.03] p-2">
+            <hr className="zara-rule" />
+
+            {/* Ask box */}
+            <div>
+              <div className="zara-section-head">Ask Zara</div>
               <textarea
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
@@ -307,16 +307,16 @@ export function ZaraSection({ contact }: { contact: CrmContact }) {
                   }
                 }}
                 rows={2}
-                placeholder="Tell Zara what to do…"
-                className="w-full resize-none bg-transparent outline-none text-[12.5px] px-1.5 py-1 min-h-[40px]"
+                placeholder="Tell Zara what to do…  ⌘⏎ to send"
+                className="zara-input resize-none min-h-[56px]"
               />
-              <div className="flex items-center justify-between gap-2 pt-1">
+              <div className="flex items-center justify-between gap-2 pt-2">
                 <div className="flex gap-1 overflow-x-auto pb-0.5 -mx-0.5 px-0.5">
                   {QUICK_PROMPTS.map((q) => (
                     <button
                       key={q}
                       onClick={() => setPrompt(q)}
-                      className="shrink-0 text-[10.5px] px-2 py-0.5 rounded-full text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors whitespace-nowrap"
+                      className="shrink-0 zara-chip whitespace-nowrap"
                     >
                       {q.length > 28 ? q.slice(0, 28) + '…' : q}
                     </button>
@@ -326,42 +326,46 @@ export function ZaraSection({ contact }: { contact: CrmContact }) {
                   type="button"
                   onClick={() => prompt.trim() && run('custom', { prompt: prompt.trim() })}
                   disabled={!prompt.trim() || busy !== null}
-                  className="zara-quiet-action !py-1 disabled:opacity-40"
+                  className="zara-link text-[12px] disabled:opacity-40"
                 >
-                  {busy === 'custom' ? <Loader2 className="w-3 h-3 animate-spin" /> : <Send className="w-3 h-3" />}
-                  Ask
+                  {busy === 'custom' ? <Loader2 className="w-3 h-3 inline animate-spin" /> : 'Send'}
                 </button>
               </div>
             </div>
 
-            {/* Quotes (collapsed by default) */}
+            {/* Quotes */}
             {quotes.length > 0 && (
-              <div>
-                <button
-                  type="button"
-                  onClick={() => setShowQuotes((v) => !v)}
-                  className="flex items-center justify-between w-full text-[10.5px] uppercase tracking-wider text-muted-foreground hover:text-foreground"
-                >
-                  <span>Why we know · {quotes.length}</span>
-                  <ChevronDown className={cn('w-3 h-3 transition-transform', showQuotes && 'rotate-180')} />
-                </button>
-                {showQuotes && (
-                  <ul className="pt-2 space-y-1.5">
-                    {quotes.map((q, i) => (
-                      <li key={i} className="text-[11.5px] italic text-foreground/70 leading-snug border-l-2 border-primary/30 pl-2">
-                        "{q}"
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
+              <>
+                <hr className="zara-rule" />
+                <div>
+                  <button
+                    type="button"
+                    onClick={() => setShowQuotes((v) => !v)}
+                    className="flex items-center justify-between w-full zara-section-head !mb-2 hover:text-foreground transition-colors"
+                  >
+                    <span>Why we know · {quotes.length}</span>
+                    <ChevronDown className={cn('w-3 h-3 transition-transform', showQuotes && 'rotate-180')} />
+                  </button>
+                  {showQuotes && (
+                    <ul className="space-y-1.5">
+                      {quotes.map((q, i) => (
+                        <li key={i} className="text-[12px] italic text-foreground/70 leading-snug pl-3 border-l border-primary/30">
+                          "{q}"
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              </>
             )}
 
-            {/* Trust controls */}
-            <div className="flex items-center justify-between gap-3 pt-2 border-t border-foreground/5">
+            <hr className="zara-rule" />
+
+            {/* Trust */}
+            <div className="flex items-center justify-between gap-3">
               <div className="min-w-0">
-                <div className="text-[11.5px] font-medium">Let Zara reply autonomously</div>
-                <div className="text-[10px] text-muted-foreground leading-snug">Off by default. Enable only after you trust the tone on this lead.</div>
+                <div className="text-[12px] font-medium text-foreground/90">Autonomous replies</div>
+                <div className="zara-meta leading-snug mt-0.5">Off by default. Enable once you trust the tone.</div>
               </div>
               <Switch checked={enabled} onCheckedChange={toggle} />
             </div>
@@ -369,10 +373,9 @@ export function ZaraSection({ contact }: { contact: CrmContact }) {
             <button
               type="button"
               onClick={() => setShowTrain(true)}
-              className="zara-quiet-action w-full justify-center !py-1.5"
+              className="zara-link text-[12px] block"
             >
-              <Trophy className="w-3.5 h-3.5" />
-              Train Zara on this win
+              Train Zara on this win →
             </button>
           </div>
         )}
