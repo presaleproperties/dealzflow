@@ -4,6 +4,7 @@
 // CRM activity feed stays accurate.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { wrapInBrandShell, isAlreadyBranded } from "../_shared/branded-email.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -90,6 +91,11 @@ interface SendBody {
   // Tier 2: if set, tags the crm_email_log row + (via trigger) the parent
   // thread so the send stays out of /crm/inbox until the lead replies.
   campaign_id?: string | null;
+  // Opt-out of the unified brand shell. Set to true ONLY for project
+  // templates pulled from Presale (render-and-send already produces a full
+  // branded <html> doc). All other senders should leave this unset so the
+  // shared shell is applied for visual consistency.
+  skip_brand_wrapper?: boolean;
 }
 
 Deno.serve(async (req) => {
@@ -127,6 +133,25 @@ Deno.serve(async (req) => {
     const ccStr = Array.isArray(body.cc) ? body.cc.join(",") : (body.cc ?? null);
     const bccStr = Array.isArray(body.bcc) ? body.bcc.join(",") : (body.bcc ?? null);
 
+    // Fetch sender brand settings up-front so the unified brand shell can use
+    // the agent's logo when present. This runs for both queued + immediate
+    // paths so the queued worker doesn't have to re-resolve it.
+    const { data: brandSettings } = await supabase
+      .from("crm_email_settings")
+      .select("sender_name,reply_to,signature_html,brand_logo_url,brand_logo_alt,brand_logo_enabled")
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    // Unified brand shell — applied to EVERY outbound CRM email except
+    // project templates from Presale (caller passes skip_brand_wrapper:true).
+    // wrapInBrandShell is idempotent and skips full <html> docs automatically.
+    const brandedHtml = body.skip_brand_wrapper || isAlreadyBranded(body.html)
+      ? body.html
+      : wrapInBrandShell(body.html, {
+          brandLogoUrl: brandSettings?.brand_logo_enabled ? brandSettings?.brand_logo_url : null,
+          brandLogoAlt: brandSettings?.brand_logo_alt ?? brandSettings?.sender_name ?? null,
+        });
+
     // ── Queue path: scheduled emails and immediate sends both go through the
     // worker so Gmail/bridge outages retry instead of producing edge errors.
     if (body.send_at || body.queue_only) {
@@ -137,7 +162,7 @@ Deno.serve(async (req) => {
         cc: ccStr,
         bcc: bccStr,
         subject: body.subject,
-        body_html: body.html,
+        body_html: brandedHtml,
         send_at: body.send_at ?? new Date().toISOString(),
         status: "pending",
         created_by: userId,
@@ -207,31 +232,13 @@ Deno.serve(async (req) => {
       }, 400);
     }
 
-    // Fetch sender's brand logo settings so 1:1 emails carry the same banner
-    // as bulk sends (visible in body regardless of BIMI/Workspace avatars).
-    const { data: settings } = await supabase
-      .from("crm_email_settings")
-      .select("sender_name,brand_logo_url,brand_logo_alt,brand_logo_enabled")
-      .eq("user_id", userId)
-      .maybeSingle();
-
-    // Header logo is opt-in: only injected when explicitly enabled in Settings.
-    const logoEnabled = settings?.brand_logo_enabled === true;
-    const rawLogoUrl = (settings?.brand_logo_url ?? "").trim();
-    const safeLogoUrl = logoEnabled && /^https:\/\//i.test(rawLogoUrl) ? rawLogoUrl : "";
-    const safeLogoAlt = ((settings?.brand_logo_alt ?? settings?.sender_name ?? "Logo") || "Logo")
-      .replace(/[<>"']/g, "");
-    const brandBannerHtml = safeLogoUrl
-      ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;margin:0 0 20px 0;"><tr><td align="center" style="padding:8px 0 16px 0;border-bottom:1px solid #ececec;"><img src="${safeLogoUrl}" alt="${safeLogoAlt}" style="display:block;max-height:64px;max-width:240px;height:auto;width:auto;border:0;outline:none;text-decoration:none;" /></td></tr></table>`
-      : "";
-
     // Generate a tracking_id up-front, inject the open-tracking pixel into
-    // the HTML, and persist the same id on crm_email_log so crm-email-track
-    // can correlate inbox opens back to this send.
+    // the brand-shelled HTML, and persist the same id on crm_email_log so
+    // crm-email-track can correlate inbox opens back to this send.
     const trackingId = crypto.randomUUID();
-    const bodyWithBanner = brandBannerHtml ? `${brandBannerHtml}${body.html}` : body.html;
-    const linkedHtml = rewriteLinks(bodyWithBanner, trackingId);
+    const linkedHtml = rewriteLinks(brandedHtml, trackingId);
     const trackedHtml = injectTrackingPixel(linkedHtml, trackingId);
+
 
     let upstreamJson: any = {};
     let upstreamOk = false;
