@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 export interface QuickReply {
   label: string;
   body: string;
+  subject?: string;
 }
 
 /**
