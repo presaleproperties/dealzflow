@@ -250,11 +250,8 @@ Deno.serve(async (req) => {
           // body and signature (parity with single-send composers).
           html = `${html}<br/>${signatureHtml}`;
         }
-        // Prepend brand banner so every recipient sees the logo inside the
-        // message body (independent of inbox-level avatar rules like BIMI).
-        if (brandBannerHtml) {
-          html = `${brandBannerHtml}${html}`;
-        }
+        // Brand chrome (logo, header, footer, unsubscribe) is applied by
+        // bridge-send-email via the shared brand shell — do not double-wrap.
         try {
           const upstream = await fetch(`${supabaseUrl}/functions/v1/bridge-send-email`, {
             method: "POST",
