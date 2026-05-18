@@ -544,28 +544,21 @@ export function ZaraDock() {
             {/* Body */}
             <div ref={scrollerRef} className="flex-1 min-h-0 overflow-y-auto px-3 py-3 space-y-2.5">
               {rendered.length === 0 && !streaming && (
-                <div className="text-center py-10 px-2">
-                  <div className="w-12 h-12 mx-auto mb-3 rounded-2xl zara-halo zara-glass flex items-center justify-center">
-                    <Sparkles className="w-5 h-5 text-primary" />
+                <div className="text-center pt-16 pb-6 px-2">
+                  <div className="text-[13px] text-muted-foreground/80 tracking-tight">
+                    Ask Zara anything about {pageContext.label.toLowerCase()}.
                   </div>
-                  <div className="text-[14px] font-semibold tracking-tight">Ask Zara about {pageContext.label.toLowerCase()}</div>
-                  <p className="text-[11.5px] text-muted-foreground mt-1 max-w-[260px] mx-auto leading-relaxed">
-                    She sees the page you're on — leads, projects, calendar, all of it.
-                  </p>
                   {pageContext.contact_id && (
-                    <div className="mt-3 inline-flex items-center gap-1.5 text-[10.5px] px-2.5 py-1 rounded-full bg-primary/10 text-primary">
-                      <span className="w-1.5 h-1.5 rounded-full bg-primary" />
-                      Pinned to this lead
-                    </div>
+                    <div className="zara-eyebrow mt-2 opacity-70">Pinned to this lead</div>
                   )}
                 </div>
               )}
-              {rendered.map((m) => <MessageBubble key={m.id} m={m} />)}
+              {rendered.map((m) => <MessageBubble key={m.id} m={m} onChip={(t) => onSend(t)} />)}
               {streaming && (
                 <MessageBubble m={{
                   kind: 'assistant', id: 'stream', text: streamText, tools: streamTools, sources: streamSources,
                   created_at: new Date().toISOString(), referencedContactIds: [], referencedProjectIds: [],
-                }} />
+                }} onChip={(t) => onSend(t)} />
               )}
               {streaming && !streamText && streamTools.length === 0 && (
                 <div className="flex items-center gap-2 text-[12px] text-muted-foreground py-1">
@@ -611,18 +604,6 @@ export function ZaraDock() {
                   </button>
                 )}
               </div>
-              <div className="mt-1.5 flex gap-1 overflow-x-auto pb-0.5 -mx-0.5 px-0.5 scrollbar-thin">
-                {chips.map((c) => (
-                  <button
-                    key={c.label}
-                    onClick={() => onChip(c.prompt, !!c.needsContact)}
-                    className="shrink-0 text-[11px] px-2.5 py-1 rounded-full text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors whitespace-nowrap"
-                  >
-                    {c.label}
-                  </button>
-                ))}
-              </div>
-              <div className="mt-1 text-center text-[10px] text-muted-foreground/70">⌘⏎ send · ⌘K new · Esc close</div>
             </div>
           </div>
         </div>
