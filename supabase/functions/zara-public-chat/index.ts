@@ -466,6 +466,11 @@ Deno.serve(async (req) => {
         const send = (event: string, data: unknown) => controller.enqueue(enc.encode(sse(event, data)));
         const abort = new AbortController();
         try {
+          // Surface RAG grounding to the client (parity with zara-chat).
+          if (ragSources && (ragSources.chunks.length || ragSources.wins.length || ragSources.projects.length || ragSources.principles.length)) {
+            send("sources", ragSources);
+          }
+
           let turn = 0;
           let lastAssistantId: string | null = null;
           while (turn < MAX_TOOL_TURNS) {
@@ -477,14 +482,20 @@ Deno.serve(async (req) => {
             if (text) assistantContent.push({ type: "text", text });
             for (const tu of toolUses) assistantContent.push({ type: "tool_use", id: tu.id, name: tu.name, input: tu.input });
 
-            const { data: ins } = await sb.from("zara_messages").insert({
+            // Persist consulted_sources on the first turn so learning loops can
+            // see which retrieval shaped this public reply (parity with zara-chat).
+            const persistPayload: any = {
               conversation_id, role: "assistant",
               content: text || null,
               tool_calls: toolUses.length ? toolUses : null,
               input_tokens: usage?.input_tokens ?? null,
               output_tokens: usage?.output_tokens ?? null,
               model: ANTHROPIC_MODEL,
-            }).select("id").single();
+            };
+            if (turn === 1 && ragSources) {
+              persistPayload.metadata = { consulted_sources: ragSources, surface: "public_site" };
+            }
+            const { data: ins } = await sb.from("zara_messages").insert(persistPayload).select("id").single();
             lastAssistantId = ins?.id ?? null;
             messages.push({ role: "assistant", content: assistantContent });
 
@@ -499,6 +510,18 @@ Deno.serve(async (req) => {
                 const blocked = { ok: false, error: "tool_not_available_in_public_mode" };
                 send("tool_result", { id: tu.id, name: tu.name, output: blocked });
                 toolResults.push({ type: "tool_result", tool_use_id: tu.id, content: JSON.stringify(blocked) });
+                continue;
+              }
+              // Lead-capture gate: never share PDFs, calendars, or escalate
+              // before we have at least an email/phone on file.
+              if (REQUIRES_CAPTURE.has(tu.name) && !hasCapturedIdentity) {
+                const out = {
+                  ok: false,
+                  error: "requires_lead_capture",
+                  message: "Before sharing this, ask the visitor for their name and email naturally. Once they give it, call capture_lead first, then retry this tool.",
+                };
+                send("tool_result", { id: tu.id, name: tu.name, output: out });
+                toolResults.push({ type: "tool_result", tool_use_id: tu.id, content: JSON.stringify(out) });
                 continue;
               }
               // Send-side rate limit for outbound tools
