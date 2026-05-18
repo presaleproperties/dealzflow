@@ -203,15 +203,15 @@ export default function ZaraQueuePage() {
     <div className="flex flex-col h-full min-h-0">
       <div className={`px-4 py-2 text-[12px] font-medium ${banner.cls}`}>{banner.text}</div>
 
-      <div className="flex items-center justify-between px-4 py-3 border-b border-border gap-3 flex-wrap">
-        <div>
-          <h1 className="text-lg font-bold">Zara queue</h1>
-          <p className="text-xs text-muted-foreground">
+      <div className="flex items-center justify-between px-3 sm:px-4 py-3 border-b border-border gap-3 flex-wrap">
+        <div className="min-w-0">
+          <h1 className="text-base sm:text-lg font-bold">Zara queue</h1>
+          <p className="text-[11px] sm:text-xs text-muted-foreground">
             {pending.length} shown · {pendingAll.length} pending · {drafts.length} total
           </p>
         </div>
         <div className="flex gap-2">
-          <Button size="sm" variant="outline" onClick={seedTestContacts}>Seed test contacts</Button>
+          <Button size="sm" variant="outline" onClick={seedTestContacts} className="min-h-[36px]">Seed test contacts</Button>
         </div>
       </div>
 
