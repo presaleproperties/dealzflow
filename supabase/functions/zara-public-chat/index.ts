@@ -308,7 +308,7 @@ Deno.serve(async (req) => {
     // Rate limit (message side) — 30 msg / hr per presale_user_id
     const sb = svc();
     const { data: rl } = await sb.rpc("zara_public_rate_check", {
-      _presale_user_id: presale_user_id, _is_send: false, _msg_limit: 30, _send_limit: 10,
+      _presale_user_id: presale_user_id, _is_send: false, _msg_limit: 60, _send_limit: 10,
     });
     const rlRow = Array.isArray(rl) ? rl[0] : rl;
     if (rlRow && rlRow.allowed === false) {
@@ -384,7 +384,7 @@ Deno.serve(async (req) => {
               // Send-side rate limit for outbound tools
               if (SEND_TOOLS.has(tu.name)) {
                 const { data: rl2 } = await sb.rpc("zara_public_rate_check", {
-                  _presale_user_id: presale_user_id, _is_send: true, _msg_limit: 30, _send_limit: 10,
+                  _presale_user_id: presale_user_id, _is_send: true, _msg_limit: 60, _send_limit: 10,
                 });
                 const row = Array.isArray(rl2) ? rl2[0] : rl2;
                 if (row && row.allowed === false) {
