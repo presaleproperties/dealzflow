@@ -157,6 +157,7 @@ export function useCrmContacts(
         const { data, error } = await supabase
           .from('crm_contacts')
           .select('*')
+          .is('deleted_at', null)
           .order('created_at', { ascending: false })
           .range(from, from + PAGE_SIZE - 1)
           .abortSignal(signal as AbortSignal);

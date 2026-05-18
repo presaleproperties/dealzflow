@@ -330,6 +330,9 @@ function applyAllContactFilters(query: any, filters: PaginatedFilters) {
         query = query.in('id', ids);
       }
 
+  // Always hide soft-deleted contacts from list/select-all views.
+  query = query.is('deleted_at', null);
+
   return query;
 }
 
