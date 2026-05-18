@@ -399,54 +399,97 @@ function ToolPill({ tool, onDecide, deciding }: {
             </div>
           )}
 
-          {isPending && isMessage && !empty && (
-            <>
-              <EditableMessagePreview
-                toolName={tool.name}
-                input={tool.input}
-                onChange={setOverrides}
-              />
-              <div className="flex items-center gap-3 flex-wrap text-[11px]">
-                <button
-                  onClick={() => setShowIntel((s) => !s)}
-                  className="text-muted-foreground hover:text-foreground underline-offset-2 hover:underline inline-flex items-center gap-1"
-                >
-                  <ChevronDown className={`w-3 h-3 transition-transform ${showIntel ? 'rotate-180' : ''}`} />
-                  {showIntel ? 'Hide lead intelligence' : 'Using lead intelligence'}
-                </button>
-                <button
-                  onClick={() => setShowRaw((s) => !s)}
-                  className="text-muted-foreground hover:text-foreground underline-offset-2 hover:underline inline-flex items-center gap-1"
-                >
-                  <ChevronDown className={`w-3 h-3 transition-transform ${showRaw ? 'rotate-180' : ''}`} />
-                  {showRaw ? 'Hide raw JSON' : 'View raw JSON'}
-                </button>
-              </div>
-              {showIntel && <LeadIntelligenceSummary contactId={tool.input?.contact_id} />}
-              {showRaw && (
-                <pre className="text-[10.5px] font-mono whitespace-pre-wrap break-words bg-background rounded p-2 border border-border/40 max-h-48 overflow-auto">
-                  {JSON.stringify({ ...tool.input, ...overrides }, null, 2)}
-                </pre>
-              )}
-              <div className="flex items-center gap-2 justify-end flex-wrap pt-1 border-t border-border/40">
-                <button
-                  disabled={deciding}
-                  onClick={() => onDecide?.(tool.pending_id!, 'deny')}
-                  className="px-3 py-1.5 text-[12px] rounded-md border border-border hover:bg-muted/60 disabled:opacity-50"
-                >
-                  Deny
-                </button>
-                <button
-                  disabled={deciding}
-                  onClick={() => onDecide?.(tool.pending_id!, 'approve', overrides)}
-                  className="px-3 py-1.5 text-[12px] rounded-md bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 inline-flex items-center gap-1"
-                >
-                  {deciding ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
-                  {isEdited ? 'Approve edited & send' : 'Approve & send'}
-                </button>
-              </div>
-            </>
-          )}
+          {isPending && isMessage && !empty && (() => {
+            const isEmail = tool.name === 'draft_email';
+            const mergedSubject = ((overrides.subject ?? tool.input?.subject) ?? '').toString().trim();
+            const mergedBody = ((overrides.body ?? tool.input?.body) ?? '').toString().trim();
+            const issues: string[] = [];
+
+            if (isEmail && mergedSubject.length < 3) {
+              issues.push('Subject is too short (min 3 characters).');
+            }
+            if (mergedBody.length < 20) {
+              issues.push('Body is too short (min 20 characters).');
+            }
+
+            const combined = `${mergedSubject}\n${mergedBody}`;
+            const mergeMatches = combined.match(/\{\{[^}]*\}\}|\$\{[^}]*\}|\{\$[a-zA-Z_]+\}/g);
+            if (mergeMatches && mergeMatches.length) {
+              issues.push(`Unresolved merge tokens: ${[...new Set(mergeMatches)].slice(0, 4).join(', ')}`);
+            }
+            const placeholderWords = combined.match(/\b(TBD|TODO|FIXME|XXX|LOREM|PLACEHOLDER)\b/gi);
+            if (placeholderWords && placeholderWords.length) {
+              issues.push(`Placeholder text found: ${[...new Set(placeholderWords.map((s) => s.toUpperCase()))].join(', ')}`);
+            }
+            const bracketMatches = combined.match(/\[[a-z][a-z\s_-]{1,40}\]/gi);
+            if (bracketMatches && bracketMatches.length) {
+              issues.push(`Bracketed placeholders: ${[...new Set(bracketMatches)].slice(0, 4).join(', ')}`);
+            }
+            const angleMatches = combined.match(/<(?!\/?(a|b|br|p|strong|em|i|u|ul|ol|li|span|div)\b)[a-z][a-z\s_-]{1,40}>/gi);
+            if (angleMatches && angleMatches.length) {
+              issues.push(`Angle-bracket placeholders: ${[...new Set(angleMatches)].slice(0, 4).join(', ')}`);
+            }
+
+            const blocked = issues.length > 0;
+
+            return (
+              <>
+                <EditableMessagePreview
+                  toolName={tool.name}
+                  input={tool.input}
+                  onChange={setOverrides}
+                />
+                {blocked && (
+                  <div className="rounded-md border border-destructive/40 bg-destructive/5 p-2.5 text-[11.5px] text-destructive space-y-1">
+                    <div className="font-semibold text-[11px] uppercase tracking-wider">Fix before sending</div>
+                    <ul className="list-disc list-inside space-y-0.5 marker:text-destructive/70">
+                      {issues.map((msg, i) => <li key={i}>{msg}</li>)}
+                    </ul>
+                  </div>
+                )}
+                <div className="flex items-center gap-3 flex-wrap text-[11px]">
+                  <button
+                    onClick={() => setShowIntel((s) => !s)}
+                    className="text-muted-foreground hover:text-foreground underline-offset-2 hover:underline inline-flex items-center gap-1"
+                  >
+                    <ChevronDown className={`w-3 h-3 transition-transform ${showIntel ? 'rotate-180' : ''}`} />
+                    {showIntel ? 'Hide lead intelligence' : 'Using lead intelligence'}
+                  </button>
+                  <button
+                    onClick={() => setShowRaw((s) => !s)}
+                    className="text-muted-foreground hover:text-foreground underline-offset-2 hover:underline inline-flex items-center gap-1"
+                  >
+                    <ChevronDown className={`w-3 h-3 transition-transform ${showRaw ? 'rotate-180' : ''}`} />
+                    {showRaw ? 'Hide raw JSON' : 'View raw JSON'}
+                  </button>
+                </div>
+                {showIntel && <LeadIntelligenceSummary contactId={tool.input?.contact_id} />}
+                {showRaw && (
+                  <pre className="text-[10.5px] font-mono whitespace-pre-wrap break-words bg-background rounded p-2 border border-border/40 max-h-48 overflow-auto">
+                    {JSON.stringify({ ...tool.input, ...overrides }, null, 2)}
+                  </pre>
+                )}
+                <div className="flex items-center gap-2 justify-end flex-wrap pt-1 border-t border-border/40">
+                  <button
+                    disabled={deciding}
+                    onClick={() => onDecide?.(tool.pending_id!, 'deny')}
+                    className="px-3 py-1.5 text-[12px] rounded-md border border-border hover:bg-muted/60 disabled:opacity-50"
+                  >
+                    Deny
+                  </button>
+                  <button
+                    disabled={deciding || blocked}
+                    title={blocked ? 'Resolve the issues above before sending' : undefined}
+                    onClick={() => onDecide?.(tool.pending_id!, 'approve', overrides)}
+                    className="px-3 py-1.5 text-[12px] rounded-md bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-1"
+                  >
+                    {deciding ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
+                    {blocked ? 'Fix issues to send' : isEdited ? 'Approve edited & send' : 'Approve & send'}
+                  </button>
+                </div>
+              </>
+            );
+          })()}
 
 
           {isPending && !isMessage && (
