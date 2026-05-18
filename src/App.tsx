@@ -84,6 +84,7 @@ const ZaraCostPage = lazy(() => import("./pages/admin/ZaraCostPage"));
 const ZaraTrainingPage = lazy(() => import("./pages/admin/ZaraTrainingPage"));
 const ZaraPlaybooksPage = lazy(() => import("./pages/admin/ZaraPlaybooksPage"));
 const ZaraToolsPage = lazy(() => import("./pages/admin/ZaraToolsPage"));
+const ZaraTriggerMapPage = lazy(() => import("./pages/admin/ZaraTriggerMapPage"));
 const CrmTrashPage = lazy(() => import("./pages/crm/CrmTrashPage"));
 const AgentProfilePage = lazy(() => import("./pages/agent/AgentProfilePage"));
 const AgentComposePage = lazy(() => import("./pages/agent/AgentComposePage"));
