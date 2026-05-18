@@ -189,6 +189,9 @@ export function ZaraSection({ contact }: { contact: CrmContact }) {
           </div>
         </div>
 
+        {/* ── retrieval intelligence (playbook + founder lens) ── */}
+        <ZaraContextStrip contactId={contactId} />
+
         {/* ── 1. Memory ── */}
         {(memory?.summary || rows.length > 0 || urgency) && (
           <div className="px-3 pt-2.5 pb-2.5">
