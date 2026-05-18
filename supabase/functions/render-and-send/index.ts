@@ -345,7 +345,7 @@ Deno.serve(async (req) => {
   const { data: projectRow } = await supabase
     .from("crm_projects")
     .select("slug, presale_slug, name, city, developer, price_from, completion_date, website_url, marketing_url, brochure_url, floor_plans_url, pricing_url")
-    .eq("slug", project_slug)
+    .or(`slug.eq.${project_slug},presale_slug.eq.${project_slug}`)
     .maybeSingle();
 
   let bridgeProjectSlug = project_slug;
@@ -772,7 +772,7 @@ Deno.serve(async (req) => {
           p_automation_id: automation.id,
           p_contact_id: contact_id,
           p_trigger_data: {
-            project_slug,
+          project_slug: projectRow?.slug || project_slug,
             template_slug,
             enrolled_via: "render-and-send",
             initial_email_sent_at: new Date().toISOString(),
@@ -823,7 +823,7 @@ Deno.serve(async (req) => {
           automation_id: automation.id,
           contact_id,
           trigger_data: {
-            project_slug,
+          project_slug: projectRow?.slug || project_slug,
             template_slug,
             enrolled_via: "render-and-send",
             enrollment_id: enrollmentId,
