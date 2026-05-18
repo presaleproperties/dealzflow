@@ -945,6 +945,26 @@ Deno.serve(async (req) => {
             let anyPending = false;
             for (const tu of toolUses) {
               if (NEEDS_APPROVAL.has(tu.name)) {
+                // Hard guard: never queue an empty draft for approval. Force the model to
+                // write the actual subject + body using the lead memory it already has.
+                const input = (tu.input ?? {}) as any;
+                const isMsg = tu.name === "draft_email" || tu.name === "draft_sms" || tu.name === "draft_whatsapp";
+                const missing: string[] = [];
+                if (isMsg) {
+                  if (!input.contact_id) missing.push("contact_id");
+                  if (!input.body || String(input.body).trim().length < 20) missing.push("body (write the full message using the lead's note intelligence, recent activity, and project context — no placeholders)");
+                  if (tu.name === "draft_email" && (!input.subject || String(input.subject).trim().length < 3)) missing.push("subject");
+                }
+                if (missing.length > 0) {
+                  const out = {
+                    ok: false,
+                    error: `Draft rejected — missing/empty: ${missing.join(", ")}. Re-call ${tu.name} with the full written message grounded in the lead's note intelligence, recent activity, and conversation history. Do NOT call this tool with empty arguments.`,
+                  };
+                  await persistToolResult(conversation_id, tu.id, tu.name, out);
+                  toolResultsById.set(tu.id, out);
+                  toolResults.push({ type: "tool_result", tool_use_id: tu.id, content: JSON.stringify(out), is_error: true });
+                  continue;
+                }
                 const { data: pend } = await sb.from("zara_pending_tool_calls").insert({
                   conversation_id, message_id: lastAssistantId,
                   tool_use_id: tu.id, tool_name: tu.name, tool_input: tu.input,
