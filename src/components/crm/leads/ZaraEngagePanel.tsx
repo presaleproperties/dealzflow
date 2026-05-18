@@ -180,22 +180,22 @@ export function ZaraEngagePanel({ contact }: { contact: CrmContact }) {
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
                 onKeyDown={(e) => {
-                  if ((e.metaKey || e.ctrlKey) && e.key === 'Enter' && prompt.trim()) {
+                  if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing && prompt.trim()) {
                     e.preventDefault();
                     run('custom', { prompt: prompt.trim() });
                   }
                 }}
                 rows={2}
-                placeholder="Tell Zara what to do — e.g. 'Follow up about parking spot question'"
-                className="w-full resize-none bg-transparent outline-none text-[12.5px] px-1.5 py-1 min-h-[44px]"
+                placeholder="Tell Zara what to do — Enter to send, Shift+Enter for newline"
+                className="w-full resize-none bg-transparent outline-none text-[16px] sm:text-[12.5px] px-1.5 py-1 min-h-[44px]"
               />
               <div className="flex items-center justify-between gap-2 pt-1">
-                <div className="flex gap-1 overflow-x-auto pb-0.5">
+                <div className="flex gap-1 overflow-x-auto pb-0.5 -mx-0.5 px-0.5 scrollbar-none">
                   {QUICK_PROMPTS.map((q) => (
                     <button
                       key={q}
                       onClick={() => setPrompt(q)}
-                      className="shrink-0 text-[10.5px] px-2 py-0.5 rounded-full border border-border bg-background hover:bg-muted/60 hover:border-primary/40 whitespace-nowrap text-muted-foreground"
+                      className="shrink-0 text-[10.5px] px-2 py-1 min-h-[28px] rounded-full border border-border bg-background hover:bg-muted/60 hover:border-primary/40 whitespace-nowrap text-muted-foreground"
                     >
                       {q}
                     </button>
@@ -205,7 +205,7 @@ export function ZaraEngagePanel({ contact }: { contact: CrmContact }) {
                   size="sm"
                   onClick={() => prompt.trim() && run('custom', { prompt: prompt.trim() })}
                   disabled={!prompt.trim() || busy !== null}
-                  className="h-7 px-2 text-[11px] gap-1 bg-primary text-primary-foreground hover:bg-primary/90 shrink-0"
+                  className="h-8 px-2.5 text-[11px] gap-1 bg-primary text-primary-foreground hover:bg-primary/90 shrink-0"
                 >
                   {busy === 'custom' ? <Loader2 className="w-3 h-3 animate-spin" /> : <Send className="w-3 h-3" />}
                   Ask
