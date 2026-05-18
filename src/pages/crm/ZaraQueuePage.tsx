@@ -5,7 +5,6 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Pill } from '@/components/crm/shared/Pill';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { formatDistanceToNow } from 'date-fns';
@@ -40,11 +39,6 @@ export default function ZaraQueuePage() {
   const [rejectReason, setRejectReason] = useState('');
   const [testInboundFor, setTestInboundFor] = useState<string | null>(null);
   const [testInboundText, setTestInboundText] = useState("What's the price?");
-  const [saveTplDraft, setSaveTplDraft] = useState<Draft | null>(null);
-  const [tplTitle, setTplTitle] = useState('');
-  const [tplSubject, setTplSubject] = useState('');
-  const [tplBody, setTplBody] = useState('');
-  const [tplSaving, setTplSaving] = useState(false);
   const [fChannel, setFChannel] = useState<'all' | 'email' | 'sms' | 'whatsapp'>('all');
   const [fSource, setFSource] = useState<'all' | 'K' | 'W' | 'P' | 'none'>('all');
   const [fTag, setFTag] = useState<string>('all');
@@ -205,51 +199,6 @@ export default function ZaraQueuePage() {
     setTestInboundFor(null);
   };
 
-  const openSaveTemplate = (d: Draft) => {
-    setSaveTplDraft(d);
-    setTplTitle('');
-    setTplSubject(d.draft_subject ?? '');
-    setTplBody(d.draft_text ?? '');
-  };
-
-  const saveAsTemplate = async () => {
-    if (!saveTplDraft) return;
-    const title = tplTitle.trim();
-    if (!title) { toast.error('Title is required'); return; }
-    if (!tplBody.trim()) { toast.error('Body is empty'); return; }
-    setTplSaving(true);
-    try {
-      const ch = saveTplDraft.channel;
-      const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60) || `tpl-${Date.now()}`;
-      let error: any = null;
-      if (ch === 'email') {
-        ({ error } = await supabase.from('crm_email_templates').insert({
-          name: title,
-          subject: tplSubject || title,
-          body_html: tplBody,
-          slug,
-          category: 'general',
-          source: 'zara',
-        } as any));
-      } else if (ch === 'sms') {
-        ({ error } = await supabase.from('crm_sms_templates').insert({
-          name: title, body: tplBody, channel: 'sms', category: 'general',
-        } as any));
-      } else if (ch === 'whatsapp') {
-        ({ error } = await supabase.from('crm_whatsapp_templates').insert({
-          name: title, body_text: tplBody, category: 'utility', status: 'approved', language: 'en',
-        } as any));
-      } else {
-        error = { message: `Unsupported channel: ${ch}` };
-      }
-      if (error) { toast.error(error.message); return; }
-      toast.success(`Saved as ${ch} template`);
-      setSaveTplDraft(null);
-    } finally {
-      setTplSaving(false);
-    }
-  };
-
   return (
     <div className="flex flex-col h-full min-h-0">
       <div className={`px-4 py-2 text-[12px] font-medium ${banner.cls}`}>{banner.text}</div>
@@ -340,7 +289,7 @@ export default function ZaraQueuePage() {
                       style={{ height: 420, border: 0, background: 'white' }}
                     />
                     <div className="flex items-center justify-between gap-2 px-3 py-1.5 border-t border-border bg-muted/30 text-[11px] text-muted-foreground">
-                      <span>Branded HTML preview {d.template_id_used ? '· template applied' : '· fallback scaffold'}</span>
+                      <span>Presale-rendered HTML preview</span>
                       <button onClick={() => togglePlain(d.id)} className="underline hover:text-foreground">Show plain text</button>
                     </div>
                   </div>
@@ -404,7 +353,6 @@ export default function ZaraQueuePage() {
                   <div className="flex gap-2 flex-wrap">
                     <Button size="sm" onClick={() => approve(d, d.draft_text)}>Approve &amp; send</Button>
                     <Button size="sm" variant="outline" onClick={() => { setEditingId(d.id); setEditText(d.draft_text); }}>Edit &amp; send</Button>
-                    <Button size="sm" variant="outline" onClick={() => openSaveTemplate(d)}>Save as template</Button>
                     <Button size="sm" variant="ghost" onClick={() => setRejectId(d.id)}>Reject</Button>
                     <Button size="sm" variant="ghost" onClick={() => snooze(d.id)}>Snooze 4h</Button>
                     {isTest && (
@@ -443,33 +391,6 @@ export default function ZaraQueuePage() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={!!saveTplDraft} onOpenChange={(o) => !o && setSaveTplDraft(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Save as {saveTplDraft?.channel ?? ''} template</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-3">
-            <div>
-              <label className="text-[11px] uppercase tracking-wide text-muted-foreground">Title</label>
-              <Input value={tplTitle} onChange={(e) => setTplTitle(e.target.value)} placeholder="e.g. Pricing reply — Brentwood" autoFocus />
-            </div>
-            {saveTplDraft?.channel === 'email' && (
-              <div>
-                <label className="text-[11px] uppercase tracking-wide text-muted-foreground">Subject</label>
-                <Input value={tplSubject} onChange={(e) => setTplSubject(e.target.value)} placeholder="Subject line" />
-              </div>
-            )}
-            <div>
-              <label className="text-[11px] uppercase tracking-wide text-muted-foreground">Body</label>
-              <Textarea value={tplBody} onChange={(e) => setTplBody(e.target.value)} rows={8} />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="ghost" onClick={() => setSaveTplDraft(null)} disabled={tplSaving}>Cancel</Button>
-            <Button onClick={saveAsTemplate} disabled={tplSaving}>{tplSaving ? 'Saving…' : 'Save template'}</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

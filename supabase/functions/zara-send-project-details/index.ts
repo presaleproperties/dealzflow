@@ -6,7 +6,7 @@
 // Bulk callers fan out (one call per contact_id) — no batching here.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { htmlToPlain } from "../_shared/zara-email-render.ts";
+import { escapeHtml, htmlToPlain } from "../_shared/zara-email-render.ts";
 import { coerceUuid, resolveAssignedToUuid } from "../_shared/zara-guardrails.ts";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
