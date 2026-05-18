@@ -126,7 +126,7 @@ Deno.serve(async (req) => {
     // Mine history via service role
     const svc = createClient(SUPABASE_URL, SERVICE_KEY, { auth: { persistSession: false, autoRefreshToken: false } });
 
-    const [memRes, engRes, actRes, showRes] = await Promise.all([
+    const [memRes, engRes, actRes, showRes, intelRes, notesRes] = await Promise.all([
       svc.from("zara_lead_memory").select("*").eq("contact_id", contactId).maybeSingle(),
       svc.from("crm_engagement_events")
         .select("event_type, source, direction, occurred_at, metadata")
@@ -144,6 +144,17 @@ Deno.serve(async (req) => {
         .order("scheduled_at", { ascending: false })
         .limit(20)
         .then(r => r, () => ({ data: [] as any[] })),
+      svc.from("zara_note_intelligence")
+        .select("summary, emotional_state, trust_level, buying_readiness, objections, motivations, financial_concerns, family_context, timing_signals, preferred_areas, escalation_signals, key_quote, recommended_style, recommended_next_step, analyzed_at")
+        .eq("contact_id", contactId)
+        .order("analyzed_at", { ascending: false })
+        .limit(10),
+      svc.from("crm_notes")
+        .select("id, content, note_type, event_at, created_at")
+        .eq("contact_id", contactId)
+        .not("note_type", "in", "(import_archive,ai_summary,system,website_behavior)")
+        .order("created_at", { ascending: false })
+        .limit(8),
     ]);
 
     const existingMemory = memRes.data;
