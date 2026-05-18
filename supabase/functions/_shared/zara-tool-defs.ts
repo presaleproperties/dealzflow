@@ -374,6 +374,21 @@ export const ZARA_TOOLS: ZaraTool[] = [
     needs_approval: false,
   },
   {
+    name: "get_floor_plans",
+    description:
+      "List private floor plans for a project and return short-lived signed download URLs (default 5 min TTL). Use this when a visitor wants confidential floorplan PDFs that aren't published publicly. Each item: { name, bedrooms, bathrooms, sqft, price_from, url, expires_in }.",
+    input_schema: {
+      type: "object",
+      properties: {
+        project_slug: { type: "string", description: "Project slug from crm_projects (required)." },
+        bedrooms: { type: "number", description: "Optional filter — only return plans matching this bedroom count." },
+        max: { type: "integer", description: "Max plans to return (default 12)." },
+        ttl_seconds: { type: "integer", description: "Signed URL lifetime in seconds (60-3600, default 300)." },
+      },
+      required: ["project_slug"],
+    },
+    needs_approval: false,
+  {
     name: "schedule_follow_up_smart",
     description:
       "Schedule a follow-up at an engagement-aware default time (hot=1 day, warm=3 days, cold=7 days) unless due_at is provided. Inserts into crm_tasks and tags the task with the chosen cadence.",
