@@ -30,7 +30,7 @@ Deno.serve(async (req) => {
     const user = u?.user;
     if (!user) return new Response("Unauthorized", { status: 401, headers: corsHeaders });
 
-    const { pending_id, decision } = await req.json();
+    const { pending_id, decision, overrides } = await req.json();
     if (!pending_id || !["approve", "deny"].includes(decision)) {
       return new Response(JSON.stringify({ error: "pending_id and decision required" }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
