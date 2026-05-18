@@ -546,9 +546,9 @@ export function ZaraDock() {
               )}
             </div>
 
-            {/* Composer */}
-            <div className="border-t border-border p-2.5 shrink-0">
-              <div className="rounded-2xl border border-border bg-card focus-within:border-primary/60 focus-within:ring-2 focus-within:ring-primary/15 transition p-1.5 flex items-end gap-1.5">
+            {/* Composer — borderless, glass-on-glass */}
+            <div className="p-2.5 shrink-0">
+              <div className="rounded-2xl bg-foreground/[0.05] focus-within:bg-foreground/[0.08] focus-within:ring-1 focus-within:ring-primary/30 transition p-1.5 flex items-end gap-1.5">
                 <textarea
                   ref={inputRef}
                   value={input}
@@ -567,11 +567,15 @@ export function ZaraDock() {
                   className="flex-1 resize-none bg-transparent outline-none text-[13px] px-2 py-1.5 min-h-[28px] max-h-[160px] disabled:opacity-60"
                 />
                 {streaming ? (
-                  <Button size="sm" variant="outline" onClick={stop}>Stop</Button>
+                  <Button size="sm" variant="ghost" onClick={stop}>Stop</Button>
                 ) : (
-                  <Button size="sm" onClick={() => onSend()} disabled={!input.trim()} className="bg-primary text-primary-foreground hover:bg-primary/90">
+                  <button
+                    onClick={() => onSend()}
+                    disabled={!input.trim()}
+                    className="zara-quiet-action !py-1.5 !px-2.5 disabled:opacity-40"
+                  >
                     <Send className="w-3.5 h-3.5" />
-                  </Button>
+                  </button>
                 )}
               </div>
               <div className="mt-1.5 flex gap-1 overflow-x-auto pb-0.5 -mx-0.5 px-0.5 scrollbar-thin">
@@ -579,13 +583,13 @@ export function ZaraDock() {
                   <button
                     key={c.label}
                     onClick={() => onChip(c.prompt, !!c.needsContact)}
-                    className="shrink-0 text-[11px] px-2.5 py-1 rounded-full border border-border bg-card hover:bg-muted/60 hover:border-primary/40 transition-colors whitespace-nowrap"
+                    className="shrink-0 text-[11px] px-2.5 py-1 rounded-full text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors whitespace-nowrap"
                   >
                     {c.label}
                   </button>
                 ))}
               </div>
-              <div className="mt-1 text-center text-[10px] text-muted-foreground">Cmd/Ctrl+Enter to send · Cmd/Ctrl+K new · Esc to close</div>
+              <div className="mt-1 text-center text-[10px] text-muted-foreground/70">⌘⏎ send · ⌘K new · Esc close</div>
             </div>
           </div>
         </div>
