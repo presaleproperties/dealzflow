@@ -7474,10 +7474,14 @@ export type Database = {
       zara_lead_memory: {
         Row: {
           contact_id: string
+          continuity_openers: string[] | null
+          continuity_refreshed_at: string | null
           facts: Json
           last_rolled_at: string | null
+          last_topics: string[] | null
           refresh_reason: string | null
           refreshed_at: string
+          relationship_stage: string | null
           signals: Json
           summary: string
           turn_count: number
@@ -7485,10 +7489,14 @@ export type Database = {
         }
         Insert: {
           contact_id: string
+          continuity_openers?: string[] | null
+          continuity_refreshed_at?: string | null
           facts?: Json
           last_rolled_at?: string | null
+          last_topics?: string[] | null
           refresh_reason?: string | null
           refreshed_at?: string
+          relationship_stage?: string | null
           signals?: Json
           summary: string
           turn_count?: number
@@ -7496,10 +7504,14 @@ export type Database = {
         }
         Update: {
           contact_id?: string
+          continuity_openers?: string[] | null
+          continuity_refreshed_at?: string | null
           facts?: Json
           last_rolled_at?: string | null
+          last_topics?: string[] | null
           refresh_reason?: string | null
           refreshed_at?: string
+          relationship_stage?: string | null
           signals?: Json
           summary?: string
           turn_count?: number

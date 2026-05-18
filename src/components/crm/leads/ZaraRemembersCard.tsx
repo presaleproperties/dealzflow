@@ -1,8 +1,11 @@
 import { useState } from 'react';
-import { Sparkles, ChevronDown, AlertCircle } from 'lucide-react';
+import { Sparkles, ChevronDown, AlertCircle, Quote, RefreshCw } from 'lucide-react';
 import { useZaraLeadMemory, isMemoryStale, type ZaraLeadFacts } from '@/hooks/useZaraLeadMemory';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface Props {
   contactId: string;
@@ -29,15 +32,30 @@ function buildRows(f: ZaraLeadFacts): Row[] {
   const budget = budgetRange(f);
   if (budget) rows.push({ label: 'Budget', value: budget });
   if (f.timeline) rows.push({ label: 'Timeline', value: f.timeline });
+  if (f.timing_concerns) rows.push({ label: 'Timing', value: f.timing_concerns });
   if (f.financing_status) rows.push({ label: 'Financing', value: f.financing_status });
-  if (f.preferred_neighborhoods?.length) rows.push({ label: 'Areas', value: f.preferred_neighborhoods.join(', ') });
+  if (f.investor_vs_enduser) rows.push({ label: 'Buyer', value: f.investor_vs_enduser === 'investor' ? 'Investor' : f.investor_vs_enduser === 'end_user' ? 'End-user' : 'Mixed' });
+  if (f.preferred_property_type) rows.push({ label: 'Type', value: f.preferred_property_type });
+  if (f.preferred_cities?.length) rows.push({ label: 'Cities', value: f.preferred_cities.join(', ') });
+  else if (f.preferred_neighborhoods?.length) rows.push({ label: 'Areas', value: f.preferred_neighborhoods.join(', ') });
   if (f.project_interest) rows.push({ label: 'Project', value: f.project_interest });
+  if (f.projects_compared?.length) rows.push({ label: 'Comparing', value: f.projects_compared.slice(0, 4).join(', ') });
+  if (f.viewed_projects?.length) rows.push({ label: 'Viewed', value: f.viewed_projects.slice(0, 4).join(', ') });
+  if (f.downloaded_floorplans?.length) rows.push({ label: 'Floorplans', value: f.downloaded_floorplans.slice(0, 4).join(', ') });
+  if (f.school_preferences) rows.push({ label: 'Schools', value: f.school_preferences });
+  if (f.commute_concerns) rows.push({ label: 'Commute', value: f.commute_concerns });
   if (f.must_haves?.length) rows.push({ label: 'Must-haves', value: f.must_haves.join(', ') });
   if (f.dealbreakers?.length) rows.push({ label: 'Dealbreakers', value: f.dealbreakers.join(', ') });
   if (f.motivations?.length) rows.push({ label: 'Why', value: f.motivations.join(', ') });
   if (f.decision_makers?.length) rows.push({ label: 'Decision', value: f.decision_makers.join(', ') });
   if (f.family_situation) rows.push({ label: 'Family', value: f.family_situation });
+  if (f.emotional_hesitation) rows.push({ label: 'Hesitation', value: f.emotional_hesitation });
+  if (f.emotional_objections?.length) rows.push({ label: 'Concerns', value: f.emotional_objections.join(' · ') });
   if (f.last_objection) rows.push({ label: 'Objection', value: f.last_objection });
+  if (f.appointment_history?.length) {
+    const a = f.appointment_history.slice(0, 3).map(x => `${x.kind ?? 'visit'}${x.project ? ` @ ${x.project}` : ''}${x.when ? ` (${x.when})` : ''}`).join(' · ');
+    rows.push({ label: 'Visits', value: a });
+  }
   if (f.next_steps?.length) rows.push({ label: 'Next', value: f.next_steps.join(' · ') });
   return rows;
 }
@@ -52,8 +70,23 @@ function urgencyTone(signal?: string | null): { dot: string; label: string } | n
 }
 
 export function ZaraRemembersCard({ contactId }: Props) {
+  const qc = useQueryClient();
   const { data: memory, isLoading } = useZaraLeadMemory(contactId);
   const [showQuotes, setShowQuotes] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+
+  async function refreshContinuity() {
+    setRefreshing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('zara-build-continuity', { body: { contact_id: contactId } });
+      if (error) throw error;
+      if ((data as any)?.ok) toast.success('Zara updated her memory of this lead');
+      else toast.warning((data as any)?.error ?? 'No new context found');
+      qc.invalidateQueries({ queryKey: ['zara-lead-memory', contactId] });
+    } catch (e: any) {
+      toast.error(e?.message ?? 'Refresh failed');
+    } finally { setRefreshing(false); }
+  }
 
   if (isLoading || !memory) return null;
 
@@ -61,9 +94,11 @@ export function ZaraRemembersCard({ contactId }: Props) {
   const rows = buildRows(facts);
   const urgency = urgencyTone(facts.urgency_signal);
   const quotes = facts.key_quotes ?? [];
+  const openers = memory.continuity_openers ?? [];
+  const stage = memory.relationship_stage ?? null;
   const stale = isMemoryStale(memory.refreshed_at);
 
-  if (rows.length === 0 && !memory.summary) return null;
+  if (rows.length === 0 && !memory.summary && openers.length === 0) return null;
 
   return (
     <div
@@ -76,19 +111,35 @@ export function ZaraRemembersCard({ contactId }: Props) {
       }}
     >
       {/* Header */}
-      <div className="flex items-center justify-between px-3 pt-3 pb-2">
-        <div className="flex items-center gap-1.5">
-          <Sparkles className="w-3.5 h-3.5 text-primary" />
-          <span className="text-[10.5px] uppercase tracking-[0.14em] font-semibold text-primary/90">
+      <div className="flex items-center justify-between px-3 pt-3 pb-2 gap-2">
+        <div className="flex items-center gap-1.5 min-w-0">
+          <Sparkles className="w-3.5 h-3.5 text-primary shrink-0" />
+          <span className="text-[10.5px] uppercase tracking-[0.14em] font-semibold text-primary/90 truncate">
             Zara remembers
           </span>
+          {stage && (
+            <span className="text-[9.5px] uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-primary/10 text-primary/90 border border-primary/20 whitespace-nowrap">
+              {stage.replace(/-/g, ' ')}
+            </span>
+          )}
         </div>
-        <span
-          className="text-[10px] text-muted-foreground tabular-nums"
-          title={`Refreshed ${new Date(memory.refreshed_at).toLocaleString()} · ${memory.turn_count} turns`}
-        >
-          {formatDistanceToNow(new Date(memory.refreshed_at), { addSuffix: true })}
-        </span>
+        <div className="flex items-center gap-1.5 shrink-0">
+          <span
+            className="text-[10px] text-muted-foreground tabular-nums hidden sm:inline"
+            title={`Refreshed ${new Date(memory.refreshed_at).toLocaleString()} · ${memory.turn_count} turns`}
+          >
+            {formatDistanceToNow(new Date(memory.refreshed_at), { addSuffix: true })}
+          </span>
+          <button
+            type="button"
+            onClick={refreshContinuity}
+            disabled={refreshing}
+            title="Rebuild Zara's memory of this lead"
+            className="p-1 rounded hover:bg-muted/60 text-muted-foreground hover:text-foreground disabled:opacity-50"
+          >
+            <RefreshCw className={cn('w-3 h-3', refreshing && 'animate-spin')} />
+          </button>
+        </div>
       </div>
 
       {/* Urgency strip */}
@@ -96,6 +147,25 @@ export function ZaraRemembersCard({ contactId }: Props) {
         <div className="px-3 pb-2 flex items-center gap-1.5">
           <span className={cn('w-1.5 h-1.5 rounded-full', urgency.dot)} />
           <span className="text-[11.5px] text-foreground/85 leading-tight">{urgency.label}</span>
+        </div>
+      )}
+
+      {/* Continuity openers — natural references Zara can drop into next message */}
+      {openers.length > 0 && (
+        <div className="px-3 pb-2.5 border-b border-border/30 mb-1">
+          <div className="flex items-center gap-1.5 mb-1.5">
+            <Quote className="w-3 h-3 text-primary/70" />
+            <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">
+              Pick up where you left off
+            </span>
+          </div>
+          <ul className="space-y-1">
+            {openers.slice(0, 4).map((o, i) => (
+              <li key={i} className="text-[12px] leading-snug text-foreground/85 pl-3 border-l-2 border-primary/30 italic">
+                {o}
+              </li>
+            ))}
+          </ul>
         </div>
       )}
 
