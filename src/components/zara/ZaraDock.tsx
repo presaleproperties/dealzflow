@@ -458,40 +458,44 @@ export function ZaraDock() {
 
   return (
     <>
-      {/* Launcher (closed state) */}
+      {/* Launcher (closed state) — glassy halo pill, Apple-Intelligence feel */}
       {!open && (
-        <button
-          onClick={() => setOpen(true)}
-          title="Talk to Zara (Cmd/Ctrl+J)"
-          className="fixed bottom-6 right-6 z-40 w-14 h-14 md:w-14 md:h-14 rounded-full bg-primary text-primary-foreground shadow-lg hover:shadow-xl transition-all flex items-center justify-center"
-          style={{ width: 56, height: 56, bottom: 'max(24px, env(safe-area-inset-bottom))', right: 24 }}
+        <div
+          className="fixed z-40 zara-halo"
+          style={{ bottom: 'max(24px, env(safe-area-inset-bottom))', right: 24, borderRadius: 9999 }}
         >
-          <Sparkles className="w-6 h-6" />
-          {pendingCount > 0 && (
-            <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] rounded-full bg-destructive text-destructive-foreground text-[10px] font-semibold flex items-center justify-center px-1">
-              {pendingCount}
-            </span>
-          )}
-        </button>
+          <button
+            onClick={() => setOpen(true)}
+            title="Talk to Zara (Cmd/Ctrl+J)"
+            className="zara-launcher !relative !top-0 !right-0 !bottom-0"
+            style={{ position: 'relative' }}
+          >
+            <Sparkles className="w-5 h-5" />
+            {pendingCount > 0 && (
+              <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-[16px] rounded-full bg-destructive text-destructive-foreground text-[9.5px] font-semibold flex items-center justify-center px-1">
+                {pendingCount}
+              </span>
+            )}
+          </button>
+        </div>
       )}
 
-      {/* Open panel */}
+      {/* Open panel — glass slide-over, no hard border */}
       {open && (
         <div
-          className="fixed inset-y-0 right-0 z-40 w-full md:w-[400px] bg-background border-l border-border shadow-2xl flex flex-col"
-          style={{ top: 0 }}
+          className="fixed inset-y-0 right-0 z-40 w-full md:w-[400px] zara-glass-strong flex flex-col animate-slide-in-right"
+          style={{ top: 0, borderRadius: 0 }}
         >
           {/* Header */}
-          <header className="h-12 px-3 border-b border-border flex items-center justify-between shrink-0">
+          <header className="h-12 px-3 flex items-center justify-between shrink-0">
             <div className="flex items-center gap-2 min-w-0">
-              <span className="w-2 h-2 rounded-full bg-primary" />
-              <span className="text-[13px] font-semibold tracking-tight">Zara</span>
+              <span className="zara-eyebrow">Zara</span>
               <Pill size="sm" tone={modePill.tone}>{modePill.label}</Pill>
             </div>
             <div className="flex items-center gap-0.5">
-              <button onClick={() => navigate('/crm/zara')} className="p-2 rounded hover:bg-muted/60" title="Open full cockpit"><Maximize2 className="w-4 h-4" /></button>
-              <button onClick={() => setShowHistory(true)} className="p-2 rounded hover:bg-muted/60" title="Conversations (/)"><History className="w-4 h-4" /></button>
-              <button onClick={() => setOpen(false)} className="p-2 rounded hover:bg-muted/60" title="Close (Esc)"><X className="w-4 h-4" /></button>
+              <button onClick={() => navigate('/crm/zara')} className="p-2 rounded-full hover:bg-foreground/5" title="Open full cockpit"><Maximize2 className="w-4 h-4" /></button>
+              <button onClick={() => setShowHistory(true)} className="p-2 rounded-full hover:bg-foreground/5" title="Conversations (/)"><History className="w-4 h-4" /></button>
+              <button onClick={() => setOpen(false)} className="p-2 rounded-full hover:bg-foreground/5" title="Close (Esc)"><X className="w-4 h-4" /></button>
             </div>
           </header>
 
@@ -508,7 +512,7 @@ export function ZaraDock() {
             <div ref={scrollerRef} className="flex-1 min-h-0 overflow-y-auto px-3 py-3 space-y-2.5">
               {rendered.length === 0 && !streaming && (
                 <div className="text-center py-10 px-2">
-                  <div className="w-12 h-12 mx-auto mb-3 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/30 flex items-center justify-center shadow-sm">
+                  <div className="w-12 h-12 mx-auto mb-3 rounded-2xl zara-halo zara-glass flex items-center justify-center">
                     <Sparkles className="w-5 h-5 text-primary" />
                   </div>
                   <div className="text-[14px] font-semibold tracking-tight">Ask Zara about {pageContext.label.toLowerCase()}</div>
@@ -516,7 +520,7 @@ export function ZaraDock() {
                     She sees the page you're on — leads, projects, calendar, all of it.
                   </p>
                   {pageContext.contact_id && (
-                    <div className="mt-3 inline-flex items-center gap-1.5 text-[10.5px] px-2 py-1 rounded-full border border-primary/30 bg-primary/5 text-primary">
+                    <div className="mt-3 inline-flex items-center gap-1.5 text-[10.5px] px-2.5 py-1 rounded-full bg-primary/10 text-primary">
                       <span className="w-1.5 h-1.5 rounded-full bg-primary" />
                       Pinned to this lead
                     </div>
@@ -542,9 +546,9 @@ export function ZaraDock() {
               )}
             </div>
 
-            {/* Composer */}
-            <div className="border-t border-border p-2.5 shrink-0">
-              <div className="rounded-2xl border border-border bg-card focus-within:border-primary/60 focus-within:ring-2 focus-within:ring-primary/15 transition p-1.5 flex items-end gap-1.5">
+            {/* Composer — borderless, glass-on-glass */}
+            <div className="p-2.5 shrink-0">
+              <div className="rounded-2xl bg-foreground/[0.05] focus-within:bg-foreground/[0.08] focus-within:ring-1 focus-within:ring-primary/30 transition p-1.5 flex items-end gap-1.5">
                 <textarea
                   ref={inputRef}
                   value={input}
@@ -563,11 +567,15 @@ export function ZaraDock() {
                   className="flex-1 resize-none bg-transparent outline-none text-[13px] px-2 py-1.5 min-h-[28px] max-h-[160px] disabled:opacity-60"
                 />
                 {streaming ? (
-                  <Button size="sm" variant="outline" onClick={stop}>Stop</Button>
+                  <Button size="sm" variant="ghost" onClick={stop}>Stop</Button>
                 ) : (
-                  <Button size="sm" onClick={() => onSend()} disabled={!input.trim()} className="bg-primary text-primary-foreground hover:bg-primary/90">
+                  <button
+                    onClick={() => onSend()}
+                    disabled={!input.trim()}
+                    className="zara-quiet-action !py-1.5 !px-2.5 disabled:opacity-40"
+                  >
                     <Send className="w-3.5 h-3.5" />
-                  </Button>
+                  </button>
                 )}
               </div>
               <div className="mt-1.5 flex gap-1 overflow-x-auto pb-0.5 -mx-0.5 px-0.5 scrollbar-thin">
@@ -575,13 +583,13 @@ export function ZaraDock() {
                   <button
                     key={c.label}
                     onClick={() => onChip(c.prompt, !!c.needsContact)}
-                    className="shrink-0 text-[11px] px-2.5 py-1 rounded-full border border-border bg-card hover:bg-muted/60 hover:border-primary/40 transition-colors whitespace-nowrap"
+                    className="shrink-0 text-[11px] px-2.5 py-1 rounded-full text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors whitespace-nowrap"
                   >
                     {c.label}
                   </button>
                 ))}
               </div>
-              <div className="mt-1 text-center text-[10px] text-muted-foreground">Cmd/Ctrl+Enter to send · Cmd/Ctrl+K new · Esc to close</div>
+              <div className="mt-1 text-center text-[10px] text-muted-foreground/70">⌘⏎ send · ⌘K new · Esc close</div>
             </div>
           </div>
         </div>

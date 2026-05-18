@@ -2155,3 +2155,141 @@ html.keyboard-open .safe-bottom {
   100% { opacity: 1; transform: scale(1); }
 }
 .sending-flash { animation: sendFlash 0.45s ease-in-out; }
+
+/* ==========================================================================
+   Zara — Apple Intelligence visual language
+   Shared utility classes for every Zara surface (dock, whisper, strip,
+   command bar). Goal: glass, no borders, soft halo, content floats.
+   ========================================================================== */
+
+/* Soft pulsing gold halo behind the dock launcher + active surfaces */
+@keyframes zara-halo {
+  0%,100% { opacity: 0.55; transform: scale(1); }
+  50%     { opacity: 0.85; transform: scale(1.06); }
+}
+
+/* Glass surface — no border, blur backdrop, subtle inner highlight */
+.zara-glass {
+  background: hsl(var(--background) / 0.62);
+  backdrop-filter: blur(22px) saturate(140%);
+  -webkit-backdrop-filter: blur(22px) saturate(140%);
+  box-shadow:
+    inset 0 1px 0 hsl(var(--foreground) / 0.04),
+    0 1px 0 hsl(var(--foreground) / 0.04),
+    0 10px 40px -16px hsl(var(--background) / 0.6);
+  border-radius: 18px;
+}
+.dark .zara-glass {
+  background: hsl(var(--background) / 0.55);
+  box-shadow:
+    inset 0 1px 0 hsl(var(--foreground) / 0.05),
+    0 1px 0 hsl(0 0% 0% / 0.4),
+    0 18px 60px -20px hsl(0 0% 0% / 0.55);
+}
+
+/* Glass — denser variant for the slide-over dock */
+.zara-glass-strong {
+  background: hsl(var(--background) / 0.85);
+  backdrop-filter: blur(28px) saturate(160%);
+  -webkit-backdrop-filter: blur(28px) saturate(160%);
+  box-shadow:
+    inset 1px 0 0 hsl(var(--foreground) / 0.04),
+    -16px 0 60px -20px hsl(var(--background) / 0.5);
+}
+
+/* Faint gold halo, used behind the launcher + on active glass cards */
+.zara-halo {
+  position: relative;
+  isolation: isolate;
+}
+.zara-halo::before {
+  content: '';
+  position: absolute;
+  inset: -14%;
+  border-radius: inherit;
+  background: radial-gradient(60% 60% at 50% 50%, hsl(var(--primary) / 0.35), transparent 70%);
+  filter: blur(18px);
+  z-index: -1;
+  animation: zara-halo 4.2s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* Whisper card — the calm lead-detail surface. One panel, no chrome. */
+.zara-whisper {
+  display: block;
+  border-radius: 18px;
+  padding: 14px 16px;
+  background: linear-gradient(180deg,
+    hsl(var(--primary) / 0.045) 0%,
+    hsl(var(--background) / 0.6) 100%);
+  backdrop-filter: blur(18px) saturate(140%);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  box-shadow:
+    inset 0 1px 0 hsl(var(--foreground) / 0.04),
+    0 1px 0 hsl(var(--foreground) / 0.04);
+  transition: box-shadow 280ms ease, background 280ms ease;
+}
+.zara-whisper:hover {
+  box-shadow:
+    inset 0 1px 0 hsl(var(--foreground) / 0.05),
+    0 6px 30px -12px hsl(var(--primary) / 0.25);
+}
+
+/* The single "Zara · refreshed 4m ago" eyebrow used on every Zara surface */
+.zara-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: hsl(var(--muted-foreground));
+  font-weight: 500;
+}
+.zara-eyebrow::before {
+  content: '';
+  width: 5px; height: 5px;
+  border-radius: 9999px;
+  background: hsl(var(--primary));
+  box-shadow: 0 0 0 3px hsl(var(--primary) / 0.18);
+}
+
+/* Quiet inline action — used inside whisper, no border, no fill */
+.zara-quiet-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 9999px;
+  font-size: 12px;
+  color: hsl(var(--foreground) / 0.78);
+  background: transparent;
+  transition: background 180ms ease, color 180ms ease;
+}
+.zara-quiet-action:hover {
+  background: hsl(var(--primary) / 0.1);
+  color: hsl(var(--primary));
+}
+
+/* Floating dock launcher pill — small, glassy, halo on hover */
+.zara-launcher {
+  position: fixed;
+  z-index: 40;
+  width: 44px; height: 44px;
+  border-radius: 9999px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: hsl(var(--background) / 0.65);
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  color: hsl(var(--primary));
+  box-shadow:
+    inset 0 1px 0 hsl(var(--foreground) / 0.06),
+    0 8px 30px -10px hsl(var(--primary) / 0.45);
+  transition: transform 200ms ease, box-shadow 240ms ease;
+}
+.zara-launcher:hover {
+  transform: translateY(-1px) scale(1.04);
+  box-shadow:
+    inset 0 1px 0 hsl(var(--foreground) / 0.08),
+    0 14px 38px -12px hsl(var(--primary) / 0.6);
+}
