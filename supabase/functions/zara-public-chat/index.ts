@@ -64,9 +64,15 @@ const SYSTEM_PROMPT_BASE = `You are Zara, an AI assistant for Presale Properties
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "content-type, x-presale-site-token",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-presale-site-token",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
+
+function errJson(error: string, message: string, status: number, extra: Record<string, unknown> = {}) {
+  return new Response(JSON.stringify({ error, message, ...extra }), {
+    status, headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+}
 
 function svc() {
   return createClient(SUPABASE_URL, SERVICE_ROLE, { auth: { persistSession: false, autoRefreshToken: false } });
@@ -274,37 +280,39 @@ Deno.serve(async (req) => {
     // Token gate
     const presented = req.headers.get("x-presale-site-token") ?? "";
     if (!PRESALE_SITE_TOKEN || presented !== PRESALE_SITE_TOKEN) {
-      return new Response(JSON.stringify({ error: "unauthorized" }), {
-        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return errJson("unauthorized", "Missing or invalid x-presale-site-token header.", 401);
     }
 
     const body = await req.json().catch(() => null);
     if (!body || !Array.isArray(body.messages) || body.messages.length === 0 || !body.presale_user_id) {
-      return new Response(JSON.stringify({ error: "messages[] and presale_user_id required" }), {
-        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return errJson("bad_request", "messages[] and presale_user_id are required.", 400);
     }
+
+    // Truncate to last 50 turns
+    if (body.messages.length > 50) body.messages = body.messages.slice(-50);
+
     const presale_user_id: string = String(body.presale_user_id).slice(0, 128);
     const known_email: string | null = body.known_email ? String(body.known_email).slice(0, 256) : null;
     const known_phone: string | null = body.known_phone ? String(body.known_phone).slice(0, 64) : null;
     const page_context = body.page_context ?? null;
-    const latestUserMsg = String(body.messages[body.messages.length - 1]?.content ?? "").slice(0, 8000);
-    if (!latestUserMsg) {
-      return new Response(JSON.stringify({ error: "empty message" }), {
-        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+    const latestUserMsgRaw = String(body.messages[body.messages.length - 1]?.content ?? "");
+    if (!latestUserMsgRaw) {
+      return errJson("empty_message", "Latest user message is empty.", 400);
     }
+    if (latestUserMsgRaw.length > 4000) {
+      return errJson("message_too_long", "Messages must be 4000 characters or fewer.", 413);
+    }
+    const latestUserMsg = latestUserMsgRaw;
 
-    // Rate limit (message side)
+    // Rate limit (message side) — 30 msg / hr per presale_user_id
     const sb = svc();
     const { data: rl } = await sb.rpc("zara_public_rate_check", {
       _presale_user_id: presale_user_id, _is_send: false, _msg_limit: 30, _send_limit: 10,
     });
     const rlRow = Array.isArray(rl) ? rl[0] : rl;
     if (rlRow && rlRow.allowed === false) {
-      return new Response(JSON.stringify({ error: "rate_limited", retry_after_seconds: rlRow.retry_after_seconds }), {
-        status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      return errJson("rate_limited", "Too many messages — slow down.", 429, {
+        retry_after_seconds: rlRow.retry_after_seconds,
       });
     }
 
@@ -415,8 +423,6 @@ Deno.serve(async (req) => {
       },
     });
   } catch (e) {
-    return new Response(JSON.stringify({ error: String((e as Error).message ?? e) }), {
-      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return errJson("server_error", String((e as Error).message ?? e), 500);
   }
 });
