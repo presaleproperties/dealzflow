@@ -115,6 +115,8 @@ export function useZaraDockChat(conversationId: string | null, pageContext: Zara
     setStreamText('');
     setStreamTools([]);
     setStreamSources(null);
+    setLeadCandidates([]);
+    // Keep resolvedLead from prior turn until a new one arrives or stream ends without one.
 
     const { data: sess } = await supabase.auth.getSession();
     const token = sess.session?.access_token;
