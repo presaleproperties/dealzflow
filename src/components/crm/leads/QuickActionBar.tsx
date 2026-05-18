@@ -130,7 +130,8 @@ export function QuickActionBar({ contact }: Props) {
         return;
       }
       if (!subject.trim() || !body.trim()) return;
-      // Build minimal HTML: paragraphs from line breaks + signature
+      // Build minimal HTML: paragraphs from line breaks + canonical signature.
+      // Brand shell + tracking pixel are applied by bridge-send-email.
       const escaped = body
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
@@ -139,9 +140,7 @@ export function QuickActionBar({ contact }: Props) {
         .split(/\n{2,}/)
         .map((p) => `<p style="margin:0 0 1em">${p.replace(/\n/g, '<br>')}</p>`)
         .join('');
-      const sigBlock = sender.signature
-        ? `<div style="margin-top:1.5em">${sender.signature}</div>`
-        : '';
+      const sigBlock = activeSignatureHtml ? `<br/>${activeSignatureHtml}` : '';
       const rawHtml = `${paragraphs}${sigBlock}`;
       const html = renderForRecipient(rawHtml, { lead: contact as any, sender });
       const renderedSubject = renderForRecipient(subject, { lead: contact as any, sender });
