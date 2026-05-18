@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Send, Loader2, Mail, ChevronsUpDown, Check, Upload, FileText, Map, DollarSign, AlertCircle } from 'lucide-react';
+import { Send, Loader2, RefreshCw, ChevronsUpDown, Check, Upload, FileText, Map, DollarSign } from 'lucide-react';
 import { formatDistanceToNowStrict } from 'date-fns';
 import { ResponsiveDialog, ResponsiveDialogContent, ResponsiveDialogHeader, ResponsiveDialogTitle } from '@/components/ui/responsive-dialog';
 import { Button } from '@/components/ui/button';
@@ -15,8 +15,10 @@ import { useToast } from '@/hooks/use-toast';
 import type { CrmContact } from '@/hooks/useCrmContacts';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { loadAgentPrefs, saveAgentPrefs, loadContactDraft, saveContactDraft, clearContactDraft } from '@/lib/sendProjectMemory';
+import { loadAgentPrefs, saveAgentPrefs } from '@/lib/sendProjectMemory';
 import { useAuth } from '@/hooks/useAuth';
+import { useEmailSettings } from '@/hooks/useEmailSettings';
+import { pickSignatureForKind, useEmailSignatures } from '@/hooks/useEmailSignatures';
 
 interface Props {
   contact: CrmContact;
@@ -24,8 +26,11 @@ interface Props {
   onOpenChange: (open: boolean) => void;
 }
 
-interface Project { slug: string; name: string; city: string | null; status: string | null; presale_slug: string | null }
+interface Project { id: string; slug: string | null; name: string; city: string | null; status: string | null; presale_slug: string | null; updated_at: string | null }
 interface Template { slug: string; name: string; description?: string }
+
+const slugifyProjectName = (name: string) => name.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+const projectOptionValue = (project: Project) => project.presale_slug || project.slug || slugifyProjectName(project.name);
 
 // (Legacy FOLLOWUP_SLUG removed — funnel picker drives enroll_followup_slug.)
 
@@ -58,18 +63,16 @@ export function SendProjectDialog({ contact, open, onOpenChange }: Props) {
   const { data: projects = [] } = useQuery<Project[]>({
     queryKey: ['send-project.projects'],
     queryFn: async () => {
-      // Show ALL active projects. We previously filtered to rows that already
-      // had a `presale_slug` populated, but the sync sometimes leaves that
-      // column null even for valid Presale projects. The render-and-send
-      // edge fn falls back to the local slug when no presale_slug exists,
-      // so it's safe (and far more complete) to surface every active project.
-      const { data } = await supabase
+      // Show every active catalog row. Older imports may be missing `slug`, so
+      // the picker falls back to presale_slug/name-derived slugs and the edge
+      // function can still resolve against Presale's backend.
+      const { data, error } = await supabase
         .from('crm_projects')
-        .select('slug, name, city, status, presale_slug')
+        .select('id, slug, name, city, status, presale_slug, updated_at')
         .eq('is_active', true)
-        .not('slug', 'is', null)
         .order('name')
-        .limit(1000);
+        .limit(5000);
+      if (error) throw error;
       return (data ?? []) as Project[];
     },
     staleTime: 5 * 60 * 1000,
@@ -135,6 +138,8 @@ export function SendProjectDialog({ contact, open, onOpenChange }: Props) {
   // ─── Local state ─────────────────────────────────────────────────────────
   const queryClient = useQueryClient();
   const { user } = useAuth();
+  const { data: emailSettings } = useEmailSettings();
+  const { data: signatures = [] } = useEmailSignatures();
   const agentKey = user?.id ?? 'anon';
   const [projectSlug, setProjectSlug] = useState<string>('');
   const [templateSlug, setTemplateSlug] = useState<string>('');
@@ -159,6 +164,19 @@ export function SendProjectDialog({ contact, open, onOpenChange }: Props) {
   const [ctaCallNow, setCtaCallNow] = useState(true);
   // CTA URL override (per-email; blank = use Presale default)
   const [projectDetailsUrlOverride, setProjectDetailsUrlOverride] = useState<string>('');
+  const [syncingProjects, setSyncingProjects] = useState(false);
+  const selectedProject = useMemo(() => projects.find((p) => projectOptionValue(p) === projectSlug) ?? null, [projects, projectSlug]);
+  const projectStats = useMemo(() => {
+    const linked = projects.filter((p) => Boolean(p.presale_slug || p.slug)).length;
+    const lastSyncedMs = projects.reduce((max, p) => {
+      const ms = p.updated_at ? new Date(p.updated_at).getTime() : 0;
+      return Number.isFinite(ms) ? Math.max(max, ms) : max;
+    }, 0);
+    return { total: projects.length, linked, needsRepair: projects.length - linked, lastSyncedAt: lastSyncedMs ? new Date(lastSyncedMs) : null };
+  }, [projects]);
+  const activeSignature = useMemo(() => pickSignatureForKind(signatures, 'full') ?? signatures.find((s) => s.is_default) ?? signatures[0] ?? null, [signatures]);
+  const senderName = emailSettings?.sender_name || user?.email || 'Sender';
+  const senderEmail = emailSettings?.reply_to || user?.email || '';
 
   // Hydrate per-agent defaults (personal note + CTA toggles) once per open.
   const hydratedRef = useRef(false);
@@ -189,6 +207,24 @@ export function SendProjectDialog({ contact, open, onOpenChange }: Props) {
       defaultCtaCallNow: ctaCallNow,
     });
     toast({ title: 'Saved', description: 'These CTA defaults will apply to your future sends.' });
+  };
+
+  const handleSyncProjects = async () => {
+    setSyncingProjects(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('sync-presale-projects', { body: {} });
+      if (error) throw error;
+      await queryClient.invalidateQueries({ queryKey: ['send-project.projects'] });
+      await queryClient.invalidateQueries({ queryKey: ['crm-projects'] });
+      toast({
+        title: 'Projects synced',
+        description: `${data?.unique_projects ?? 'All'} Presale projects checked · ${data?.inserted ?? 0} new · ${data?.updated ?? 0} updated.`,
+      });
+    } catch (e) {
+      toast({ title: 'Project sync failed', description: e instanceof Error ? e.message : 'Try again.', variant: 'destructive' });
+    } finally {
+      setSyncingProjects(false);
+    }
   };
 
   // ─── Presale signup-style funnels (seeded in crm_automations) ────────────
@@ -267,9 +303,13 @@ export function SendProjectDialog({ contact, open, onOpenChange }: Props) {
     if (projectSlug) return;
     const contactProjects = (contact as unknown as { projects?: string[] }).projects ?? [];
     const match = projects.find(p =>
-      contactProjects.some(cp => cp && p.slug && cp.toLowerCase() === p.slug.toLowerCase()),
+      contactProjects.some(cp => {
+        if (!cp) return false;
+        const v = cp.toLowerCase();
+        return [p.slug, p.presale_slug, p.name].some((candidate) => candidate?.toLowerCase() === v);
+      }),
     );
-    setProjectSlug(match?.slug ?? projects[0].slug);
+    setProjectSlug(projectOptionValue(match ?? projects[0]));
   }, [open, projects, contact, projectSlug]);
 
   useEffect(() => {
@@ -368,7 +408,7 @@ export function SendProjectDialog({ contact, open, onOpenChange }: Props) {
       kind === 'brochure'    ? { brochure_url: url, brochure_filename: file.name } :
       kind === 'floor_plans' ? { floor_plans_url: url, floor_plans_filename: file.name } :
                                { pricing_url: url, pricing_filename: file.name };
-    const { error: updErr } = await supabase.from('crm_projects').update(patch).eq('slug', projectSlug);
+    const { error: updErr } = await supabase.from('crm_projects').update(patch).eq('id', selectedProject?.id ?? '');
     setUploadingKind(null);
     if (updErr) {
       toast({ title: 'Saved file but project update failed', description: updErr.message, variant: 'destructive' });
@@ -407,6 +447,8 @@ export function SendProjectDialog({ contact, open, onOpenChange }: Props) {
         cta_overrides: {
           project_details_url: projectDetailsUrlOverride.trim() || null,
         },
+        subject_override: subjectOverride || null,
+        personal_note: personalNote || null,
       },
     });
     setSending(false);
@@ -459,13 +501,54 @@ export function SendProjectDialog({ contact, open, onOpenChange }: Props) {
                 value={projectSlug}
                 onChange={setProjectSlug}
                 items={projects.map(p => ({
-                  value: p.slug,
+                  value: projectOptionValue(p),
                   label: p.name,
-                  hint: [p.city, p.status].filter(Boolean).join(' · '),
+                  hint: [p.city, p.status, p.presale_slug || p.slug ? 'linked' : 'needs sync'].filter(Boolean).join(' · '),
                 }))}
                 placeholder="Select project…"
-                emptyText="No projects with presale link."
+                emptyText="No projects found. Sync from Presale Properties."
               />
+              <div className="mt-2 rounded-md border border-border bg-muted/30 px-3 py-2 text-[11px] text-muted-foreground">
+                <div className="flex items-center justify-between gap-3">
+                  <span className="truncate">
+                    <span className="text-foreground font-medium">{projectStats.total}</span> synced projects
+                    <span className="mx-1.5">·</span>
+                    {projectStats.linked} linked
+                    {projectStats.needsRepair > 0 && <><span className="mx-1.5">·</span>{projectStats.needsRepair} need repair</>}
+                  </span>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    onClick={handleSyncProjects}
+                    disabled={syncingProjects}
+                    className="h-7 shrink-0 px-2 text-[11px]"
+                  >
+                    {syncingProjects ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <RefreshCw className="mr-1 h-3 w-3" />}
+                    Sync
+                  </Button>
+                </div>
+                {projectStats.lastSyncedAt && (
+                  <div className="mt-0.5">Last catalog update {formatDistanceToNowStrict(projectStats.lastSyncedAt, { addSuffix: true })}</div>
+                )}
+              </div>
+            </Field>
+
+            <Field label="Sender">
+              <div className="rounded-md border border-border bg-background px-3 py-2.5 text-sm">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="truncate font-medium text-foreground">{senderName}</div>
+                    <div className="truncate text-xs text-muted-foreground">{senderEmail || 'No reply-to email set'}</div>
+                  </div>
+                  <Link to="/crm/settings" className="shrink-0 text-[11px] underline text-muted-foreground hover:text-foreground">
+                    Edit
+                  </Link>
+                </div>
+                <div className="mt-2 border-t border-border pt-2 text-[11px] text-muted-foreground">
+                  Signature: <span className="text-foreground">{activeSignature?.name ?? (emailSettings?.signature_html ? 'Legacy signature' : 'Not set')}</span>
+                </div>
+              </div>
             </Field>
 
             {/* Template picker — Presale-styled email is auto-composed by the bridge */}
@@ -503,6 +586,15 @@ export function SendProjectDialog({ contact, open, onOpenChange }: Props) {
                   </button>
                 )}
               </div>
+            </Field>
+
+            <Field label="Subject override">
+              <Input
+                value={subjectOverride}
+                onChange={(e) => setSubjectOverride(e.target.value)}
+                placeholder="Use template subject"
+                className="h-9 text-sm"
+              />
             </Field>
 
             {/* Personal note — agent's own line, injected above the project card */}
