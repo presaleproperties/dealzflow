@@ -56,6 +56,7 @@ export function useCrmContactsLite() {
         const { data, error } = await supabase
           .from('crm_contacts')
           .select(LITE_COLUMNS)
+          .is('deleted_at', null)
           .order('created_at', { ascending: false })
           .range(from, from + PAGE_SIZE - 1);
         if (error) throw error;

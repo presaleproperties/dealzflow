@@ -143,6 +143,7 @@ export function useSegmentCounts(
         segments.map(async (seg) => {
           let query = supabase.from('crm_contacts').select('id', { count: 'exact', head: true });
           query = applyFilters(query, baseFilters);
+          query = query.is('deleted_at', null);
           if (seg.filter_config && Object.keys(seg.filter_config).length > 0) {
             query = query.eq('pipeline_segment_id', seg.id);
           }
