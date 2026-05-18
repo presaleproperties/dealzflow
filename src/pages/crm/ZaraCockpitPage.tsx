@@ -70,6 +70,7 @@ const TOOL_LABELS: Record<string, string> = {
   confirm_update_lead: 'Confirm lead update',
   draft_email: 'Draft email',
   draft_sms: 'Draft SMS',
+  draft_whatsapp: 'Draft WhatsApp',
   add_lead_note: 'Add note',
   add_lead_tag: 'Add tag',
   set_lead_status: 'Change status',
@@ -77,12 +78,57 @@ const TOOL_LABELS: Record<string, string> = {
   approve_draft: 'Approve & send draft',
 };
 
+const MESSAGE_TOOLS = new Set(['draft_email', 'draft_sms', 'draft_whatsapp']);
+
+function isEmptyInput(input: any) {
+  if (!input) return true;
+  if (typeof input !== 'object') return false;
+  return Object.keys(input).length === 0;
+}
+
+function MessagePreview({ toolName, input }: { toolName: string; input: any }) {
+  const isEmail = toolName === 'draft_email';
+  const subject = input?.subject?.trim?.();
+  const body = (input?.body ?? '').toString();
+  const purpose = input?.purpose;
+  const cta = input?.cta_text && input?.cta_url ? { text: input.cta_text, url: input.cta_url } : null;
+  return (
+    <div className="rounded-md border border-border/60 bg-background overflow-hidden">
+      {isEmail && (
+        <div className="px-3 py-2 border-b border-border/60 bg-muted/30 space-y-0.5">
+          {subject ? (
+            <div className="text-[13px] font-semibold leading-snug">{subject}</div>
+          ) : (
+            <div className="text-[12px] italic text-muted-foreground">No subject</div>
+          )}
+          {purpose && (
+            <div className="text-[10.5px] uppercase tracking-wider text-muted-foreground">
+              {purpose === 'project_details' ? 'Project details template' : 'Follow-up template'}
+            </div>
+          )}
+        </div>
+      )}
+      <div className="px-3 py-2.5 text-[13px] leading-relaxed whitespace-pre-wrap text-foreground">
+        {body || <span className="italic text-muted-foreground">Empty body</span>}
+      </div>
+      {cta && (
+        <div className="px-3 pb-3">
+          <span className="inline-block px-3 py-1.5 text-[11.5px] rounded-md bg-primary/10 text-primary border border-primary/30">
+            {cta.text} →
+          </span>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function ToolPill({ tool, onDecide, deciding }: {
   tool: ToolUiState;
   onDecide?: (pending_id: string, decision: 'approve' | 'deny') => void;
   deciding?: boolean;
 }) {
   const [open, setOpen] = useState(tool.status === 'pending');
+  const [showRaw, setShowRaw] = useState(false);
   const Icon = tool.status === 'running' ? Loader2 : Wrench;
   const tone =
     tool.status === 'error' || tool.status === 'denied' ? 'destructive'
@@ -90,9 +136,13 @@ function ToolPill({ tool, onDecide, deciding }: {
       : tool.status === 'pending' ? 'warning'
       : 'warning';
   const isPending = tool.status === 'pending' && !!tool.pending_id;
+  const isMessage = MESSAGE_TOOLS.has(tool.name);
+  const empty = isEmptyInput(tool.input);
   const borderCls = isPending
     ? 'border-amber-500/50 ring-1 ring-amber-500/20'
     : 'border-border/60';
+  const label = TOOL_LABELS[tool.name] ?? tool.name;
+
   return (
     <div className={`my-2 rounded-lg border bg-card text-[12px] overflow-hidden ${borderCls}`}>
       <button
@@ -100,22 +150,61 @@ function ToolPill({ tool, onDecide, deciding }: {
         className="w-full flex items-center gap-2 px-3 py-2 hover:bg-muted/50 transition-colors text-left"
       >
         <Icon className={`w-3.5 h-3.5 ${tool.status === 'running' ? 'animate-spin text-primary' : 'text-muted-foreground'}`} />
-        <span className="font-medium font-mono text-[11px]">{tool.name}</span>
+        <span className="font-medium text-[12px]">{label}</span>
         <Pill size="sm" tone={tone as any}>{tool.status === 'pending' ? 'needs approval' : tool.status}</Pill>
         <ChevronDown className={`w-3 h-3 ml-auto text-muted-foreground transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
       {open && (
-        <div className="border-t border-border/60 bg-muted/20 p-2 space-y-2">
-          {isPending && (
-            <div className="rounded-md border border-amber-500/40 bg-amber-500/5 p-2.5">
-              <div className="text-[12px] font-semibold mb-1.5">
-                {TOOL_LABELS[tool.name] ?? 'Action'} — approval required
+        <div className="border-t border-border/60 bg-muted/10 p-3 space-y-3">
+          {isPending && isMessage && empty && (
+            <div className="rounded-md border border-destructive/40 bg-destructive/5 p-3 text-[12px] text-destructive">
+              Zara tried to queue a {tool.name === 'draft_email' ? 'draft email' : 'draft message'} without writing it.
+              Deny this and ask her to write the actual message.
+            </div>
+          )}
+
+          {isPending && isMessage && !empty && (
+            <>
+              <MessagePreview toolName={tool.name} input={tool.input} />
+              <div className="flex items-center gap-2 justify-end">
+                <button
+                  onClick={() => setShowRaw((s) => !s)}
+                  className="text-[11px] text-muted-foreground hover:text-foreground underline"
+                >
+                  {showRaw ? 'Hide raw' : 'View raw'}
+                </button>
+                <div className="flex-1" />
+                <button
+                  disabled={deciding}
+                  onClick={() => onDecide?.(tool.pending_id!, 'deny')}
+                  className="px-3 py-1.5 text-[12px] rounded-md border border-border hover:bg-muted/60 disabled:opacity-50"
+                >
+                  Deny
+                </button>
+                <button
+                  disabled={deciding}
+                  onClick={() => onDecide?.(tool.pending_id!, 'approve')}
+                  className="px-3 py-1.5 text-[12px] rounded-md bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 inline-flex items-center gap-1"
+                >
+                  {deciding ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
+                  Approve & send
+                </button>
               </div>
-              <div className="text-[11.5px] text-muted-foreground mb-2">
-                Zara wants to run <span className="font-mono">{tool.name}</span>. Review the input below and confirm.
+              {showRaw && (
+                <pre className="text-[10.5px] font-mono whitespace-pre-wrap break-words bg-background rounded p-2 border border-border/40 max-h-48 overflow-auto">
+                  {JSON.stringify(tool.input, null, 2)}
+                </pre>
+              )}
+            </>
+          )}
+
+          {isPending && !isMessage && (
+            <div className="space-y-2">
+              <div className="text-[12px] text-muted-foreground">
+                {label} — approval required.
               </div>
-              {tool.input && (
-                <pre className="text-[10.5px] font-mono whitespace-pre-wrap break-words bg-background rounded p-2 border border-border/40 max-h-48 overflow-auto mb-2">
+              {!empty && (
+                <pre className="text-[10.5px] font-mono whitespace-pre-wrap break-words bg-background rounded p-2 border border-border/40 max-h-48 overflow-auto">
                   {JSON.stringify(tool.input, null, 2)}
                 </pre>
               )}
@@ -123,14 +212,14 @@ function ToolPill({ tool, onDecide, deciding }: {
                 <button
                   disabled={deciding}
                   onClick={() => onDecide?.(tool.pending_id!, 'deny')}
-                  className="px-3 py-1.5 text-[11.5px] rounded-md border border-border hover:bg-muted/60 disabled:opacity-50"
+                  className="px-3 py-1.5 text-[12px] rounded-md border border-border hover:bg-muted/60 disabled:opacity-50"
                 >
                   Deny
                 </button>
                 <button
                   disabled={deciding}
                   onClick={() => onDecide?.(tool.pending_id!, 'approve')}
-                  className="px-3 py-1.5 text-[11.5px] rounded-md bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 inline-flex items-center gap-1"
+                  className="px-3 py-1.5 text-[12px] rounded-md bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 inline-flex items-center gap-1"
                 >
                   {deciding ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
                   Approve & run
@@ -138,21 +227,24 @@ function ToolPill({ tool, onDecide, deciding }: {
               </div>
             </div>
           )}
-          {!isPending && tool.input && (
-            <div>
-              <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Input</div>
-              <pre className="text-[10.5px] font-mono whitespace-pre-wrap break-words bg-background rounded p-2 border border-border/40">
-                {JSON.stringify(tool.input, null, 2)}
-              </pre>
-            </div>
+
+          {!isPending && isMessage && !empty && (
+            <MessagePreview toolName={tool.name} input={tool.input} />
           )}
-          {tool.output && (
-            <div>
-              <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Output</div>
-              <pre className="text-[10.5px] font-mono whitespace-pre-wrap break-words bg-background rounded p-2 border border-border/40 max-h-64 overflow-auto">
+
+          {!isPending && !isMessage && tool.input && !empty && (
+            <pre className="text-[10.5px] font-mono whitespace-pre-wrap break-words bg-background rounded p-2 border border-border/40 max-h-40 overflow-auto">
+              {JSON.stringify(tool.input, null, 2)}
+            </pre>
+          )}
+
+          {tool.output && tool.status !== 'pending' && (
+            <details className="text-[11px]">
+              <summary className="cursor-pointer text-muted-foreground hover:text-foreground">Result</summary>
+              <pre className="mt-1 text-[10.5px] font-mono whitespace-pre-wrap break-words bg-background rounded p-2 border border-border/40 max-h-48 overflow-auto">
                 {JSON.stringify(tool.output, null, 2)}
               </pre>
-            </div>
+            </details>
           )}
         </div>
       )}
