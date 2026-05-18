@@ -444,7 +444,7 @@ Draft the outbound message per the system rules. Strict JSON only.`;
         reasoning: String(ai?.reasoning ?? '').slice(0, 500),
         confidence,
         scheduled_for: new Date().toISOString(),
-        source_event: { trigger, context, model, lang: 'en', lead_language: lead.language ?? 'en' },
+        source_event: { trigger, context, model, lang: 'en', lead_language: lead.language ?? 'en', template_key: templateKey, template_id: templateId },
       })
       .select('id')
       .single();
