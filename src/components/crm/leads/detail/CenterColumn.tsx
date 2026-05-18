@@ -358,7 +358,7 @@ export function CenterColumn({ contact, onCall, onText, onEmail, onTask, onShowi
         </div>
 
         <div className="px-3 md:px-0">
-          <EngagementTimeline contactId={contact.id} />
+          <CollapsibleEngagementTimeline contactId={contact.id} />
         </div>
 
         <div className="px-3 md:px-0 space-y-3">
