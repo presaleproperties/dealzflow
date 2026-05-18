@@ -30,6 +30,8 @@ type Draft = {
   trigger_kind: string;
   subject: string | null;
   body: string;
+  original_subject: string | null;
+  original_body: string | null;
   reasoning: string | null;
   confidence: number | null;
   scheduled_for: string;
@@ -39,6 +41,19 @@ type Draft = {
   send_meta: any;
   created_at: string;
 };
+
+const FEEDBACK_LABELS: { key: string; label: string; tone: 'good' | 'bad' | 'neutral' }[] = [
+  { key: 'sounds_like_uzair', label: 'Sounds Like Uzair', tone: 'good' },
+  { key: 'good_tone', label: 'Good Tone', tone: 'good' },
+  { key: 'good_investor_angle', label: 'Good Investor Angle', tone: 'good' },
+  { key: 'too_robotic', label: 'Too Robotic', tone: 'bad' },
+  { key: 'too_pushy', label: 'Too Pushy', tone: 'bad' },
+  { key: 'too_long', label: 'Too Long', tone: 'bad' },
+  { key: 'too_salesy', label: 'Too Salesy', tone: 'bad' },
+  { key: 'weak_cta', label: 'Weak CTA', tone: 'bad' },
+  { key: 'needs_more_trust', label: 'Needs More Trust Building', tone: 'neutral' },
+  { key: 'escalate_to_uzair', label: 'Escalate To Uzair', tone: 'neutral' },
+];
 
 type Contact = {
   id: string;
