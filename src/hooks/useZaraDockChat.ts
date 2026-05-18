@@ -100,6 +100,8 @@ export function useZaraDockChat(conversationId: string | null, pageContext: Zara
   const [streamText, setStreamText] = useState('');
   const [streamTools, setStreamTools] = useState<ToolUiState[]>([]);
   const [streamSources, setStreamSources] = useState<StreamSources>(null);
+  const [resolvedLead, setResolvedLead] = useState<any | null>(null);
+  const [leadCandidates, setLeadCandidates] = useState<any[]>([]);
   const abortRef = useRef<AbortController | null>(null);
 
   const stop = useCallback(() => abortRef.current?.abort(), []);
