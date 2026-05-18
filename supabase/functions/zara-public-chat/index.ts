@@ -305,7 +305,7 @@ Deno.serve(async (req) => {
     }
     const latestUserMsg = latestUserMsgRaw;
 
-    // Rate limit (message side) — 30 msg / hr per presale_user_id
+    // Rate limit (message side) — 60 msg / hr per presale_user_id
     const sb = svc();
     const { data: rl } = await sb.rpc("zara_public_rate_check", {
       _presale_user_id: presale_user_id, _is_send: false, _msg_limit: 60, _send_limit: 10,
