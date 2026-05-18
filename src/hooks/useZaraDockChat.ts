@@ -250,7 +250,7 @@ export function useZaraDockChat(conversationId: string | null, pageContext: Zara
     return out;
   }, [messages, pendingByUseId]);
 
-  return { messages, rendered, send, stop, streaming, streamText, streamTools, streamSources, decide, decidingId };
+  return { messages, rendered, send, stop, streaming, streamText, streamTools, streamSources, decide, decidingId, resolvedLead, leadCandidates, clearResolvedLead: () => setResolvedLead(null) };
 }
 
 /** Lightweight conversation CRUD shared by the overlay. */
