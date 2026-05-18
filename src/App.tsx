@@ -349,6 +349,7 @@ const App = () => (
                     <Route path="/crm/calendar" element={<ProtectedRoute><CrmLayout><CrmCalendarPage /></CrmLayout></ProtectedRoute>} />
                     <Route path="/crm/reports" element={<ProtectedRoute><CrmLayout><CrmReportsPage /></CrmLayout></ProtectedRoute>} />
                     <Route path="/crm/reports/engagement" element={<ProtectedRoute><CrmLayout><CrmEngagementReportsPage /></CrmLayout></ProtectedRoute>} />
+                    <Route path="/crm/needs-review" element={<ProtectedRoute><CrmLayout><CrmNeedsReviewPage /></CrmLayout></ProtectedRoute>} />
                     <Route path="/crm/zara" element={<ProtectedRoute><CrmLayout><ZaraCockpitPage /></CrmLayout></ProtectedRoute>} />
                     <Route path="/crm/zara/queue" element={<ProtectedRoute><CrmLayout><ZaraQueuePage /></CrmLayout></ProtectedRoute>} />
                     <Route path="/crm/zara/projects" element={<ProtectedRoute><CrmLayout><ZaraProjectsPage /></CrmLayout></ProtectedRoute>} />
