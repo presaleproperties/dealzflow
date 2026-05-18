@@ -301,14 +301,14 @@ export function ZaraSection({ contact }: { contact: CrmContact }) {
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
                 onKeyDown={(e) => {
-                  if ((e.metaKey || e.ctrlKey) && e.key === 'Enter' && prompt.trim()) {
+                  if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing && prompt.trim()) {
                     e.preventDefault();
                     run('custom', { prompt: prompt.trim() });
                   }
                 }}
                 rows={2}
-                placeholder="Tell Zara what to do…  ⌘⏎ to send"
-                className="zara-input resize-none min-h-[56px]"
+                placeholder="Tell Zara what to do…  Enter to send"
+                className="zara-input resize-none min-h-[56px] text-[16px] sm:text-[14px]"
               />
               <div className="flex items-center justify-between gap-2 pt-2">
                 <div className="flex gap-1 overflow-x-auto pb-0.5 -mx-0.5 px-0.5">
