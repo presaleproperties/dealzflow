@@ -762,92 +762,38 @@ export default function ZaraCockpitPage() {
     <div className="flex flex-1 min-h-0 h-full -mx-4 -my-4 bg-background">
       {/* LEFT — Conversations rail (desktop) */}
       <aside className="hidden md:flex w-[240px] shrink-0 border-r border-border/60 flex-col min-h-0">
-
-        <div className="p-3 border-b border-border/60 space-y-2">
-          <Button className="w-full bg-primary text-primary-foreground hover:bg-primary/90" size="sm" onClick={() => newConv.mutate()}>
-            <Plus className="w-3.5 h-3.5 mr-1.5" />
-            New conversation
-          </Button>
-          <div className="relative">
-            <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
-            <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search" className="h-8 pl-7 text-[12px]" />
-          </div>
-        </div>
-        <div className="flex-1 min-h-0 overflow-y-auto p-1.5 space-y-0.5">
-          {filteredConvs.length === 0 && (
-            <div className="text-center text-[11px] text-muted-foreground py-8 px-3">
-              No conversations yet. Start one with "New conversation".
-            </div>
-          )}
-          {filteredConvs.map((c) => (
-            <button
-              key={c.id}
-              onClick={() => setActiveId(c.id)}
-              onContextMenu={(e) => {
-                e.preventDefault();
-                const choice = window.prompt('Action: pin | archive', 'pin');
-                if (choice === 'pin') togglePin(c);
-                else if (choice === 'archive') archive(c);
-              }}
-              className={`w-full text-left px-2.5 py-2 rounded-md transition-colors ${
-                activeId === c.id ? 'bg-primary/10 text-foreground' : 'hover:bg-muted/60 text-foreground/90'
-              }`}
-            >
-              <div className="flex items-center gap-1.5 mb-0.5">
-                {c.pinned && <Pin className="w-3 h-3 text-primary shrink-0" />}
-                <span className="text-[13px] font-medium truncate">{c.title}</span>
-              </div>
-              <div className="text-[10.5px] text-muted-foreground">
-                {c.last_message_at
-                  ? formatDistanceToNow(new Date(c.last_message_at), { addSuffix: true })
-                  : formatDistanceToNow(new Date(c.created_at), { addSuffix: true })}
-              </div>
-            </button>
-          ))}
-        </div>
-        <div className="p-2.5 border-t border-border/60 space-y-1.5">
-          <Link to="/crm/zara/queue" className="flex items-center justify-between text-[12px] px-2 py-1.5 rounded-md hover:bg-muted/60 transition-colors">
-            <span className="flex items-center gap-1.5"><Inbox className="w-3.5 h-3.5" />Approval queue</span>
-            <span className="flex items-center gap-1">
-              {pendingCount > 0 && <Pill size="sm" tone="warning">{pendingCount}</Pill>}
-              <ChevronRight className="w-3 h-3 text-muted-foreground" />
-            </span>
-          </Link>
-          <Link to="/crm/zara/projects" className="flex items-center justify-between text-[12px] px-2 py-1.5 rounded-md hover:bg-muted/60 transition-colors">
-            <span className="flex items-center gap-1.5"><Building2 className="w-3.5 h-3.5" />Project catalog</span>
-            <ChevronRight className="w-3 h-3 text-muted-foreground" />
-          </Link>
-          <Link to="/crm/zara/training" className="flex items-center justify-between text-[12px] px-2 py-1.5 rounded-md hover:bg-muted/60 transition-colors">
-            <span className="flex items-center gap-1.5"><Brain className="w-3.5 h-3.5" />Self-awareness</span>
-            <ChevronRight className="w-3 h-3 text-muted-foreground" />
-          </Link>
-          <Link to="/crm/zara/engagement" className="flex items-center justify-between text-[12px] px-2 py-1.5 rounded-md hover:bg-muted/60 transition-colors">
-            <span className="flex items-center gap-1.5"><ActivityIcon className="w-3.5 h-3.5" />Engagement status</span>
-            <ChevronRight className="w-3 h-3 text-muted-foreground" />
-          </Link>
-          <Link to="/crm/zara/audit" className="flex items-center justify-between text-[12px] px-2 py-1.5 rounded-md hover:bg-muted/60 transition-colors">
-            <span className="flex items-center gap-1.5"><FileText className="w-3.5 h-3.5" />Outbound audit</span>
-            <ChevronRight className="w-3 h-3 text-muted-foreground" />
-          </Link>
-          <Link to="/crm/settings#zara" className="flex items-center justify-between text-[12px] px-2 py-1.5 rounded-md hover:bg-muted/60 transition-colors">
-            <span>Mode</span>
-            <Pill size="sm" tone={modePill.tone}>{modePill.label}</Pill>
-          </Link>
-        </div>
+        {railContent}
       </aside>
+
+      {/* Mobile rail drawer */}
+      <Sheet open={railOpen} onOpenChange={setRailOpen}>
+        <SheetContent side="left" className="w-[280px] p-0 flex flex-col">
+          {railContent}
+        </SheetContent>
+      </Sheet>
 
       {/* CENTER — Chat */}
       <section className="flex-1 min-w-0 flex flex-col">
-        <header className="px-5 py-3 border-b border-border/60 flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <Sparkles className="w-4 h-4 text-primary" />
-            <h1 className="text-[15px] font-semibold tracking-tight">Zara</h1>
+        <header className="px-3 sm:px-5 py-3 border-b border-border/60 flex items-center justify-between gap-2 sm:gap-3"
+          style={{ paddingTop: 'calc(12px + env(safe-area-inset-top))' }}>
+          <div className="flex items-center gap-2 min-w-0">
+            <button
+              type="button"
+              onClick={() => setRailOpen(true)}
+              className="md:hidden p-2 -ml-2 rounded-md hover:bg-muted/60 min-w-[44px] min-h-[44px] flex items-center justify-center"
+              aria-label="Open conversations"
+            >
+              <Menu className="w-5 h-5" />
+            </button>
+            <Sparkles className="w-4 h-4 text-primary shrink-0" />
+            <h1 className="text-[15px] font-semibold tracking-tight truncate">Zara</h1>
             <Pill size="sm" tone={modePill.tone}>{modePill.label}</Pill>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             <AutonomyControl />
             <span className="text-[11px] text-muted-foreground hidden lg:inline">Cmd/Ctrl+J · type / for commands</span>
           </div>
+
         </header>
 
         <ZaraKillSwitch />
