@@ -34,6 +34,46 @@ export function ZaraQueuedEmailsPanel({ contactId }: { contactId: string }) {
   const qc = useQueryClient();
   const [openId, setOpenId] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [editId, setEditId] = useState<string | null>(null);
+  const [draftSubject, setDraftSubject] = useState('');
+  const [draftHtml, setDraftHtml] = useState('');
+
+  const startEdit = (row: Row) => {
+    setEditId(row.id);
+    setOpenId(row.id);
+    setDraftSubject(row.subject ?? '');
+    setDraftHtml(row.body_html ?? '');
+  };
+  const cancelEdit = () => { setEditId(null); setDraftSubject(''); setDraftHtml(''); };
+
+  const saveEdits = async (row: Row, opts: { approve?: boolean; sendNow?: boolean } = {}) => {
+    setBusyId(row.id);
+    const patch: Record<string, unknown> = {
+      subject: draftSubject.trim() || row.subject,
+      body_html: draftHtml,
+    };
+    if (opts.approve || opts.sendNow) {
+      patch.needs_review = false;
+      patch.review_reason = null;
+    }
+    if (opts.sendNow) patch.send_at = new Date().toISOString();
+    const { error } = await supabase.from('crm_email_schedule').update(patch).eq('id', row.id);
+    if (error) {
+      setBusyId(null);
+      return toast.error(error.message);
+    }
+    if (opts.sendNow) {
+      supabase.functions.invoke('process-scheduled-emails', { body: { source: 'lead_panel_edit', rowId: row.id } })
+        .catch(() => { /* cron will pick it up */ });
+    }
+    setBusyId(null);
+    setEditId(null);
+    toast.success(
+      opts.sendNow ? 'Saved & sending now' : opts.approve ? 'Saved & approved' : 'Changes saved',
+    );
+    invalidate();
+  };
+
 
   const { data: rows = [], isLoading } = useQuery({
     queryKey: ['lead-queued-emails', contactId],
