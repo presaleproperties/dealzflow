@@ -326,7 +326,7 @@ function ToolPill({ tool, onDecide, deciding }: {
           )}
 
           {!isPending && isMessage && !empty && (
-            <MessagePreview toolName={tool.name} input={tool.input} />
+            <ReadOnlyMessagePreview toolName={tool.name} input={tool.input} />
           )}
 
           {!isPending && !isMessage && tool.input && !empty && (
