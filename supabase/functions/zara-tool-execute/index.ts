@@ -900,7 +900,7 @@ Deno.serve(async (req) => {
       "project_details", "recommend_projects_for_lead", "web_research",
       "show_engagement_score", "search_knowledge", "get_winning_pattern",
       "get_project_deep_dive", "get_market_context", "get_pricing", "enrich_lead",
-      "send_briefing_summary", "get_unit_availability",
+      "send_briefing_summary", "get_unit_availability", "get_floor_plans",
     ]);
     if (READ_ONLY.has(tool)) {
       await logAction(ctx, tool, args ?? {}, result, args?.contact_id ?? null);
