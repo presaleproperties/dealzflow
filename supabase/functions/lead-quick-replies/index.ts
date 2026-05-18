@@ -110,8 +110,9 @@ Return 3 distinct draft replies.`;
                   items: {
                     type: 'object',
                     properties: {
-                      label: { type: 'string', description: '2-4 word chip label, e.g. "Confirm showing"' },
-                      body:  { type: 'string', description: 'The draft text to insert' },
+                      label:   { type: 'string', description: '2-4 word chip label, e.g. "Confirm showing"' },
+                      subject: { type: 'string', description: 'Email subject line (4-7 words). Required when mode=email; ignored for sms.' },
+                      body:    { type: 'string', description: 'The draft text to insert' },
                     },
                     required: ['label', 'body'],
                   },
