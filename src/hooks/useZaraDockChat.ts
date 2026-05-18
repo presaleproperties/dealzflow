@@ -167,6 +167,8 @@ export function useZaraDockChat(conversationId: string | null, pageContext: Zara
             qc.invalidateQueries({ queryKey: ['zara-pending-tool-calls', convId] });
           } else if (ev === 'title') qc.invalidateQueries({ queryKey: ['zara-conversations'] });
           else if (ev === 'sources') setStreamSources(payload);
+          else if (ev === 'resolved_lead') setResolvedLead(payload.lead);
+          else if (ev === 'lead_candidates') setLeadCandidates(payload.candidates ?? []);
           else if (ev === 'warning') toast.warning(payload.message ?? 'Zara warning');
           else if (ev === 'error') toast.error(payload.message ?? 'Stream error');
           else if (ev === 'done') qc.invalidateQueries({ queryKey: ['zara-messages', convId] });
