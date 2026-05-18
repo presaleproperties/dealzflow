@@ -38,10 +38,11 @@ const PUBLIC_TOOL_ALLOWLIST = new Set<string>([
   "get_unit_availability",
   "escalate_to_human",
   "get_floor_plans",
+  "send_brochure",
 ]);
 
 // Tools that count toward the outbound-send rate limit (10/hr).
-const SEND_TOOLS = new Set<string>(["book_calendly", "attach_floorplan", "escalate_to_human"]);
+const SEND_TOOLS = new Set<string>(["book_calendly", "attach_floorplan", "escalate_to_human", "send_brochure"]);
 
 const SYSTEM_PROMPT_PUBLIC = `You are speaking to a PUBLIC VISITOR on presaleproperties.com, not to an internal agent.
 
