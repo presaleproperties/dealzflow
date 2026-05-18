@@ -33,6 +33,36 @@ import { HandoffBriefBanner } from '@/components/crm/zara/HandoffBriefBanner';
 
 type FilterType = 'all' | 'manual' | 'email' | 'sms' | 'call_log' | 'web' | 'system';
 
+function CollapsibleEngagementTimeline({ contactId }: { contactId: string }) {
+  const storageKey = 'crm-engagement-timeline-open';
+  const [open, setOpen] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    const v = window.localStorage.getItem(storageKey);
+    return v === null ? false : v === '1';
+  });
+  useEffect(() => {
+    try { window.localStorage.setItem(storageKey, open ? '1' : '0'); } catch {}
+  }, [open]);
+  return (
+    <div className="rounded-lg border border-border/60 bg-card/40">
+      <button
+        type="button"
+        onClick={() => setOpen(o => !o)}
+        className="w-full flex items-center justify-between gap-2 px-3 py-2 text-left hover:bg-muted/30 transition-colors rounded-lg"
+        aria-expanded={open}
+      >
+        <span className="text-[12px] font-medium text-foreground/80 uppercase tracking-wide">Engagement timeline</span>
+        <ChevronDown className={cn('h-4 w-4 text-muted-foreground transition-transform', open && 'rotate-180')} />
+      </button>
+      {open && (
+        <div className="px-3 pb-3 pt-1">
+          <EngagementTimeline contactId={contactId} />
+        </div>
+      )}
+    </div>
+  );
+}
+
 interface Props {
   contact: CrmContact;
   onCall: () => void;
