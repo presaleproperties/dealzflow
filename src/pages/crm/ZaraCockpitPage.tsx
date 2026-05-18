@@ -847,7 +847,7 @@ export default function ZaraCockpitPage() {
                     el.style.height = Math.min(el.scrollHeight, 220) + 'px';
                   }}
                   onKeyDown={(e) => {
-                    if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+                    if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
                       e.preventDefault();
                       sendTranscript();
                     } else if (e.key === 'Escape') {
@@ -861,7 +861,7 @@ export default function ZaraCockpitPage() {
                 />
                 <div className="mt-2 flex items-center justify-between gap-2">
                   <div className="text-[10.5px] text-muted-foreground">
-                    Cmd/Ctrl+Enter to send · Esc to discard
+                    Enter to send · Shift+Enter for newline · Esc to discard
                   </div>
                   <div className="flex items-center gap-1.5">
                     <Button size="sm" variant="outline" onClick={appendTranscriptToInput} disabled={!transcript.trim()}>
