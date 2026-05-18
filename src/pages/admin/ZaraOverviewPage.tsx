@@ -1,20 +1,16 @@
-// Zara Overview — new landing at /admin/zara (replaces old dashboard).
-// Uses ZaraShell sidebar. Existing rich dashboard moved to /admin/zara/live.
+// Zara Overview — Apple Intelligence v2.
+// Editorial number-first tiles, hairline dividers, no shadcn Cards.
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ZaraShell } from '@/components/admin/zara/ZaraShell';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Skeleton } from '@/components/ui/skeleton';
 import { supabase } from '@/integrations/supabase/client';
 import { ZARA_TEAM_ID, ZARA_EDGE_FUNCTIONS } from '@/lib/zaraConstants';
 import { toast } from 'sonner';
 import { formatDistanceToNow } from 'date-fns';
-import {
-  Sparkles, Activity, Database, Clock, Gauge, Heart, Play, FlaskConical, ExternalLink,
-} from 'lucide-react';
+import { Play } from 'lucide-react';
 
 type State = {
   settings: any;
@@ -38,14 +34,12 @@ export default function ZaraOverviewPage() {
     const [
       { data: settings },
       { data: ticks },
-      { data: tables },
       { data: score },
       { data: dist },
       { data: recent },
     ] = await Promise.all([
       supabase.from('crm_zara_settings').select('*').eq('id', 1).maybeSingle(),
       supabase.from('crm_audit_log').select('*').like('action', 'zara.tick%').order('occurred_at', { ascending: false }).limit(50),
-      supabase.rpc('crm_zara_pending_drafts_count'),
       supabase.rpc('crm_zara_behavior_score'),
       supabase.from('crm_contacts').select('zara_state').eq('assigned_to', ZARA_TEAM_ID).is('deleted_at', null),
       supabase.from('crm_audit_log').select('id, action, occurred_at, meta').eq('actor_label', 'zara')
@@ -63,14 +57,11 @@ export default function ZaraOverviewPage() {
     });
     const stateDist = Object.entries(counts).map(([state, count]) => ({ state, count }));
 
-    // table count via fixed list of zara tables (avoids needing pg_meta)
-    const tableCount = 8; // crm_zara_settings, drafts, insights, knowledge_gaps, model_calls, playbooks, zara_org_context, zara_system_prompts
-
     setS({
       settings,
       lastTick: ticks?.[0] ?? null,
       uptime,
-      tableCount,
+      tableCount: 8,
       behaviorScore: typeof score === 'number' ? score : 50,
       stateDist,
       recent: recent ?? [],
@@ -103,113 +94,152 @@ export default function ZaraOverviewPage() {
   }
 
   if (loading || !s) {
-    return <ZaraShell title="Overview"><Skeleton className="h-64 w-full" /></ZaraShell>;
+    return <ZaraShell title="Overview"><Skeleton className="h-64 w-full rounded-2xl" /></ZaraShell>;
   }
+
+  const totalLeads = s.stateDist.reduce((a, b) => a + b.count, 0);
 
   return (
     <ZaraShell
       title="Overview"
-      subtitle="Health, state distribution, recent activity"
+      subtitle="A quiet view of Zara's health, attention, and recent work."
       actions={
         <>
-          <Button variant="outline" size="sm" asChild>
-            <Link to="/admin/zara/live"><Activity className="h-4 w-4 mr-1" /> Live dashboard</Link>
+          <Button variant="ghost" size="sm" asChild className="text-[12px]">
+            <Link to="/admin/zara/live">Live dashboard</Link>
           </Button>
-          <Button size="sm" onClick={runPlanner} disabled={busy}>
-            <Play className="h-4 w-4 mr-1" /> Run planner now
+          <Button size="sm" onClick={runPlanner} disabled={busy} className="text-[12px]">
+            <Play className="h-3.5 w-3.5 mr-1.5" /> Run planner
           </Button>
         </>
       }
     >
-      {/* Stat tiles */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
-        <Tile icon={Activity} label="Edge functions" value={ZARA_EDGE_FUNCTIONS.length} />
-        <Tile icon={Database} label="Zara tables" value={s.tableCount} />
-        <Tile icon={Clock} label="Last tick" value={s.lastTick ? formatDistanceToNow(new Date(s.lastTick.occurred_at), { addSuffix: true }) : '—'} small />
-        <Tile icon={Gauge} label="7-day uptime" value={`${s.uptime}%`} tone={s.uptime >= 95 ? 'text-emerald-500' : 'text-amber-500'} />
-        <Tile icon={Heart} label="Behavior score" value={`${s.behaviorScore}/100`} tone={s.behaviorScore >= 70 ? 'text-emerald-500' : s.behaviorScore >= 50 ? 'text-amber-500' : 'text-rose-500'} />
-        <Card>
-          <CardContent className="p-4 flex flex-col gap-2">
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-muted-foreground">Kill switch</span>
-              <Switch checked={!!s.settings?.enabled} onCheckedChange={toggleKill} disabled={busy} />
-            </div>
-            <span className={`text-sm font-semibold ${s.settings?.enabled ? 'text-emerald-500' : 'text-muted-foreground'}`}>
-              {s.settings?.enabled ? 'Enabled' : 'Paused'}
-            </span>
-          </CardContent>
-        </Card>
+      {/* Number tiles — editorial, number first */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-10">
+        <Tile label="Edge functions" value={ZARA_EDGE_FUNCTIONS.length} />
+        <Tile label="Zara tables"    value={s.tableCount} />
+        <Tile
+          label="Last tick"
+          value={s.lastTick ? formatDistanceToNow(new Date(s.lastTick.occurred_at), { addSuffix: true }) : '—'}
+          small
+        />
+        <Tile
+          label="7-day uptime"
+          value={`${s.uptime}%`}
+          accent={s.uptime >= 95 ? 'emerald' : 'amber'}
+        />
+        <Tile
+          label="Behavior"
+          value={`${s.behaviorScore}`}
+          sub="/ 100"
+          accent={s.behaviorScore >= 70 ? 'emerald' : s.behaviorScore >= 50 ? 'amber' : 'rose'}
+        />
+        <KillSwitchTile enabled={!!s.settings?.enabled} onToggle={toggleKill} disabled={busy} />
       </div>
 
-      {/* State distribution + Recent */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <Card>
-          <CardHeader><CardTitle className="text-base">Lead state distribution</CardTitle></CardHeader>
-          <CardContent className="space-y-2">
+      {/* State distribution + Recent — flat layout, hairline only */}
+      <div className="grid grid-cols-1 lg:grid-cols-[1.3fr_1fr] gap-10">
+        <section>
+          <div className="flex items-baseline justify-between mb-4">
+            <h2 className="zara-section-head !mb-0">Lead state distribution</h2>
+            <span className="zara-meta">{totalLeads.toLocaleString()} leads</span>
+          </div>
+          <ul className="space-y-2.5">
             {ZARA_STATES.map((st) => {
               const row = s.stateDist.find((d) => d.state === st);
               const count = row?.count ?? 0;
-              const total = s.stateDist.reduce((a, b) => a + b.count, 0) || 1;
-              const pct = Math.round((count / total) * 100);
+              const pct = totalLeads ? Math.round((count / totalLeads) * 100) : 0;
               return (
-                <div key={st} className="flex items-center gap-3 text-sm">
-                  <div className="w-32 text-muted-foreground capitalize">{st.replace(/_/g, ' ')}</div>
-                  <div className="flex-1 h-2 bg-muted rounded overflow-hidden">
-                    <div className="h-full bg-primary" style={{ width: `${pct}%` }} />
+                <li key={st} className="grid grid-cols-[120px_1fr_auto] items-center gap-3">
+                  <span className="text-[12px] text-foreground/80 capitalize">{st.replace(/_/g, ' ')}</span>
+                  <div className="h-[3px] bg-foreground/[0.06] rounded-full overflow-hidden">
+                    <div
+                      className="h-full rounded-full transition-all duration-700 ease-out"
+                      style={{
+                        width: `${pct}%`,
+                        background: 'linear-gradient(90deg, hsl(var(--primary) / 0.55), hsl(var(--primary)))',
+                      }}
+                    />
                   </div>
-                  <div className="w-12 text-right tabular-nums">{count}</div>
-                </div>
+                  <span className="zara-meta w-14 text-right">{count.toLocaleString()}</span>
+                </li>
               );
             })}
-          </CardContent>
-        </Card>
+          </ul>
+        </section>
 
-        <Card>
-          <CardHeader><CardTitle className="text-base">Recent activity</CardTitle></CardHeader>
-          <CardContent className="space-y-2">
-            {s.recent.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No activity yet.</p>
-            ) : s.recent.map((r) => (
-              <div key={r.id} className="flex items-center gap-2 text-sm">
-                <Badge variant="outline" className="text-[10px]">{r.action.replace('zara.', '')}</Badge>
-                <span className="text-muted-foreground text-xs ml-auto">
-                  {formatDistanceToNow(new Date(r.occurred_at), { addSuffix: true })}
-                </span>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
+        <section>
+          <h2 className="zara-section-head">Recent activity</h2>
+          {s.recent.length === 0 ? (
+            <p className="text-[12.5px] text-muted-foreground italic">Nothing yet. Zara is listening.</p>
+          ) : (
+            <ul className="space-y-2.5">
+              {s.recent.map((r, i) => (
+                <li key={r.id}>
+                  <div className="flex items-baseline justify-between gap-3 py-1">
+                    <span className="text-[12.5px] text-foreground/85">
+                      {r.action.replace('zara.', '').replace(/_/g, ' ')}
+                    </span>
+                    <span className="zara-meta">
+                      {formatDistanceToNow(new Date(r.occurred_at), { addSuffix: true })}
+                    </span>
+                  </div>
+                  {i < s.recent.length - 1 && <hr className="zara-rule mt-1" />}
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
       </div>
 
-      {/* Quick test lead */}
-      <Card className="mt-4 border-dashed">
-        <CardContent className="p-4 flex items-center gap-3">
-          <FlaskConical className="h-5 w-5 text-amber-500" />
-          <div className="flex-1">
-            <div className="text-sm font-medium">Quick test lead</div>
-            <p className="text-xs text-muted-foreground">Coming next — creates a throwaway lead tagged <code>zara:test</code>, triggers the planner, watch a draft appear in /admin/zara/drafts.</p>
-          </div>
-          <Button size="sm" variant="outline" asChild>
-            <Link to="/admin/zara/drafts">Drafts <ExternalLink className="h-3 w-3 ml-1" /></Link>
-          </Button>
-        </CardContent>
-      </Card>
+      {/* Quick test lead — quiet footer */}
+      <hr className="zara-rule my-10" />
+      <div className="flex items-center justify-between gap-4">
+        <div>
+          <div className="zara-eyebrow">Sandbox</div>
+          <p className="text-[12.5px] text-muted-foreground mt-1.5 max-w-md leading-relaxed">
+            Create a throwaway lead tagged <code className="text-foreground/90">zara:test</code> and watch a draft appear in Drafts.
+          </p>
+        </div>
+        <Link to="/admin/zara/drafts" className="zara-link text-[12.5px]">
+          Open Drafts →
+        </Link>
+      </div>
     </ZaraShell>
   );
 }
 
-function Tile({ icon: Icon, label, value, tone, small }: {
-  icon: any; label: string; value: any; tone?: string; small?: boolean;
-}) {
+function Tile({
+  label, value, sub, small, accent,
+}: { label: string; value: any; sub?: string; small?: boolean; accent?: 'emerald' | 'amber' | 'rose' }) {
+  const accentColor =
+    accent === 'emerald' ? 'text-emerald-500' :
+    accent === 'amber'   ? 'text-amber-500'   :
+    accent === 'rose'    ? 'text-rose-500'    : '';
   return (
-    <Card>
-      <CardContent className="p-4">
-        <div className="flex items-center gap-2 mb-1">
-          <Icon className="h-3.5 w-3.5 text-muted-foreground" />
-          <span className="text-xs text-muted-foreground">{label}</span>
-        </div>
-        <div className={`font-semibold ${small ? 'text-sm' : 'text-2xl'} ${tone ?? ''}`}>{value}</div>
-      </CardContent>
-    </Card>
+    <div className="zara-tile">
+      <div className="zara-tile__label">{label}</div>
+      <div className={`zara-tile__num ${small ? 'zara-tile__num--sm' : ''} ${accentColor}`}>
+        {value}
+        {sub && <span className="text-[13px] text-muted-foreground/80 ml-1 font-normal">{sub}</span>}
+      </div>
+    </div>
   );
 }
+
+function KillSwitchTile({ enabled, onToggle, disabled }: {
+  enabled: boolean; onToggle: (v: boolean) => void; disabled: boolean;
+}) {
+  return (
+    <div className="zara-tile flex flex-col justify-between">
+      <div className="flex items-center justify-between">
+        <span className="zara-tile__label">Kill switch</span>
+        <Switch checked={enabled} onCheckedChange={onToggle} disabled={disabled} />
+      </div>
+      <div className={`mt-3 text-[15px] font-medium tracking-tight ${enabled ? 'text-emerald-500' : 'text-muted-foreground'}`}>
+        {enabled ? 'Live' : 'Paused'}
+      </div>
+    </div>
+  );
+}
+
