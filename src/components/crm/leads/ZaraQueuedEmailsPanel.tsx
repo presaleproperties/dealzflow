@@ -35,12 +35,15 @@ export function ZaraQueuedEmailsPanel({ contactId }: { contactId: string }) {
   const [openId, setOpenId] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [editId, setEditId] = useState<string | null>(null);
+  const [editMode, setEditMode] = useState<'rich' | 'html'>('rich');
   const [draftSubject, setDraftSubject] = useState('');
   const [draftHtml, setDraftHtml] = useState('');
+  const richRef = useRef<HTMLDivElement | null>(null);
 
   const startEdit = (row: Row) => {
     setEditId(row.id);
     setOpenId(row.id);
+    setEditMode('rich');
     setDraftSubject(row.subject ?? '');
     setDraftHtml(row.body_html ?? '');
   };
