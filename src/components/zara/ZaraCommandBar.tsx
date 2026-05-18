@@ -131,12 +131,7 @@ export function ZaraCommandBar() {
   }, [actions]);
 
   return (
-    <CommandDialog
-      open={open}
-      onOpenChange={setOpen}
-      title="Zara"
-      description={ctx.label ? `On ${ctx.label.toLowerCase()}` : 'Quick actions'}
-    >
+    <CommandDialog open={open} onOpenChange={setOpen}>
       <CommandInput placeholder="What do you want Zara to do?" />
       <CommandList className="max-h-[60dvh]">
         <CommandEmpty>No actions match.</CommandEmpty>

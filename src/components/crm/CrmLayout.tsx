@@ -9,6 +9,7 @@ import { PageTransition } from '@/components/layout/PageTransition';
 import { useLocation } from 'react-router-dom';
 import { SafeAreaPreview } from '@/components/dev/SafeAreaPreview';
 import { ZaraDock } from '@/components/zara/ZaraDock';
+import { ZaraCommandBar } from '@/components/zara/ZaraCommandBar';
 import { useZaraKeyboard } from '@/hooks/useZaraKeyboard';
 
 interface CrmLayoutProps {
@@ -46,6 +47,7 @@ export function CrmLayout({ requireRole, children }: CrmLayoutProps) {
       <RightRail />
       <BottomNav />
       <ZaraDock />
+      <ZaraCommandBar />
       <SafeAreaPreview />
     </CrmRouteGuard>
   );
