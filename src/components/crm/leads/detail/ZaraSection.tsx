@@ -25,6 +25,7 @@ import { cn } from '@/lib/utils';
 import { useZaraLeadMemory, isMemoryStale, type ZaraLeadFacts } from '@/hooks/useZaraLeadMemory';
 import { BookShowingDialog } from '../BookShowingDialog';
 import { TrainOnWinDialog } from './TrainOnWinDialog';
+import { ZaraContextStrip } from '@/components/zara/ZaraContextStrip';
 import type { CrmContact } from '@/hooks/useCrmContacts';
 
 type Channel = 'email' | 'sms' | 'whatsapp';
@@ -187,6 +188,9 @@ export function ZaraSection({ contact }: { contact: CrmContact }) {
             </div>
           </div>
         </div>
+
+        {/* ── retrieval intelligence (playbook + founder lens) ── */}
+        <ZaraContextStrip contactId={contactId} />
 
         {/* ── 1. Memory ── */}
         {(memory?.summary || rows.length > 0 || urgency) && (
