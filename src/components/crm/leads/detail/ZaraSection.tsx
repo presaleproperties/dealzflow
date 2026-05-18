@@ -25,6 +25,7 @@ import { cn } from '@/lib/utils';
 import { useZaraLeadMemory, isMemoryStale, type ZaraLeadFacts } from '@/hooks/useZaraLeadMemory';
 import { BookShowingDialog } from '../BookShowingDialog';
 import { TrainOnWinDialog } from './TrainOnWinDialog';
+import { ZaraContextStrip } from '@/components/zara/ZaraContextStrip';
 import type { CrmContact } from '@/hooks/useCrmContacts';
 
 type Channel = 'email' | 'sms' | 'whatsapp';
