@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { useZaraDock } from '@/stores/useZaraDock';
+import { useZaraCommandBar } from '@/stores/useZaraCommandBar';
 
 const TYPING_TAGS = new Set(['INPUT', 'TEXTAREA', 'SELECT']);
 function isTypingTarget(el: Element | null): boolean {
@@ -10,47 +11,46 @@ function isTypingTarget(el: Element | null): boolean {
 }
 
 /**
- * Global keyboard shortcuts for the Zara dock.
- * - Cmd/Ctrl+J → toggle dock
- * - Cmd/Ctrl+K → open + new conversation + focus input
- * - Cmd/Ctrl+/ → open + focus chat input
- * - Esc       → close dock (when no input focused)
- * - /         → open + focus history search (when no input focused)
+ * Global keyboard shortcuts for Zara.
+ *  ⌘K / Ctrl+K  → open command bar (contextual actions, Linear/Notion AI vibe)
+ *  ⌘J / Ctrl+J  → toggle dock (chat)
+ *  ⌘/           → open dock + focus input
+ *  Esc          → close dock when no input focused
+ *  /            → focus dock search when dock is already open
  */
 export function useZaraKeyboard() {
-  const { open, toggle, setOpen, setShowHistory, setConversationId } = useZaraDock();
+  const { open: dockOpen, toggle: toggleDock, setOpen: setDockOpen, setShowHistory } = useZaraDock();
+  const { toggle: toggleBar } = useZaraCommandBar();
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       const meta = e.metaKey || e.ctrlKey;
       const k = e.key.toLowerCase();
 
-      if (meta && k === 'j') {
-        e.preventDefault();
-        toggle();
-        setTimeout(() => window.dispatchEvent(new Event('zara-dock:focus-input')), 80);
-        return;
-      }
       if (meta && k === 'k') {
         e.preventDefault();
-        setOpen(true);
-        setConversationId(null);
-        setTimeout(() => window.dispatchEvent(new Event('zara-dock:new-and-focus')), 50);
+        toggleBar();
+        return;
+      }
+      if (meta && k === 'j') {
+        e.preventDefault();
+        toggleDock();
+        setTimeout(() => window.dispatchEvent(new Event('zara-dock:focus-input')), 80);
         return;
       }
       if (meta && k === '/') {
         e.preventDefault();
-        setOpen(true);
+        setDockOpen(true);
         setTimeout(() => window.dispatchEvent(new Event('zara-dock:focus-input')), 50);
         return;
       }
 
-      if (!open) return;
+      if (!dockOpen) return;
       if (isTypingTarget(document.activeElement)) return;
 
       if (e.key === 'Escape') {
         e.preventDefault();
-        setOpen(false);
+        setDockOpen(false);
         return;
       }
       if (e.key === '/') {
@@ -61,5 +61,5 @@ export function useZaraKeyboard() {
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [open, toggle, setOpen, setShowHistory, setConversationId]);
+  }, [dockOpen, toggleDock, setDockOpen, setShowHistory, toggleBar]);
 }
