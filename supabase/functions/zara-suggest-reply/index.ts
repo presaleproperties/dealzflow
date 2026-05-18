@@ -17,6 +17,7 @@ import {
   ZARA_MODEL_ESCALATION,
   type ZaraIntent,
 } from '../_shared/zara-guardrails.ts';
+import { fetchToneSample } from '../_shared/zara-email-enhance.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -65,6 +66,11 @@ Deno.serve(async (req) => {
         .order('occurred_at', { ascending: false })
         .limit(10),
     ]);
+
+    // 3b. Tone sample — last 1-2 inbound messages so the draft matches the
+    // lead's register (formal/casual, short/long, language) instead of
+    // reading as a form letter.
+    const toneSample = await fetchToneSample(admin, contactId, 2);
 
     // 4. Language detect
     const detectedLang = detectLanguage(inboundText);
@@ -191,7 +197,10 @@ ${eventLines}
 INBOUND MESSAGE (channel=${channel}, at=${inboundAt}):
 """${inboundText}"""
 
-Draft Zara's reply now. Return ONLY the JSON object.`;
+${toneSample ? `TONE SAMPLE (recent inbound messages from this lead — match their register, length, formality, emoji use, and language. Do not copy phrasing verbatim; mirror the cadence):
+${toneSample}
+
+` : ''}Draft Zara's reply now. Return ONLY the JSON object.`;
 
     // 6. Two-tier model routing.
     // Pass 1: heuristic intent + Haiku with intent-specific system prompt.
