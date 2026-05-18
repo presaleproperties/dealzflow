@@ -1,6 +1,12 @@
 // zara-execute-send — finalizes an approved draft. Sandbox gate refuses real leads.
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 import { corsHeaders, levenshtein } from '../_shared/zara-guardrails.ts';
+import {
+  applyNeverQuote,
+  getSendWindow,
+  hygiene,
+  preflightQA,
+} from '../_shared/zara-email-enhance.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
