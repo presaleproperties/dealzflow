@@ -24,6 +24,8 @@ import { SlashCommandPalette } from '@/components/crm/zara/SlashCommandPalette';
 import { ZaraKillSwitch } from '@/components/crm/zara/ZaraKillSwitch';
 import { AutonomyControl } from '@/components/crm/zara/AutonomyControl';
 import { DynamicSuggestions } from '@/components/crm/zara/DynamicSuggestions';
+import { useZaraLeadMemory } from '@/hooks/useZaraLeadMemory';
+import { useZaraNoteIntelligence } from '@/hooks/useZaraNoteIntelligence';
 
 
 type Conv = {
@@ -87,6 +89,122 @@ function isEmptyInput(input: any) {
 }
 
 type MessageOverrides = { subject?: string; body?: string; cta_text?: string; cta_url?: string };
+
+function uniq(arr: (string | null | undefined)[]): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const v of arr) {
+    const t = (v ?? '').toString().trim();
+    if (!t) continue;
+    const k = t.toLowerCase();
+    if (seen.has(k)) continue;
+    seen.add(k);
+    out.push(t);
+  }
+  return out;
+}
+
+function ChipRow({ label, items, tone = 'default' }: { label: string; items: string[]; tone?: 'default' | 'warn' | 'good' }) {
+  if (!items.length) return null;
+  const toneCls =
+    tone === 'warn' ? 'bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/30'
+      : tone === 'good' ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/30'
+      : 'bg-muted/60 text-foreground border-border/60';
+  return (
+    <div className="flex items-start gap-2 text-[11px]">
+      <span className="shrink-0 text-muted-foreground uppercase tracking-wider text-[10px] pt-0.5 w-[68px]">{label}</span>
+      <div className="flex flex-wrap gap-1">
+        {items.slice(0, 6).map((it, i) => (
+          <span key={i} className={`inline-block px-1.5 py-0.5 rounded border text-[11px] leading-tight ${toneCls}`}>
+            {it}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function LeadIntelligenceSummary({ contactId }: { contactId?: string }) {
+  const { data: memory } = useZaraLeadMemory(contactId);
+  const { data: noteIntel } = useZaraNoteIntelligence(contactId);
+
+  if (!contactId) return null;
+
+  const facts = memory?.facts ?? ({} as any);
+  const latestIntel = noteIntel?.[0];
+  const noteCount = noteIntel?.length ?? 0;
+
+  const objections = uniq([
+    ...(facts.objections ?? []),
+    ...(facts.emotional_objections ?? []),
+    facts.last_objection,
+    ...(noteIntel ?? []).flatMap((n) => n.objections ?? []),
+  ]);
+  const motivations = uniq([
+    ...(facts.motivations ?? []),
+    ...(noteIntel ?? []).flatMap((n) => n.motivations ?? []),
+  ]);
+  const concerns = uniq((noteIntel ?? []).flatMap((n) => n.financial_concerns ?? []));
+  const emotional = uniq([
+    facts.emotional_hesitation,
+    ...(noteIntel ?? []).map((n) => n.emotional_state),
+  ]);
+  const style = memory?.recommended_style || latestIntel?.recommended_style;
+  const nextStep = memory?.recommended_next_step || latestIntel?.recommended_next_step;
+  const summary = (memory?.intelligence_summary || latestIntel?.summary || '').trim();
+
+  const hasAnything =
+    summary || objections.length || motivations.length || concerns.length ||
+    emotional.length || style || nextStep || noteCount > 0;
+
+  if (!hasAnything) {
+    return (
+      <div className="rounded-md border border-dashed border-border/60 bg-muted/20 px-3 py-2 text-[11.5px] text-muted-foreground">
+        No lead intelligence on file yet — draft is grounded only in profile + activity data.
+      </div>
+    );
+  }
+
+  return (
+    <div className="rounded-md border border-primary/30 bg-primary/[0.04] px-3 py-2.5 space-y-2">
+      <div className="flex items-center gap-2">
+        <Brain className="w-3.5 h-3.5 text-primary" />
+        <span className="text-[11px] uppercase tracking-wider text-primary font-semibold">
+          Using lead intelligence
+        </span>
+        <span className="text-[10.5px] text-muted-foreground ml-auto">
+          {noteCount} note{noteCount === 1 ? '' : 's'} analyzed
+        </span>
+      </div>
+      {summary && (
+        <div className="text-[12px] leading-snug text-foreground italic">"{summary}"</div>
+      )}
+      <div className="space-y-1.5">
+        <ChipRow label="Feels" items={emotional} />
+        <ChipRow label="Wants" items={motivations} tone="good" />
+        <ChipRow label="Blocks" items={objections} tone="warn" />
+        <ChipRow label="Money" items={concerns} tone="warn" />
+      </div>
+      {(style || nextStep) && (
+        <div className="pt-1.5 border-t border-border/40 grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-1 text-[11px]">
+          {style && (
+            <div>
+              <span className="text-muted-foreground">Style: </span>
+              <span className="text-foreground">{style}</span>
+            </div>
+          )}
+          {nextStep && (
+            <div>
+              <span className="text-muted-foreground">Next: </span>
+              <span className="text-foreground">{nextStep}</span>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 
 function EditableMessagePreview({
   toolName, input, onChange,
@@ -257,6 +375,7 @@ function ToolPill({ tool, onDecide, deciding }: {
 
           {isPending && isMessage && !empty && (
             <>
+              <LeadIntelligenceSummary contactId={tool.input?.contact_id} />
               <EditableMessagePreview
                 toolName={tool.name}
                 input={tool.input}
