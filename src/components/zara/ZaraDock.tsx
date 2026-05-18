@@ -15,6 +15,13 @@ import { useZaraPageContext } from '@/hooks/useZaraPageContext';
 import { useZaraDockChat, useZaraConversations, type Conv } from '@/hooks/useZaraDockChat';
 import { getChipsForSurface } from '@/lib/zaraDockChips';
 import { ZaraQueuedEmailsPanel } from '@/components/crm/leads/ZaraQueuedEmailsPanel';
+import { ZaraDraftCard } from '@/components/zara/ZaraDraftCard';
+
+const DRAFT_TOOL_CHANNEL: Record<string, 'email' | 'sms' | 'whatsapp'> = {
+  draft_email: 'email',
+  draft_sms: 'sms',
+  draft_whatsapp: 'whatsapp',
+};
 
 const HIDDEN_PATTERNS: RegExp[] = [
   /^\/crm\/zara\/?$/, // cockpit
