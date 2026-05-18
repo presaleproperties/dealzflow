@@ -5,6 +5,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 import { logModelCall, captureLookupGaps, estimateTokens } from '../_shared/zara-logging.ts';
 import { autoSendDraft } from '../_shared/zara-send.ts';
+import { resolveTemplateForTrigger } from '../_shared/zara-email-enhance.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -267,6 +268,15 @@ Deno.serve(async (req) => {
       continue;
     }
 
+    // ── Registry lookup: trigger → template (slug + id) ────────────────
+    // Replaces hardcoded template_key=trigger. Falls back to trigger string
+    // when no registry row exists so audits/dedupe keep working.
+    const resolvedTpl = await resolveTemplateForTrigger(admin, trigger, null);
+    const templateKey: string = resolvedTpl?.slug ?? trigger;
+    const templateId: string | null = resolvedTpl?.id ?? null;
+    ruleEval.resolved_template_slug = resolvedTpl?.slug ?? null;
+    ruleEval.resolved_template_id = templateId;
+
     // ── Auto multi-project showcase branch ──────────────────────────────
     // When the matched trigger is configured for auto-showcase AND autonomous
     // sending is enabled (and not sandbox-blocked), invoke zara-send-project-details
@@ -296,7 +306,7 @@ Deno.serve(async (req) => {
       if ((priorShowcase ?? 0) > 0) {
         skipped.push({ id: lead.id, reason: 'showcase_recent' });
         await writeAudit({
-          contact_id: lead.id, trigger_kind: trigger, template_key: 'project-showcase',
+          contact_id: lead.id, trigger_kind: trigger, template_key: (resolvedTpl?.slug ?? 'project-showcase'),
           channel: 'email', decision: 'skipped',
           decision_reason: 'showcase already sent/queued in last 14 days',
           rule_evaluation: ruleEval,
@@ -318,7 +328,7 @@ Deno.serve(async (req) => {
         if (!r.ok || !out?.ok) {
           skipped.push({ id: lead.id, reason: 'showcase_failed', error: out?.error });
           await writeAudit({
-            contact_id: lead.id, trigger_kind: trigger, template_key: 'project-showcase',
+            contact_id: lead.id, trigger_kind: trigger, template_key: (resolvedTpl?.slug ?? 'project-showcase'),
             channel: 'email', decision: 'failed',
             decision_reason: `auto-showcase failed: ${out?.error ?? r.status}`,
             rule_evaluation: ruleEval,
@@ -327,7 +337,7 @@ Deno.serve(async (req) => {
         }
         generated.push({ contact_id: lead.id, trigger, channel: 'email', auto_showcase: true, draft_id: out.draft_id, project_count: out.project_count });
         await writeAudit({
-          contact_id: lead.id, trigger_kind: trigger, template_key: 'project-showcase',
+          contact_id: lead.id, trigger_kind: trigger, template_key: (resolvedTpl?.slug ?? 'project-showcase'),
           channel: 'email', decision: 'auto_showcase_queued',
           decision_reason: `auto-showcase queued (${out.project_count} projects) — awaiting send pipeline`,
           rule_evaluation: ruleEval,
@@ -337,7 +347,7 @@ Deno.serve(async (req) => {
       } catch (e) {
         skipped.push({ id: lead.id, reason: 'showcase_error', error: String(e) });
         await writeAudit({
-          contact_id: lead.id, trigger_kind: trigger, template_key: 'project-showcase',
+          contact_id: lead.id, trigger_kind: trigger, template_key: (resolvedTpl?.slug ?? 'project-showcase'),
           channel: 'email', decision: 'failed',
           decision_reason: `auto-showcase threw: ${String(e).slice(0, 200)}`,
           rule_evaluation: ruleEval,
@@ -356,7 +366,7 @@ Deno.serve(async (req) => {
     if ((existingPending ?? 0) > 0) {
       skipped.push({ id: lead.id, reason: 'duplicate_pending' });
       await writeAudit({
-        contact_id: lead.id, trigger_kind: trigger, template_key: trigger,
+        contact_id: lead.id, trigger_kind: trigger, template_key: templateKey,
         decision: 'skipped', decision_reason: 'duplicate pending draft already exists for this trigger',
         rule_evaluation: ruleEval,
       });
@@ -391,7 +401,7 @@ Draft the outbound message per the system rules. Strict JSON only.`;
       });
       skipped.push({ id: lead.id, reason: 'ai_error', error: String(e) });
       await writeAudit({
-        contact_id: lead.id, trigger_kind: trigger, template_key: trigger, channel, model,
+        contact_id: lead.id, trigger_kind: trigger, template_key: templateKey, channel, model,
         decision: 'failed', decision_reason: `AI draft generation failed: ${String(e).slice(0, 200)}`,
         rule_evaluation: ruleEval,
       });
@@ -403,7 +413,7 @@ Draft the outbound message per the system rules. Strict JSON only.`;
     if (!body) {
       skipped.push({ id: lead.id, reason: 'empty_body' });
       await writeAudit({
-        contact_id: lead.id, trigger_kind: trigger, template_key: trigger, channel, model,
+        contact_id: lead.id, trigger_kind: trigger, template_key: templateKey, channel, model,
         decision: 'failed', decision_reason: 'AI returned empty body',
         rule_evaluation: ruleEval,
       });
@@ -416,7 +426,7 @@ Draft the outbound message per the system rules. Strict JSON only.`;
     if (opts.dry_run) {
       generated.push({ contact_id: lead.id, trigger, channel, subject, body, reasoning: ai?.reasoning, confidence });
       await writeAudit({
-        contact_id: lead.id, trigger_kind: trigger, template_key: trigger, channel, model, confidence, subject,
+        contact_id: lead.id, trigger_kind: trigger, template_key: templateKey, channel, model, confidence, subject,
         decision: 'dry_run', decision_reason: 'dry_run mode — draft generated but not persisted',
         rule_evaluation: ruleEval,
       });
@@ -434,7 +444,7 @@ Draft the outbound message per the system rules. Strict JSON only.`;
         reasoning: String(ai?.reasoning ?? '').slice(0, 500),
         confidence,
         scheduled_for: new Date().toISOString(),
-        source_event: { trigger, context, model, lang: 'en', lead_language: lead.language ?? 'en' },
+        source_event: { trigger, context, model, lang: 'en', lead_language: lead.language ?? 'en', template_key: templateKey, template_id: templateId },
       })
       .select('id')
       .single();
@@ -442,7 +452,7 @@ Draft the outbound message per the system rules. Strict JSON only.`;
     if (insErr) {
       skipped.push({ id: lead.id, reason: 'insert_error', error: insErr.message });
       await writeAudit({
-        contact_id: lead.id, trigger_kind: trigger, template_key: trigger, channel, model, confidence, subject,
+        contact_id: lead.id, trigger_kind: trigger, template_key: templateKey, channel, model, confidence, subject,
         decision: 'failed', decision_reason: `draft insert failed: ${insErr.message}`,
         rule_evaluation: ruleEval,
       });
@@ -464,7 +474,7 @@ Draft the outbound message per the system rules. Strict JSON only.`;
     // SANDBOX GATE: block autonomous sends to non-test contacts when mode=sandbox.
     const isTestContact = tags.includes('zara_test_contact');
     const baseAudit = {
-      contact_id: lead.id, draft_id: inserted.id, trigger_kind: trigger, template_key: trigger,
+      contact_id: lead.id, draft_id: inserted.id, trigger_kind: trigger, template_key: templateKey,
       channel, model, confidence, subject, rule_evaluation: ruleEval,
     };
 
