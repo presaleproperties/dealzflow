@@ -157,6 +157,28 @@ ${priceRange ? `<div style="color:#14181F;font-size:16px;margin-bottom:10px;">${
   let { data: tpl } = await sb.from("crm_email_templates")
     .select("id, body_html, subject")
     .eq("slug", "project-showcase-zara").maybeSingle();
+  // ── Load Project Showcase scaffold ───────────────────────────────────
+  // 1) Try the registry (crm_zara_trigger_map → preferred/fallback slug,
+  //    agent-scoped first). 2) Legacy slug. 3) prefs.fallback_template_id.
+  const prefs = await getZaraEmailPrefs(sb);
+
+  // Resolve caller's presale slug for agent-scoped template preference.
+  let agentSlug: string | null = null;
+  try {
+    const lookupUserId = userId ?? (await resolveAssignedToUuid(sb, (contact as any).assigned_to));
+    if (lookupUserId) {
+      const { data: teamRow } = await sb.from("crm_team")
+        .select("presale_slug, slug").eq("user_id", lookupUserId).maybeSingle();
+      agentSlug = (teamRow as any)?.presale_slug ?? (teamRow as any)?.slug ?? null;
+    }
+  } catch (_) { /* non-fatal */ }
+
+  let tpl: any = await resolveTemplateForTrigger(sb, TRIGGER_KIND, agentSlug);
+  if (!tpl) {
+    ({ data: tpl } = await sb.from("crm_email_templates")
+      .select("id, body_html, subject")
+      .eq("slug", "project-showcase-zara").maybeSingle());
+  }
   if (!tpl && prefs.fallback_template_id) {
     ({ data: tpl } = await sb.from("crm_email_templates")
       .select("id, body_html, subject").eq("id", prefs.fallback_template_id).maybeSingle());
@@ -164,6 +186,10 @@ ${priceRange ? `<div style="color:#14181F;font-size:16px;margin-bottom:10px;">${
   if (!tpl) return reply({ ok: false, error: "Project Showcase template missing — re-run migration" }, 500);
 
   const sigHtml = prefs.append_signature && userId ? await resolveSignatureHtml(sb, userId) : "";
+
+  // Pull rolling memory for personalize context (best-effort).
+  const { data: memoryRow } = await sb.from("zara_lead_memory")
+    .select("summary, facts").eq("contact_id", contactId).maybeSingle();
 
   const vars: Record<string, string> = {
     first_name: firstName,
@@ -173,8 +199,37 @@ ${priceRange ? `<div style="color:#14181F;font-size:16px;margin-bottom:10px;">${
     signature_html: sigHtml,
     unsubscribe: "{{unsubscribe}}",
   };
-  const html = interpolate((tpl as any).body_html, vars);
-  const subject = interpolate((tpl as any).subject ?? "Curated projects for {{first_name}}", vars);
+  let html = interpolate((tpl as any).body_html, vars);
+  let subject = interpolate((tpl as any).subject ?? "Curated projects for {{first_name}}", vars);
+
+  // ── Personalize: merge {{first_name}}/{{matched_project}}/{{price_band}}/etc. ──
+  const mergeVars = buildMergeVars({
+    contact: contact as any,
+    memory: memoryRow as any,
+    matched_project: top[0] ? { name: top[0].name, city: top[0].city, price_from: top[0].price_from, price_to: top[0].price_to } : null,
+  });
+  html = personalize(html, mergeVars);
+  subject = personalize(subject, mergeVars);
+
+  // ── Preflight QA (blocks if no projects, empty body, unrendered tokens, etc.) ──
+  const qa = preflightQA({
+    to: (contact as any).email ?? null,
+    subject,
+    html,
+    channel: "email",
+    projectsCount: top.length,
+    signaturePresent: !!sigHtml,
+    requireProjects: true,
+  });
+  const blockers = qa.filter((i) => i.severity === "block");
+  if (blockers.length > 0) {
+    return reply({
+      ok: false,
+      error: "preflight_qa_blocked",
+      issues: qa,
+    }, 422);
+  }
+
   const text = htmlToPlain(html);
 
   // ── Resolve assigned_to safely ─────────────────────────────────────
