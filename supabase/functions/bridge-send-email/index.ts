@@ -91,6 +91,11 @@ interface SendBody {
   // Tier 2: if set, tags the crm_email_log row + (via trigger) the parent
   // thread so the send stays out of /crm/inbox until the lead replies.
   campaign_id?: string | null;
+  // Opt-out of the unified brand shell. Set to true ONLY for project
+  // templates pulled from Presale (render-and-send already produces a full
+  // branded <html> doc). All other senders should leave this unset so the
+  // shared shell is applied for visual consistency.
+  skip_brand_wrapper?: boolean;
 }
 
 Deno.serve(async (req) => {
