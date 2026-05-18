@@ -215,7 +215,7 @@ export default function ZaraQueuePage() {
         </div>
       </div>
 
-      <div className="flex items-center gap-3 flex-wrap px-4 py-2 border-b border-border text-[11px]">
+      <div className="flex items-center gap-3 flex-nowrap overflow-x-auto px-3 sm:px-4 py-2 border-b border-border text-[11px] scrollbar-thin">
         <FilterGroup label="Channel">
           {(['all','email','sms','whatsapp'] as const).map((v) => (
             <FilterChip key={v} active={fChannel === v} onClick={() => setFChannel(v)}>{v}</FilterChip>
