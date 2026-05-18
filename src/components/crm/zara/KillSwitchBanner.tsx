@@ -30,7 +30,15 @@ export function KillSwitchBanner() {
   if (!data?.kill_switch || dismissed) return null;
 
   return (
-    <div className="sticky top-0 z-50 w-full bg-red-600 text-white px-4 py-2 flex items-center justify-between text-[12.5px] font-medium shadow-md">
+    <div
+      className="sticky top-0 z-50 w-full bg-red-600 text-white px-4 flex items-center justify-between text-[12.5px] font-medium shadow-md"
+      style={{
+        paddingTop: 'calc(8px + env(safe-area-inset-top))',
+        paddingBottom: '8px',
+        paddingLeft: 'max(16px, env(safe-area-inset-left))',
+        paddingRight: 'max(16px, env(safe-area-inset-right))',
+      }}
+    >
       <div className="flex items-center gap-2 min-w-0">
         <AlertOctagon className="w-4 h-4 shrink-0" />
         <span className="truncate">
@@ -38,7 +46,7 @@ export function KillSwitchBanner() {
           {data.kill_switch_reason ? ` — ${data.kill_switch_reason}` : ''}
         </span>
       </div>
-      <button onClick={() => setDismissed(true)} className="text-white/80 hover:text-white text-[11px] underline ml-3 shrink-0">
+      <button onClick={() => setDismissed(true)} className="text-white/80 hover:text-white text-[11px] underline ml-3 shrink-0 min-h-[32px]">
         Hide
       </button>
     </div>
