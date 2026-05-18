@@ -55,11 +55,31 @@ async function getBrandSettings(supabase: any, userId: string | null | undefined
 
 type SendResult = { ok: true; provider: "gmail" | "presale"; messageId?: string | null; detail?: string } | { ok: false; provider: "gmail" | "presale" | "none"; error: string; retryable: boolean };
 
-function isAuthorized(req: Request): boolean {
-  const cronSecret = Deno.env.get("CRON_SECRET");
-  const provided = req.headers.get("x-cron-secret") || "";
-  if (cronSecret && provided && provided === cronSecret) return true;
+// Cached vault-resolved CRON_SECRET so we never drift from what pg_cron sends.
+let _cronSecretCache: { value: string | null; at: number } | null = null;
+async function resolveCronSecret(supabase: any): Promise<string | null> {
+  const fresh = _cronSecretCache && Date.now() - _cronSecretCache.at < 60_000;
+  if (fresh) return _cronSecretCache!.value;
+  let value: string | null = null;
+  try {
+    const { data } = await supabase
+      .from("vault.decrypted_secrets" as any)
+      .select("decrypted_secret")
+      .eq("name", "CRON_SECRET")
+      .maybeSingle();
+    value = (data as any)?.decrypted_secret ?? null;
+  } catch { /* vault not reachable */ }
+  if (!value) value = Deno.env.get("CRON_SECRET") ?? null;
+  _cronSecretCache = { value, at: Date.now() };
+  return value;
+}
 
+async function isAuthorized(req: Request, supabase: any): Promise<boolean> {
+  const provided = req.headers.get("x-cron-secret") || "";
+  if (provided) {
+    const cronSecret = await resolveCronSecret(supabase);
+    if (cronSecret && provided === cronSecret) return true;
+  }
   const auth = req.headers.get("authorization") || "";
   if (auth.toLowerCase().startsWith("bearer ")) {
     const token = auth.slice(7).trim();
