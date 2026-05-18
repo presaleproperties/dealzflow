@@ -30,6 +30,8 @@ type Draft = {
   trigger_kind: string;
   subject: string | null;
   body: string;
+  original_subject: string | null;
+  original_body: string | null;
   reasoning: string | null;
   confidence: number | null;
   scheduled_for: string;
@@ -39,6 +41,19 @@ type Draft = {
   send_meta: any;
   created_at: string;
 };
+
+const FEEDBACK_LABELS: { key: string; label: string; tone: 'good' | 'bad' | 'neutral' }[] = [
+  { key: 'sounds_like_uzair', label: 'Sounds Like Uzair', tone: 'good' },
+  { key: 'good_tone', label: 'Good Tone', tone: 'good' },
+  { key: 'good_investor_angle', label: 'Good Investor Angle', tone: 'good' },
+  { key: 'too_robotic', label: 'Too Robotic', tone: 'bad' },
+  { key: 'too_pushy', label: 'Too Pushy', tone: 'bad' },
+  { key: 'too_long', label: 'Too Long', tone: 'bad' },
+  { key: 'too_salesy', label: 'Too Salesy', tone: 'bad' },
+  { key: 'weak_cta', label: 'Weak CTA', tone: 'bad' },
+  { key: 'needs_more_trust', label: 'Needs More Trust Building', tone: 'neutral' },
+  { key: 'escalate_to_uzair', label: 'Escalate To Uzair', tone: 'neutral' },
+];
 
 type Contact = {
   id: string;
@@ -77,6 +92,8 @@ export default function ZaraDraftsPage() {
   const [planning, setPlanning] = useState(false);
   const [rejectOpen, setRejectOpen] = useState(false);
   const [rejectReason, setRejectReason] = useState('');
+  const [selectedLabels, setSelectedLabels] = useState<string[]>([]);
+  const [analyzing, setAnalyzing] = useState(false);
 
   useEffect(() => {
     if (!checking && !isAdmin) navigate('/');
@@ -128,6 +145,7 @@ export default function ZaraDraftsPage() {
     if (selected) {
       setEditSubject(selected.subject ?? '');
       setEditBody(selected.body);
+      setSelectedLabels([]);
     }
   }, [selectedId]); // eslint-disable-line
 
@@ -145,17 +163,56 @@ export default function ZaraDraftsPage() {
     } finally { setPlanning(false); }
   }
 
+  async function analyzeRewrite(draft: Draft, finalSubject: string, finalBody: string, wasApproved: boolean, extraNote?: string) {
+    const origBody = draft.original_body ?? draft.body;
+    const origSubject = draft.original_subject ?? draft.subject;
+    const bodyChanged = (origBody ?? '').trim() !== (finalBody ?? '').trim();
+    const subjChanged = (origSubject ?? '') !== (finalSubject ?? '');
+    if (!bodyChanged && !subjChanged && selectedLabels.length === 0) return; // nothing to learn
+    setAnalyzing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('zara-analyze-rewrite', {
+        body: {
+          draft_id: draft.id,
+          original_subject: origSubject,
+          original_body: origBody,
+          final_subject: finalSubject,
+          final_body: finalBody,
+          feedback_labels: selectedLabels,
+          notes: extraNote ?? null,
+          was_approved: wasApproved,
+        },
+      });
+      if (error) throw error;
+      const r: any = data;
+      if (r?.ok) toast.success('Zara learned from this rewrite');
+      else toast.warning(`Analysis: ${r?.error ?? 'no patterns extracted'}`);
+    } catch (e: any) {
+      // non-fatal — learning is best-effort
+      console.warn('analyze-rewrite failed', e);
+    } finally { setAnalyzing(false); }
+  }
+
   async function act(action: 'approve' | 'reject' | 'snooze' | 'mute', extra: Record<string, unknown> = {}) {
     if (!selected) return;
+    const current = selected;
     setBusy(true);
     try {
       const { data, error } = await supabase.functions.invoke('zara-draft-action', {
-        body: { draft_id: selected.id, action, ...extra },
+        body: { draft_id: current.id, action, ...extra },
       });
       if (error) throw error;
       const r: any = data;
       if (r?.error || r?.ok === false) toast.error(`${action} failed: ${r.error ?? 'unknown'}`);
       else toast.success(`${action === 'approve' ? 'Sent' : action.charAt(0).toUpperCase() + action.slice(1) + 'd'}`);
+
+      // Feed the learning loop when we approve or reject — capture the diff between original and final.
+      if (action === 'approve') {
+        await analyzeRewrite(current, editSubject, editBody, true);
+      } else if (action === 'reject') {
+        await analyzeRewrite(current, editSubject, editBody, false, (extra as any)?.reason);
+      }
+
       setSelectedId(null);
       load();
     } catch (e: any) { toast.error(e.message ?? String(e)); }
@@ -299,7 +356,44 @@ export default function ZaraDraftsPage() {
                       disabled={selected.status !== 'pending' && selected.status !== 'snoozed'}
                       className="mt-1 font-mono text-sm"
                     />
+                    {(selected.original_body && selected.original_body !== editBody) && (
+                      <p className="mt-1 text-[11px] text-muted-foreground italic">
+                        Edits detected — Zara will learn from this rewrite when you approve or reject.
+                      </p>
+                    )}
                   </div>
+
+                  {(selected.status === 'pending' || selected.status === 'snoozed') && (
+                    <div className="rounded-md border border-border bg-muted/20 p-3 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div className="text-xs font-medium text-foreground">Coach Zara on this draft</div>
+                        {analyzing && <span className="text-[10px] text-muted-foreground">Learning…</span>}
+                      </div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {FEEDBACK_LABELS.map((f) => {
+                          const on = selectedLabels.includes(f.key);
+                          const toneCls = on
+                            ? (f.tone === 'good' ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-600 dark:text-emerald-400'
+                               : f.tone === 'bad' ? 'bg-rose-500/15 border-rose-500/40 text-rose-600 dark:text-rose-400'
+                               : 'bg-primary/15 border-primary/40 text-primary')
+                            : 'bg-background hover:bg-muted text-muted-foreground border-border';
+                          return (
+                            <button
+                              key={f.key}
+                              type="button"
+                              onClick={() => setSelectedLabels((s) => s.includes(f.key) ? s.filter(x => x !== f.key) : [...s, f.key])}
+                              className={`text-[11px] px-2 py-1 rounded-full border transition ${toneCls}`}
+                            >
+                              {f.label}
+                            </button>
+                          );
+                        })}
+                      </div>
+                      <p className="text-[10px] text-muted-foreground">
+                        Labels feed into Zara's style memory together with your edits to body/subject.
+                      </p>
+                    </div>
+                  )}
 
                   {selected.status === 'pending' || selected.status === 'snoozed' ? (
                     <div className="flex flex-wrap gap-2">
