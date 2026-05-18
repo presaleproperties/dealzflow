@@ -65,7 +65,7 @@ Deno.serve(async (req) => {
         }
       }
 
-      await admin.from('crm_sms_log').insert({
+      const { data: inserted } = await admin.from('crm_sms_log').insert({
         user_id: assignedUserId,
         contact_id: contactId,
         direction: 'inbound',
@@ -80,7 +80,36 @@ Deno.serve(async (req) => {
         provider_message_id: resourceId,
         messaging_profile_id: resource?.messaging_profile_id ?? null,
         sent_at: resource?.received_at ?? new Date().toISOString(),
-      });
+      }).select('id').single();
+
+      // Fire-and-forget: notify assigned agent + ask Zara for a suggested reply.
+      if (contactId) {
+        const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
+        const SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+        // Notification → assigned agent (per CRM Notification Routing Rule)
+        admin.rpc('crm_send_notification', {
+          p_contact_id: contactId,
+          p_kind: `${channel}_inbound`,
+          p_title: `New ${channel.toUpperCase()} reply`,
+          p_body: (text || '').slice(0, 140),
+          p_url: `/crm/chats/${contactId}`,
+        }).then(() => {}, (e: any) => console.warn('[telnyx-webhook] notify failed', e?.message));
+
+        // Zara suggested reply
+        if (text) {
+          fetch(`${SUPABASE_URL}/functions/v1/zara-suggest-reply`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${SERVICE_KEY}` },
+            body: JSON.stringify({
+              contactId,
+              channel,
+              inboundText: text,
+              inboundAt: resource?.received_at ?? new Date().toISOString(),
+              inboundEventId: inserted?.id ?? null,
+            }),
+          }).catch((e) => console.warn('[telnyx-webhook] zara-suggest-reply kick failed', e?.message));
+        }
+      }
     } else if (
       eventType === 'message.sent' ||
       eventType === 'message.finalized' ||
