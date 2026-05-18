@@ -12,7 +12,7 @@ import remarkGfm from 'remark-gfm';
 import {
   Plus, Pin, Search, Send, Mic, MicOff, Sparkles, Inbox, ChevronRight,
   Activity as ActivityIcon, ThumbsUp, ThumbsDown, Wrench, Loader2, ChevronDown,
-  Building2, Brain, FileText, Menu,
+  Building2, Brain, FileText, Menu, Monitor, Tablet, Smartphone,
 } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { useKeyboardInset } from '@/hooks/useKeyboardInset';
