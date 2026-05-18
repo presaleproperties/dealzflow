@@ -881,7 +881,7 @@ const REGISTRY: Record<string, (args: any, ctx: Ctx) => Promise<unknown>> = {
   // Phase 4
   book_calendly, get_pricing, attach_floorplan, schedule_follow_up_smart, enrich_lead,
   // Public-site
-  capture_lead, get_unit_availability, escalate_to_human,
+  capture_lead, get_unit_availability, escalate_to_human, get_floor_plans,
 };
 
 
