@@ -15,7 +15,7 @@ import { useToast } from '@/hooks/use-toast';
 import type { CrmContact } from '@/hooks/useCrmContacts';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { loadAgentPrefs, saveAgentPrefs, loadContactDraft, saveContactDraft, clearContactDraft } from '@/lib/sendProjectMemory';
+import { loadAgentPrefs, saveAgentPrefs } from '@/lib/sendProjectMemory';
 import { useAuth } from '@/hooks/useAuth';
 import { useEmailSettings } from '@/hooks/useEmailSettings';
 import { pickSignatureForKind, useEmailSignatures } from '@/hooks/useEmailSignatures';
