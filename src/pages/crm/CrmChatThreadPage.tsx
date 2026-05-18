@@ -1227,10 +1227,14 @@ export default function CrmChatThreadPage({ embedded = false }: CrmChatThreadPag
           </>
         )}
 
-        {/* Ghost bubbles for offline outbox items not yet on the server */}
+        {/* Ghost bubbles for offline outbox items not yet on the server.
+            Empty-body items are skipped — they would render as "(empty)"
+            placeholders which look broken. The banner above still surfaces
+            the failure count and Retry-all action. */}
         {(conv.channel === 'sms' || conv.channel === 'whatsapp') &&
           outbox.items
             .filter((i) => i.contact_id === contact.id && i.channel === conv.channel)
+            .filter((i) => !!(i.body && i.body.trim().length > 0))
             .map((i) => {
               const state: DeliveryState = i.status === 'failed' ? 'failed' : 'sending';
               return (
@@ -1242,18 +1246,27 @@ export default function CrmChatThreadPage({ embedded = false }: CrmChatThreadPag
                           state === 'failed' ? 'ring-1 ring-destructive/60' : ''
                         }`}
                       >
-                        {i.body || <span className="italic opacity-60">(empty)</span>}
+                        {i.body}
                       </div>
                       <span className="text-[10px] tabular-nums flex items-center gap-1.5 text-muted-foreground justify-end pr-1">
                         <DeliveryIndicator state={state} error={i.last_error} />
                         {state === 'failed' && (
-                          <button
-                            type="button"
-                            onClick={() => outbox.retry(i.id)}
-                            className="underline underline-offset-2 text-destructive hover:opacity-80"
-                          >
-                            Retry
-                          </button>
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => outbox.retry(i.id)}
+                              className="underline underline-offset-2 text-destructive hover:opacity-80"
+                            >
+                              Retry
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => outbox.remove(i.id)}
+                              className="underline underline-offset-2 text-muted-foreground hover:opacity-80"
+                            >
+                              Discard
+                            </button>
+                          </>
                         )}
                       </span>
                     </div>
