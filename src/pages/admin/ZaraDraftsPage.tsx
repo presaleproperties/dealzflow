@@ -163,17 +163,56 @@ export default function ZaraDraftsPage() {
     } finally { setPlanning(false); }
   }
 
+  async function analyzeRewrite(draft: Draft, finalSubject: string, finalBody: string, wasApproved: boolean, extraNote?: string) {
+    const origBody = draft.original_body ?? draft.body;
+    const origSubject = draft.original_subject ?? draft.subject;
+    const bodyChanged = (origBody ?? '').trim() !== (finalBody ?? '').trim();
+    const subjChanged = (origSubject ?? '') !== (finalSubject ?? '');
+    if (!bodyChanged && !subjChanged && selectedLabels.length === 0) return; // nothing to learn
+    setAnalyzing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('zara-analyze-rewrite', {
+        body: {
+          draft_id: draft.id,
+          original_subject: origSubject,
+          original_body: origBody,
+          final_subject: finalSubject,
+          final_body: finalBody,
+          feedback_labels: selectedLabels,
+          notes: extraNote ?? null,
+          was_approved: wasApproved,
+        },
+      });
+      if (error) throw error;
+      const r: any = data;
+      if (r?.ok) toast.success('Zara learned from this rewrite');
+      else toast.warning(`Analysis: ${r?.error ?? 'no patterns extracted'}`);
+    } catch (e: any) {
+      // non-fatal — learning is best-effort
+      console.warn('analyze-rewrite failed', e);
+    } finally { setAnalyzing(false); }
+  }
+
   async function act(action: 'approve' | 'reject' | 'snooze' | 'mute', extra: Record<string, unknown> = {}) {
     if (!selected) return;
+    const current = selected;
     setBusy(true);
     try {
       const { data, error } = await supabase.functions.invoke('zara-draft-action', {
-        body: { draft_id: selected.id, action, ...extra },
+        body: { draft_id: current.id, action, ...extra },
       });
       if (error) throw error;
       const r: any = data;
       if (r?.error || r?.ok === false) toast.error(`${action} failed: ${r.error ?? 'unknown'}`);
       else toast.success(`${action === 'approve' ? 'Sent' : action.charAt(0).toUpperCase() + action.slice(1) + 'd'}`);
+
+      // Feed the learning loop when we approve or reject — capture the diff between original and final.
+      if (action === 'approve') {
+        await analyzeRewrite(current, editSubject, editBody, true);
+      } else if (action === 'reject') {
+        await analyzeRewrite(current, editSubject, editBody, false, (extra as any)?.reason);
+      }
+
       setSelectedId(null);
       load();
     } catch (e: any) { toast.error(e.message ?? String(e)); }
