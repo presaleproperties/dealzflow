@@ -390,6 +390,20 @@ export const ZARA_TOOLS: ZaraTool[] = [
     needs_approval: false,
   },
   {
+    name: "send_brochure",
+    description:
+      "Return the public brochure / pitch-deck URL for a project so it can be shared in chat (or attached to an email draft). Pulls from crm_projects.brochure_url first, then falls back to the Presale bridge (pitch_deck_url / brochure_files). Use this when a visitor asks for the brochure, deck, or info package. Does NOT send email — share the link in your reply.",
+    input_schema: {
+      type: "object",
+      properties: {
+        project_slug: { type: "string" },
+        project_id: { type: "string" },
+        project_name: { type: "string", description: "Fuzzy match fallback" },
+      },
+    },
+    needs_approval: false,
+  },
+  {
     name: "schedule_follow_up_smart",
     description:
       "Schedule a follow-up at an engagement-aware default time (hot=1 day, warm=3 days, cold=7 days) unless due_at is provided. Inserts into crm_tasks and tags the task with the chosen cadence.",
