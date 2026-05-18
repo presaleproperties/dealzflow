@@ -52,21 +52,23 @@ export default function ZaraFounderPage() {
   });
 
   return (
-    <div className="px-4 sm:px-6 lg:px-8 py-6 max-w-[1400px] mx-auto">
-      <header className="mb-5">
-        <h1 className="text-2xl font-semibold tracking-tight">Founder Intelligence</h1>
-        <p className="text-sm text-muted-foreground mt-1">
+    <div className="px-3 sm:px-6 lg:px-8 py-4 sm:py-6 max-w-[1400px] mx-auto">
+      <header className="mb-4 sm:mb-5">
+        <h1 className="text-xl sm:text-2xl font-semibold tracking-tight">Founder Intelligence</h1>
+        <p className="text-xs sm:text-sm text-muted-foreground mt-1">
           Uzair Memory Engine — teach Zara how you think, communicate, qualify, calm, and build trust with presale buyers.
         </p>
       </header>
 
       <Tabs defaultValue="modules" className="w-full">
-        <TabsList>
-          <TabsTrigger value="modules"><BookOpen className="h-4 w-4 mr-1.5" />Modules</TabsTrigger>
-          <TabsTrigger value="teach"><Brain className="h-4 w-4 mr-1.5" />Teach Zara</TabsTrigger>
-          <TabsTrigger value="conversations"><MessageSquare className="h-4 w-4 mr-1.5" />Real Conversations</TabsTrigger>
-          <TabsTrigger value="lessons"><FileText className="h-4 w-4 mr-1.5" />Lessons</TabsTrigger>
-        </TabsList>
+        <div className="overflow-x-auto -mx-3 px-3 sm:mx-0 sm:px-0 scrollbar-thin">
+          <TabsList className="inline-flex w-max">
+            <TabsTrigger value="modules"><BookOpen className="h-4 w-4 mr-1.5" />Modules</TabsTrigger>
+            <TabsTrigger value="teach"><Brain className="h-4 w-4 mr-1.5" />Teach Zara</TabsTrigger>
+            <TabsTrigger value="conversations"><MessageSquare className="h-4 w-4 mr-1.5" />Real Conversations</TabsTrigger>
+            <TabsTrigger value="lessons"><FileText className="h-4 w-4 mr-1.5" />Lessons</TabsTrigger>
+          </TabsList>
+        </div>
 
         <TabsContent value="modules" className="mt-4"><ModulesPane modules={modules} /></TabsContent>
         <TabsContent value="teach" className="mt-4"><TeachPane modules={modules} /></TabsContent>
@@ -74,6 +76,7 @@ export default function ZaraFounderPage() {
         <TabsContent value="lessons" className="mt-4"><LessonsPane modules={modules} /></TabsContent>
       </Tabs>
     </div>
+
   );
 }
 
