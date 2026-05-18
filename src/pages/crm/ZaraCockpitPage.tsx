@@ -12,8 +12,10 @@ import remarkGfm from 'remark-gfm';
 import {
   Plus, Pin, Search, Send, Mic, MicOff, Sparkles, Inbox, ChevronRight,
   Activity as ActivityIcon, ThumbsUp, ThumbsDown, Wrench, Loader2, ChevronDown,
-  Building2, Brain, FileText,
+  Building2, Brain, FileText, Menu,
 } from 'lucide-react';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { useKeyboardInset } from '@/hooks/useKeyboardInset';
 import { usePushToTalk } from '@/hooks/usePushToTalk';
 import { MicPermissionDialog } from '@/components/crm/zara/MicPermissionDialog';
 import { useZaraPin } from '@/hooks/useZaraPin';
@@ -22,6 +24,7 @@ import { SlashCommandPalette } from '@/components/crm/zara/SlashCommandPalette';
 import { ZaraKillSwitch } from '@/components/crm/zara/ZaraKillSwitch';
 import { AutonomyControl } from '@/components/crm/zara/AutonomyControl';
 import { DynamicSuggestions } from '@/components/crm/zara/DynamicSuggestions';
+
 
 type Conv = {
   id: string; title: string; pinned: boolean; archived: boolean;
