@@ -92,6 +92,8 @@ export default function ZaraDraftsPage() {
   const [planning, setPlanning] = useState(false);
   const [rejectOpen, setRejectOpen] = useState(false);
   const [rejectReason, setRejectReason] = useState('');
+  const [selectedLabels, setSelectedLabels] = useState<string[]>([]);
+  const [analyzing, setAnalyzing] = useState(false);
 
   useEffect(() => {
     if (!checking && !isAdmin) navigate('/');
