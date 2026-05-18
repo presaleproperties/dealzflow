@@ -356,7 +356,44 @@ export default function ZaraDraftsPage() {
                       disabled={selected.status !== 'pending' && selected.status !== 'snoozed'}
                       className="mt-1 font-mono text-sm"
                     />
+                    {(selected.original_body && selected.original_body !== editBody) && (
+                      <p className="mt-1 text-[11px] text-muted-foreground italic">
+                        Edits detected — Zara will learn from this rewrite when you approve or reject.
+                      </p>
+                    )}
                   </div>
+
+                  {(selected.status === 'pending' || selected.status === 'snoozed') && (
+                    <div className="rounded-md border border-border bg-muted/20 p-3 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div className="text-xs font-medium text-foreground">Coach Zara on this draft</div>
+                        {analyzing && <span className="text-[10px] text-muted-foreground">Learning…</span>}
+                      </div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {FEEDBACK_LABELS.map((f) => {
+                          const on = selectedLabels.includes(f.key);
+                          const toneCls = on
+                            ? (f.tone === 'good' ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-600 dark:text-emerald-400'
+                               : f.tone === 'bad' ? 'bg-rose-500/15 border-rose-500/40 text-rose-600 dark:text-rose-400'
+                               : 'bg-primary/15 border-primary/40 text-primary')
+                            : 'bg-background hover:bg-muted text-muted-foreground border-border';
+                          return (
+                            <button
+                              key={f.key}
+                              type="button"
+                              onClick={() => setSelectedLabels((s) => s.includes(f.key) ? s.filter(x => x !== f.key) : [...s, f.key])}
+                              className={`text-[11px] px-2 py-1 rounded-full border transition ${toneCls}`}
+                            >
+                              {f.label}
+                            </button>
+                          );
+                        })}
+                      </div>
+                      <p className="text-[10px] text-muted-foreground">
+                        Labels feed into Zara's style memory together with your edits to body/subject.
+                      </p>
+                    </div>
+                  )}
 
                   {selected.status === 'pending' || selected.status === 'snoozed' ? (
                     <div className="flex flex-wrap gap-2">
