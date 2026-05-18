@@ -16,6 +16,8 @@ import { useProfile } from '@/hooks/useProfile';
 import { usePresaleAgentStore } from '@/stores/usePresaleAgent';
 import { openComposer } from '@/stores/useComposer';
 import { useLeadQuickReplies } from '@/hooks/useLeadQuickReplies';
+import { useEmailSignatures, pickSignatureForKind } from '@/hooks/useEmailSignatures';
+import { useEmailSettings } from '@/hooks/useEmailSettings';
 import { toast } from 'sonner';
 import type { CrmContact } from '@/hooks/useCrmContacts';
 
