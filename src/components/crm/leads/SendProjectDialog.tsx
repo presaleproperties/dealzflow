@@ -501,13 +501,54 @@ export function SendProjectDialog({ contact, open, onOpenChange }: Props) {
                 value={projectSlug}
                 onChange={setProjectSlug}
                 items={projects.map(p => ({
-                  value: p.slug,
+                  value: projectOptionValue(p),
                   label: p.name,
-                  hint: [p.city, p.status].filter(Boolean).join(' · '),
+                  hint: [p.city, p.status, p.presale_slug || p.slug ? 'linked' : 'needs sync'].filter(Boolean).join(' · '),
                 }))}
                 placeholder="Select project…"
-                emptyText="No projects with presale link."
+                emptyText="No projects found. Sync from Presale Properties."
               />
+              <div className="mt-2 rounded-md border border-border bg-muted/30 px-3 py-2 text-[11px] text-muted-foreground">
+                <div className="flex items-center justify-between gap-3">
+                  <span className="truncate">
+                    <span className="text-foreground font-medium">{projectStats.total}</span> synced projects
+                    <span className="mx-1.5">·</span>
+                    {projectStats.linked} linked
+                    {projectStats.needsRepair > 0 && <><span className="mx-1.5">·</span>{projectStats.needsRepair} need repair</>}
+                  </span>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    onClick={handleSyncProjects}
+                    disabled={syncingProjects}
+                    className="h-7 shrink-0 px-2 text-[11px]"
+                  >
+                    {syncingProjects ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <RefreshCw className="mr-1 h-3 w-3" />}
+                    Sync
+                  </Button>
+                </div>
+                {projectStats.lastSyncedAt && (
+                  <div className="mt-0.5">Last catalog update {formatDistanceToNowStrict(projectStats.lastSyncedAt, { addSuffix: true })}</div>
+                )}
+              </div>
+            </Field>
+
+            <Field label="Sender">
+              <div className="rounded-md border border-border bg-background px-3 py-2.5 text-sm">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="truncate font-medium text-foreground">{senderName}</div>
+                    <div className="truncate text-xs text-muted-foreground">{senderEmail || 'No reply-to email set'}</div>
+                  </div>
+                  <Link to="/crm/settings" className="shrink-0 text-[11px] underline text-muted-foreground hover:text-foreground">
+                    Edit
+                  </Link>
+                </div>
+                <div className="mt-2 border-t border-border pt-2 text-[11px] text-muted-foreground">
+                  Signature: <span className="text-foreground">{activeSignature?.name ?? (emailSettings?.signature_html ? 'Legacy signature' : 'Not set')}</span>
+                </div>
+              </div>
             </Field>
 
             {/* Template picker — Presale-styled email is auto-composed by the bridge */}
