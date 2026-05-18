@@ -186,19 +186,17 @@ Deno.serve(async (req) => {
       })
       .then(() => {});
 
-    // Roll per-lead memory with the actual sent text (fire-and-forget).
-    if (!emailQueued) {
-      fetch(`${SUPABASE_URL}/functions/v1/zara-roll-memory`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${SERVICE_KEY}` },
-        body: JSON.stringify({
-          contact_id: draft.contact_id,
-          inbound_text: draft.inbound_text ?? null,
-          outbound_text: finalText,
-          kind: 'send',
-        }),
-      }).catch((e) => console.warn('[zara-execute-send] roll-memory kick failed', e));
-    }
+    // Roll per-lead memory with the approved outbound text (fire-and-forget).
+    fetch(`${SUPABASE_URL}/functions/v1/zara-roll-memory`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${SERVICE_KEY}` },
+      body: JSON.stringify({
+        contact_id: draft.contact_id,
+        inbound_text: draft.inbound_text ?? null,
+        outbound_text: finalText,
+        kind: 'send',
+      }),
+    }).catch((e) => console.warn('[zara-execute-send] roll-memory kick failed', e));
 
     return json({ ok: true, status: emailQueued ? newStatus : 'sent', queued: emailQueued, queue_id: emailQueueId, edit_distance, sent_at: emailQueued ? null : sent_at });
   } catch (e) {
