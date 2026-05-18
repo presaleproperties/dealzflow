@@ -206,9 +206,45 @@ const INTENT_BLOCKS: Record<ZaraIntent, string> = {
   unknown: `INTENT: unclear. Ask one clarifying question, no pitching, escalate=true.`,
 };
 
-export function buildZaraSystemPrompt(intent: ZaraIntent | null | undefined): string {
+export interface NeverQuoteRules {
+  phrases?: string[];
+  topics?: string[];
+}
+
+/** Build an extra system-prompt block enforcing per-team never-quote rules. */
+export function buildNeverQuoteBlock(rules: NeverQuoteRules | null | undefined): string {
+  if (!rules) return '';
+  const phrases = (rules.phrases ?? []).filter(Boolean);
+  const topics = (rules.topics ?? []).filter(Boolean);
+  if (!phrases.length && !topics.length) return '';
+  const parts: string[] = ['ABSOLUTE NEVER-QUOTE RULES (override everything else):'];
+  if (phrases.length) parts.push(`- Never use these exact phrases or near-paraphrases: ${phrases.map((p) => `"${p}"`).join(', ')}`);
+  if (topics.length) parts.push(`- Never discuss these topics — say "let me get Uzair on that" and set escalate=true: ${topics.join(', ')}`);
+  parts.push('- If the inbound is asking about any of the above, escalate=true.');
+  return parts.join('\n');
+}
+
+/** Server-side validator. Returns array of violated phrases (empty if clean). */
+export function validateNeverQuote(draftText: string, rules: NeverQuoteRules | null | undefined): string[] {
+  if (!rules || !draftText) return [];
+  const hay = draftText.toLowerCase();
+  const violated: string[] = [];
+  for (const p of rules.phrases ?? []) {
+    if (p && hay.includes(p.toLowerCase())) violated.push(p);
+  }
+  return violated;
+}
+
+export function buildZaraSystemPrompt(
+  intent: ZaraIntent | null | undefined,
+  opts?: { neverQuote?: NeverQuoteRules | null; mode?: 'discovery' | 'transaction_support' | null },
+): string {
   const intentBlock = intent && INTENT_BLOCKS[intent] ? INTENT_BLOCKS[intent] : '';
-  return intentBlock ? `${ZARA_BASE_PROMPT}\n\n---\n${intentBlock}` : ZARA_BASE_PROMPT;
+  const nq = buildNeverQuoteBlock(opts?.neverQuote);
+  const modeBlock = opts?.mode === 'transaction_support'
+    ? 'CURRENT MODE: transaction support. Lead has an active deal. Tone shifts to logistics, document follow-ups, milestone reminders, NO new pitching. Keep replies short and operational.'
+    : '';
+  return [ZARA_BASE_PROMPT, intentBlock, modeBlock, nq].filter(Boolean).join('\n\n---\n');
 }
 
 /** Backwards-compat export — equals BASE prompt. New code should use buildZaraSystemPrompt(). */
