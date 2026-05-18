@@ -897,7 +897,7 @@ export default function ZaraCockpitPage() {
                   el.style.height = Math.min(el.scrollHeight, 200) + 'px';
                 }}
                 onKeyDown={(e) => {
-                  if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+                  if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
                     e.preventDefault();
                     onSend();
                   }
