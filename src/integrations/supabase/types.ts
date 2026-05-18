@@ -7092,6 +7092,47 @@ export type Database = {
           },
         ]
       }
+      zara_bad_responses: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          reason: string | null
+          response_text: string
+          scenario_kind: string | null
+          source_message_id: string | null
+          tags: string[]
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          reason?: string | null
+          response_text: string
+          scenario_kind?: string | null
+          source_message_id?: string | null
+          tags?: string[]
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          reason?: string | null
+          response_text?: string
+          scenario_kind?: string | null
+          source_message_id?: string | null
+          tags?: string[]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "zara_bad_responses_source_message_id_fkey"
+            columns: ["source_message_id"]
+            isOneToOne: false
+            referencedRelation: "zara_training_messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       zara_chat_messages: {
         Row: {
           agent_user_id: string
@@ -7205,6 +7246,39 @@ export type Database = {
           status?: string
           target_id?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      zara_escalation_rules: {
+        Row: {
+          action: string
+          active: boolean
+          condition_text: string
+          created_at: string
+          created_by: string | null
+          id: string
+          notes: string | null
+          trigger_kind: string
+        }
+        Insert: {
+          action: string
+          active?: boolean
+          condition_text: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+          trigger_kind: string
+        }
+        Update: {
+          action?: string
+          active?: boolean
+          condition_text?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+          trigger_kind?: string
         }
         Relationships: []
       }
@@ -7461,6 +7535,39 @@ export type Database = {
           },
         ]
       }
+      zara_objection_patterns: {
+        Row: {
+          active: boolean
+          created_at: string
+          created_by: string | null
+          escalate_to_uzair: boolean
+          id: string
+          objection_kind: string
+          suggested_reframe: string
+          trigger_text: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          created_by?: string | null
+          escalate_to_uzair?: boolean
+          id?: string
+          objection_kind: string
+          suggested_reframe: string
+          trigger_text: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          created_by?: string | null
+          escalate_to_uzair?: boolean
+          id?: string
+          objection_kind?: string
+          suggested_reframe?: string
+          trigger_text?: string
+        }
+        Relationships: []
+      }
       zara_org_context: {
         Row: {
           custom_instructions: string | null
@@ -7628,6 +7735,72 @@ export type Database = {
         }
         Relationships: []
       }
+      zara_prompt_updates: {
+        Row: {
+          applied_to_addendum_id: string | null
+          created_at: string
+          created_by: string | null
+          evidence: Json
+          id: string
+          kind: string
+          proposal: string
+          rationale: string | null
+          review_note: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          source_message_id: string | null
+          source_session_id: string | null
+          status: string
+        }
+        Insert: {
+          applied_to_addendum_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          evidence?: Json
+          id?: string
+          kind: string
+          proposal: string
+          rationale?: string | null
+          review_note?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          source_message_id?: string | null
+          source_session_id?: string | null
+          status?: string
+        }
+        Update: {
+          applied_to_addendum_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          evidence?: Json
+          id?: string
+          kind?: string
+          proposal?: string
+          rationale?: string | null
+          review_note?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          source_message_id?: string | null
+          source_session_id?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "zara_prompt_updates_source_message_id_fkey"
+            columns: ["source_message_id"]
+            isOneToOne: false
+            referencedRelation: "zara_training_messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "zara_prompt_updates_source_session_id_fkey"
+            columns: ["source_session_id"]
+            isOneToOne: false
+            referencedRelation: "zara_training_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       zara_research_cache: {
         Row: {
           created_at: string
@@ -7721,6 +7894,47 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      zara_style_rules: {
+        Row: {
+          active: boolean
+          created_at: string
+          created_by: string | null
+          id: string
+          kind: string
+          rationale: string | null
+          rule: string
+          source_message_id: string | null
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          kind: string
+          rationale?: string | null
+          rule: string
+          source_message_id?: string | null
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          kind?: string
+          rationale?: string | null
+          rule?: string
+          source_message_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "zara_style_rules_source_message_id_fkey"
+            columns: ["source_message_id"]
+            isOneToOne: false
+            referencedRelation: "zara_training_messages"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -7975,6 +8189,94 @@ export type Database = {
         }
         Relationships: []
       }
+      zara_training_messages: {
+        Row: {
+          ask_uzair: boolean
+          content: string
+          created_at: string
+          feedback_kind: string | null
+          feedback_note: string | null
+          id: string
+          meta: Json
+          role: string
+          scenario_kind: string | null
+          session_id: string
+        }
+        Insert: {
+          ask_uzair?: boolean
+          content: string
+          created_at?: string
+          feedback_kind?: string | null
+          feedback_note?: string | null
+          id?: string
+          meta?: Json
+          role: string
+          scenario_kind?: string | null
+          session_id: string
+        }
+        Update: {
+          ask_uzair?: boolean
+          content?: string
+          created_at?: string
+          feedback_kind?: string | null
+          feedback_note?: string | null
+          id?: string
+          meta?: Json
+          role?: string
+          scenario_kind?: string | null
+          session_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "zara_training_messages_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "zara_training_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      zara_training_sessions: {
+        Row: {
+          contact_id: string | null
+          created_at: string
+          id: string
+          last_message_at: string
+          message_count: number
+          owner_user_id: string
+          scenario_kind: string | null
+          title: string
+        }
+        Insert: {
+          contact_id?: string | null
+          created_at?: string
+          id?: string
+          last_message_at?: string
+          message_count?: number
+          owner_user_id: string
+          scenario_kind?: string | null
+          title?: string
+        }
+        Update: {
+          contact_id?: string | null
+          created_at?: string
+          id?: string
+          last_message_at?: string
+          message_count?: number
+          owner_user_id?: string
+          scenario_kind?: string | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "zara_training_sessions_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "crm_contacts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       zara_whatsapp_message_map: {
         Row: {
           agent_id: string
@@ -8079,6 +8381,53 @@ export type Database = {
             columns: ["source_contact_id"]
             isOneToOne: false
             referencedRelation: "crm_contacts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      zara_winning_responses: {
+        Row: {
+          channel: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          lead_situation: string
+          response_text: string
+          scenario_kind: string | null
+          source_message_id: string | null
+          tags: string[]
+          why_it_works: string | null
+        }
+        Insert: {
+          channel?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          lead_situation: string
+          response_text: string
+          scenario_kind?: string | null
+          source_message_id?: string | null
+          tags?: string[]
+          why_it_works?: string | null
+        }
+        Update: {
+          channel?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          lead_situation?: string
+          response_text?: string
+          scenario_kind?: string | null
+          source_message_id?: string | null
+          tags?: string[]
+          why_it_works?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "zara_winning_responses_source_message_id_fkey"
+            columns: ["source_message_id"]
+            isOneToOne: false
+            referencedRelation: "zara_training_messages"
             referencedColumns: ["id"]
           },
         ]
