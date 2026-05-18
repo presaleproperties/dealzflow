@@ -485,11 +485,16 @@ export function ZaraDock() {
 
   return (
     <>
-      {/* Launcher (closed state) — glassy halo pill, Apple-Intelligence feel */}
+      {/* Launcher (closed state) — glassy halo pill, lifted off the edge so
+          it sits above any preview/native chrome at the bottom. */}
       {!open && (
         <div
           className="fixed z-40 zara-halo"
-          style={{ bottom: 'max(24px, env(safe-area-inset-bottom))', right: 24, borderRadius: 9999 }}
+          style={{
+            bottom: 'calc(max(28px, env(safe-area-inset-bottom)) + var(--bottom-nav-pad, 0px))',
+            right: 28,
+            borderRadius: 9999,
+          }}
         >
           <button
             onClick={() => setOpen(true)}
@@ -506,6 +511,7 @@ export function ZaraDock() {
           </button>
         </div>
       )}
+
 
       {/* Open panel — glass slide-over, no hard border */}
       {open && (
