@@ -3892,7 +3892,7 @@ export type Database = {
           id: string
           last_attempt_at: string | null
           max_attempts: number
-          media_urls: string[]
+          media_urls: string[] | null
           message_type: string
           messaging_profile_id: string | null
           num_segments: number | null
@@ -3926,7 +3926,7 @@ export type Database = {
           id?: string
           last_attempt_at?: string | null
           max_attempts?: number
-          media_urls?: string[]
+          media_urls?: string[] | null
           message_type?: string
           messaging_profile_id?: string | null
           num_segments?: number | null
@@ -3960,7 +3960,7 @@ export type Database = {
           id?: string
           last_attempt_at?: string | null
           max_attempts?: number
-          media_urls?: string[]
+          media_urls?: string[] | null
           message_type?: string
           messaging_profile_id?: string | null
           num_segments?: number | null
