@@ -205,22 +205,27 @@ async function embedQuery(text: string): Promise<number[] | null> {
 }
 
 async function retrieveContext(userText: string) {
-  const empty = { block: "", sources: { chunks: [], wins: [], projects: [], market: [] } };
+  const empty = { block: "", sources: { chunks: [], wins: [], projects: [], market: [], principles: [] } };
   const emb = await embedQuery(userText);
   if (!emb) return empty;
   const sb = svc();
-  const [chunkRes, winRes, projRes, marketRes] = await Promise.all([
+  const [chunkRes, winRes, projRes, marketRes, principlesRes] = await Promise.all([
     sb.rpc("zara_match_knowledge_chunks", { query_embedding: emb as any, match_threshold: RAG_CHUNK_THRESHOLD, match_count: RAG_CHUNK_COUNT }),
     sb.rpc("zara_match_winning_conversations", { query_embedding: emb as any, match_threshold: RAG_WIN_THRESHOLD, match_count: RAG_WIN_COUNT }),
     sb.rpc("zara_match_project_deep_dives", { query_embedding: emb as any, match_threshold: RAG_PROJECT_THRESHOLD, match_count: RAG_PROJECT_COUNT }),
     sb.from("market_intel").select("id,week_of,headline,summary").order("week_of", { ascending: false }).limit(2),
+    sb.rpc("zara_founder_retrieve", { _query: userText, _module_slug: null, _limit: 6 }).then(
+      (r: any) => r,
+      () => ({ data: [] }),
+    ),
   ]);
   const chunks = (chunkRes.data ?? []) as any[];
   const wins = (winRes.data ?? []) as any[];
   const projects = (projRes.data ?? []) as any[];
   const market = (marketRes.data ?? []) as any[];
+  const principles = (principlesRes.data ?? []) as any[];
 
-  if (!chunks.length && !wins.length && !projects.length && !market.length) return empty;
+  if (!chunks.length && !wins.length && !projects.length && !market.length && !principles.length) return empty;
 
   // Bump retrieval counts (best-effort)
   const docIds = Array.from(new Set(chunks.map((c) => c.document_id).filter(Boolean)));
