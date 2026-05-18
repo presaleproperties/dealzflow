@@ -18,6 +18,7 @@ import { useOpenChat } from '@/hooks/useOpenChat';
 import { EnrollInAutomationDialog } from '@/components/crm/automations/EnrollInAutomationDialog';
 import { formatContactName } from '@/lib/format';
 import { AskZaraButton } from '@/components/crm/zara/AskZaraButton';
+import { VoicePressButton } from '@/components/crm/zara/VoicePressButton';
 
 export function LeadQuickActions({ contact }: { contact: CrmContact }) {
   const updateContact = useUpdateCrmContact();
