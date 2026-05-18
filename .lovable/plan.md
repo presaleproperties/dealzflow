@@ -1,92 +1,81 @@
-# Zara Website Intelligence Extraction Layer
+## SMS Major Update — Telnyx everywhere + Zara SMS
 
-## What's already in place (verified)
-- **Project inventory**: `crm_projects` (slug/city/neighborhood/developer/property_type/price_from-to/completion_date/bedrooms_offered/brochure/floorplans/pricing URLs/hero_image) + `presale_projects` extended (unit_types, unit_count, deposit_structure, completion_year/quarter, status, vip_access, key_features, uzair_pitch, caveats, fit profile). Daily sync from Presale via `sync-presale-projects`.
-- **Lead context**: `crm_contacts` + identities + tags + assigned agent + project_interest. Tools `get_lead_context`, `enrich_lead`, `recommend_projects_for_lead`, `capture_lead` already exist.
-- **Behaviour ingest**: `bridge-ingest-behavior` + `receive-presale-activity` write to `crm_activity_events` (type, contact_id, project_slug, metadata, occurred_at).
-- **RAG store**: `zara_knowledge_documents` + `zara_knowledge_chunks` for playbooks/scripts/FAQs, queried via `search_knowledge`.
-- **Existing tools (partial coverage)**: list_projects, project_details, get_pricing, get_floor_plans, get_unit_availability, send_brochure, attach_floorplan, get_project_deep_dive, capture_lead, escalate_to_human.
+Goal: every SMS path in the app (single, bulk, scheduled, Zara) uses Telnyx (`telnyx-send-message`). Zara can draft, send (autonomy-gated), and read SMS context. Inbound replies notify the assigned agent and ask Zara for a suggested reply.
 
-## What's missing (the gaps this build closes)
+### What's broken / disabled today
+- `bulk-send-sms`, `process-scheduled-sms` — return `disabled: 410` stubs (Twilio-era no-ops)
+- `zara-execute-send` SMS branch — inserts into dead `sms_outbound_queue` table; nothing ever sends
+- `zara-execute-send` WhatsApp branch — calls Meta Graph (removed); should route through Telnyx
+- `get-zara-context` returns no SMS history → Zara writes drafts blind on SMS replies
+- Inbound webhook stores the message but never triggers a Zara suggested reply
 
-### 1. Project inventory completeness
-Add two missing columns on `crm_projects` + `presale_projects`:
-- `incentives` (jsonb — list of current incentives: VIP bonus, deposit defer, decor credit, etc.)
-- `assignment_rules` (text — "no assignments / closing-only / open after deposit 2", etc.)
+### Backend (edge functions)
 
-Surface in `list_projects` and `project_details` responses, and include in `get_pricing` so the never-quote guardrail can pull verified incentive data.
+1. **Rewrite `bulk-send-sms`** → real Telnyx batch:
+   - Inputs: `{ contact_ids?, filter?, body, media_urls?, channel?, scheduled_for?, throttle_per_min?, dry_run?, name }`
+   - Resolve recipients (mirror existing `crm-mass-send-email` resolver pattern), apply opt-outs + quiet-hours per recipient, render merge tokens (`{{first_name}}`, `{$first_name}`, `${first_name}`)
+   - For each: call `telnyx-send-message` with caller's JWT, `client_dedupe_id = campaign_id + ":" + contact_id`
+   - Insert `crm_sms_campaigns` row; update sent/failed counters as we go
+   - Honor `scheduled_for` by inserting `crm_sms_schedule` rows instead of sending now
 
-### 2. Website behaviour query tool (currently NO read-side tool exists)
-New tool **`get_lead_website_behavior`** with input `{contact_id?, email?, phone?, since_days?, types?[]}` returning a structured summary from `crm_activity_events`:
-- page_views, project_views (per slug, with count + last viewed)
-- repeat_visits (sessions in last 30d)
-- floor_plan_downloads, pricing_sheet_requests, brochure_downloads
-- calculator_usage (mortgage/deposit), comparison_page_views
-- assignment_page_views, buyer_guide_views, blog_views, city_page_views
-- booking_starts, booking_abandons, CTA clicks
-- raw_timeline (last 20 events for transparency)
+2. **Rewrite `process-scheduled-sms`** → drain `crm_sms_schedule` (status `pending` + `send_at <= now()`), call `telnyx-send-message` via service role + impersonated user JWT (reuse same pattern as `process-scheduled-emails`)
 
-Falls back to Presale bridge `getLeadBehavior` when contact has no local events yet.
+3. **Fix `zara-execute-send` SMS branch**:
+   - Replace `sms_outbound_queue` insert with `fetch(.../telnyx-send-message)` using forwarded auth header
+   - On failure → mark draft `pending` (current fallback path)
+   - WhatsApp branch: same call, `channel: 'whatsapp'` (drops Meta dependency entirely)
 
-### 3. Content intelligence layer (currently NO content access)
-Two-part:
+4. **Zara tool: `send_sms_now`** (new) in `zara-chat` tool list, autonomy-gated:
+   - High autonomy → executes immediately via `telnyx-send-message`
+   - Low/medium autonomy → falls back to existing `draft_sms` (no behavior change)
+   - Reuses `zara_effective_autonomy(uid)` helper that email already uses
+   - Existing `draft_sms` → `zara-execute-send` flow stays as the approval path
 
-**a. Crawler edge fn `presale-content-sync`** (admin/cron, daily). Pulls PresaleProperties.com sitemap and selectively ingests:
-- buyer guides / process pages
-- assignment sales pages
-- city pages (Fraser Valley)
-- mortgage/deposit calculator descriptions
-- comparison pages
-- blog posts (last 90 days)
+5. **`get-zara-context`** — add `recentSms` (last 20 `crm_sms_log` rows for contact, both directions, channel sms+whatsapp). `zara-chat` system prompt builder includes a `RECENT SMS THREAD` block when present.
 
-Writes to `zara_knowledge_documents` with `type` in `('buyer_guide','assignment_page','city_page','calculator','comparison','blog_post','process_page')`, `source_url`, `title`, `last_crawled_at`. Reuses existing chunk+embed pipeline (`zara-embed`/`zara-process-embed-queue`).
+6. **Inbound auto-suggest** — at end of `telnyx-messaging-webhook` inbound branch, when `contactId` + `assignedUserId` resolved:
+   - Fire-and-forget POST to `zara-suggest-reply` `{ contact_id, channel, inbound_text, assigned_to }`
+   - Fire `crm_send_notification` via the existing `crm_recipients_for_contact` RPC (assigned-agent-only, per memory rule)
 
-**b. New tool `search_website_content`** — semantic search over `zara_knowledge_documents` filtered to website types. Distinct from `search_knowledge` (which is for internal playbooks) so Zara picks the right corpus.
+### Frontend
 
-### 4. Never-Quote Guardrails + `{LOOKUP: topic}` convention
-Update `_shared/zara-guardrails.ts:ZARA_BASE_PROMPT` with a hard block:
+7. **`useSms.tsx`** — already routes single sends through `send-sms` (proxy → `telnyx-send-message`). No change needed for single sends. `useBulkSendSms` continues invoking `bulk-send-sms`; new implementation makes it actually work.
 
-> NEVER quote prices, deposit structures, incentives, availability, completion dates, or unit counts from memory. ALWAYS call `get_pricing`, `get_unit_availability`, `project_details`, or `attach_floorplan` first. If a tool returns missing/stale data, leave a `{LOOKUP: <topic>}` placeholder in the draft and add a note for the agent.
+8. **`SendTextDialog` / `BulkSendTextDialog`** — drop the "Twilio removed" comments + disabled banners. Remove the staged-queue admin gate for bulk (Telnyx doesn't have the same fraud profile; keep quiet-hours + opt-out checks).
 
-Add tool **`lookup_topic`** as a unified dispatcher — agent or downstream prompt can call `lookup_topic({topic:'incentives', project_slug:'eden'})` and it routes to the right structured fetch (pricing / availability / floor plans / incentives / completion). Returns either verified data or `{status:'unavailable', reason, action_for_agent}`.
+9. **Lead detail Zara dock** — `RemembersCard` already shows continuity openers; add a small "Recent texts" line when `recentSms.length > 0` (one-liner, no UI overhaul).
 
-In `zara-chat` and `zara-public-chat`, post-process outbound drafts: scan for `{LOOKUP:...}` placeholders and either auto-resolve via `lookup_topic` or block send and flag the draft.
+### Database
 
-### 5. Relationship logic prompt update
-Extend `ZARA_BASE_PROMPT` "OUTBOUND VOICE" section to require Zara to pull `get_lead_website_behavior` + `get_lead_context` + `recommend_projects_for_lead` before drafting any follow-up to a website lead, and to weave in (without quoting numbers): what they viewed, which floorplans they downloaded, what they compared, plus their emotional state cue from message tone.
+10. Migration:
+    - Create `crm_sms_schedule` (id, user_id, contact_id, body, media_urls[], channel, send_at, status, campaign_id, attempts, last_error, timestamps) with RLS scoped to `auth.uid() = user_id`
+    - Re-enable pg_cron: `process-scheduled-sms` every minute (replaces the no-op cron)
+    - Drop unused `sms_outbound_queue` if present (only Zara wrote to it; nothing reads it)
 
-### 6. Admin visibility (lightweight)
-Add a `/crm/zara/intelligence` admin pane showing:
-- Project data freshness (last_synced_at per project, count of projects missing pricing / floorplans / incentives)
-- Website content freshness (counts per type, oldest crawl)
-- Behaviour event volume last 7d (events/day, top events)
-- "Lookup misses" — surface `{LOOKUP: ...}` placeholders flagged by guardrails
+### Out of scope (explicit)
+- Voice / dialer — already deferred per earlier turn
+- Bulk WhatsApp — single WhatsApp sends keep working via Telnyx, bulk stays SMS-only for now
+- New SMS Center redesign — only wiring/bug-fix work
 
-## Technical changes (files / migrations)
+### Files touched
+```
+supabase/functions/bulk-send-sms/index.ts            (rewrite)
+supabase/functions/process-scheduled-sms/index.ts    (rewrite)
+supabase/functions/zara-execute-send/index.ts        (SMS + WhatsApp branches)
+supabase/functions/zara-chat/index.ts                (add send_sms_now tool + autonomy gate)
+supabase/functions/get-zara-context/index.ts         (recentSms)
+supabase/functions/telnyx-messaging-webhook/index.ts (inbound → suggest-reply + notify)
+src/hooks/useSms.tsx                                  (clean up disabled paths)
+src/components/crm/leads/SendTextDialog.tsx           (remove disabled copy)
+src/components/crm/leads/BulkSendTextDialog.tsx       (remove disabled copy)
+src/components/crm/leads/BulkActionsBar.tsx           (remove disabled copy)
+src/components/crm/zara/RemembersCard.tsx             (recent texts hint)
+migration: crm_sms_schedule + cron + drop sms_outbound_queue
+```
 
-| Area | Change |
-|---|---|
-| Migration | `ALTER TABLE crm_projects ADD COLUMN incentives jsonb DEFAULT '[]', assignment_rules text;` same on `presale_projects`. New table `zara_lookup_misses(id, topic, project_slug, contact_id, created_at)`. |
-| Edge fn (new) | `presale-content-sync` (sitemap → fetch → embed queue) |
-| Edge fn (new) | `zara-tool-get-lead-website-behavior` (or inline in `zara-tool-execute`) |
-| Edge fn (new) | `zara-tool-lookup-topic` (inline) |
-| Edge fn (new) | `zara-tool-search-website-content` (inline) |
-| `_shared/zara-tool-defs.ts` | Add 4 new tool definitions |
-| `zara-tool-execute/index.ts` | Add handlers for the 4 new tools |
-| `_shared/zara-guardrails.ts` | NEVER-QUOTE block + `{LOOKUP: topic}` convention + website-context preamble |
-| `zara-chat/index.ts` + `zara-public-chat/index.ts` | Post-process drafts: detect `{LOOKUP:}`, auto-resolve via `lookup_topic`, log unresolved misses |
-| Frontend | `/crm/zara/intelligence` admin pane (data freshness + lookup misses) |
-| Cron | `presale-content-sync` daily at 03:00 UTC (off-peak, after projects sync at 05:00) |
-
-## Out of scope (explicit)
-- Editing Presale-side bridge endpoints. The crawler reads public HTML; we don't depend on Presale shipping new endpoints.
-- Backfilling old behaviour events — we only enhance forward.
-- Calculator interactive embed inside Zara — she'll reference, not replicate.
-
-## Acceptance checks (post-build)
-1. Run `get_lead_website_behavior` on a known active website lead → returns project views + downloads + last-7-day session counts.
-2. Ask Zara "what's the deposit on Eden by Zentera?" → she calls `get_pricing` (verified data) or returns `{LOOKUP: deposit_structure}` not a fabricated number.
-3. Ask Zara "summarize our buyer process page" → she calls `search_website_content` and answers grounded in crawled content.
-4. Admin `/crm/zara/intelligence` shows >0 buyer_guides and city_pages crawled, and lists any unresolved `{LOOKUP:}` misses from the last 7d.
-
-Approve and I'll execute the migration first, then ship the edge fns + prompt updates + admin pane.
+### Verification
+- Send single SMS from lead detail → arrives, logs `delivered` after webhook
+- Bulk send to 3 leads from Leads page → 3 sends, campaign counters update
+- Zara draft_sms → approve from Today inbox → arrives via Telnyx (no more dead queue)
+- Zara on high autonomy with `send_sms_now` → immediate send + logged decision
+- Inbound reply → notification fires to assigned agent + a Zara suggested reply lands in Today

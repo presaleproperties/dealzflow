@@ -95,18 +95,31 @@ Deno.serve(async (req) => {
     let sendOk = true;
     let sendErr: string | null = null;
     try {
-      if (draft.channel === 'whatsapp') {
-        if (!META_TOKEN || !META_PHONE_ID) throw new Error('meta_whatsapp_secrets_missing');
-        const res = await fetch(`https://graph.facebook.com/v18.0/${META_PHONE_ID}/messages`, {
+      if (draft.channel === 'sms' || draft.channel === 'whatsapp') {
+        // Route both SMS and WhatsApp through Telnyx (telnyx-send-message).
+        // Forward caller's JWT so the row is attributed to the agent and
+        // RLS-visible immediately in the chat thread.
+        if (!contact.phone) throw new Error('contact_phone_missing');
+        const canForward = authHeader.toLowerCase().startsWith('bearer ') && !authHeader.includes(SERVICE_KEY);
+        const res = await fetch(`${SUPABASE_URL}/functions/v1/telnyx-send-message`, {
           method: 'POST',
-          headers: { Authorization: `Bearer ${META_TOKEN}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ messaging_product: 'whatsapp', to: contact.phone, type: 'text', text: { body: finalText } }),
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: canForward ? authHeader : `Bearer ${SERVICE_KEY}`,
+            apikey: ANON_KEY,
+          },
+          body: JSON.stringify({
+            to: contact.phone,
+            body: finalText,
+            channel: draft.channel,
+            contact_id: draft.contact_id,
+            client_dedupe_id: `zara-draft:${draftId}`,
+          }),
         });
-        if (!res.ok) throw new Error(`whatsapp_send_failed_${res.status}`);
-      } else if (draft.channel === 'sms') {
-        await admin.from('sms_outbound_queue').insert({
-          contact_id: draft.contact_id, body: finalText, requested_by: decidedBy ?? null, status: 'queued',
-        });
+        if (!res.ok) {
+          const errBody = await res.text();
+          throw new Error(`${draft.channel}_send_failed_${res.status}: ${errBody.slice(0, 200)}`);
+        }
       } else if (draft.channel === 'email') {
         const to = (contact.email ?? '').trim();
         if (!to) throw new Error('contact_email_missing');

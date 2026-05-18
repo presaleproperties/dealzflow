@@ -45,7 +45,7 @@ Deno.serve(async (req) => {
     }
 
     const admin = createClient(SUPABASE_URL, SERVICE_KEY);
-    const [contactRes, lastTouchRes, eventsRes, memoryRes, intelRes, recentNotesRes] = await Promise.all([
+    const [contactRes, lastTouchRes, eventsRes, memoryRes, intelRes, recentNotesRes, recentSmsRes] = await Promise.all([
       admin.from("crm_contacts").select("*").eq("id", contactId).maybeSingle(),
       admin.from("crm_contact_last_touch").select("*").eq("contact_id", contactId).maybeSingle(),
       admin
@@ -66,6 +66,11 @@ Deno.serve(async (req) => {
         .not("note_type", "in", "(import_archive,ai_summary,system,website_behavior)")
         .order("created_at", { ascending: false })
         .limit(6),
+      admin.from("crm_sms_log")
+        .select("id, direction, body, channel, status, sent_at, created_at, to_number, from_number")
+        .eq("contact_id", contactId)
+        .order("sent_at", { ascending: false, nullsFirst: false })
+        .limit(20),
     ]);
 
     return new Response(
@@ -77,6 +82,7 @@ Deno.serve(async (req) => {
         leadMemory: memoryRes.data ?? null,
         noteIntelligence: intelRes.data ?? [],
         recentNotes: recentNotesRes.data ?? [],
+        recentSms: recentSmsRes.data ?? [],
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
