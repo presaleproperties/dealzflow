@@ -549,6 +549,7 @@ export function ZaraDock() {
               <Pill size="sm" tone={modePill.tone}>{modePill.label}</Pill>
             </div>
             <div className="flex items-center gap-0.5">
+              <button onClick={clearChat} disabled={rendered.length === 0 && !streaming} className="p-2 rounded-full hover:bg-foreground/5 disabled:opacity-30 disabled:hover:bg-transparent" title="Clear chat"><Eraser className="w-4 h-4" /></button>
               <button onClick={() => navigate('/crm/zara')} className="p-2 rounded-full hover:bg-foreground/5" title="Open full cockpit"><Maximize2 className="w-4 h-4" /></button>
               <button onClick={() => setShowHistory(true)} className="p-2 rounded-full hover:bg-foreground/5" title="Conversations (/)"><History className="w-4 h-4" /></button>
               <button onClick={() => setOpen(false)} className="p-2 rounded-full hover:bg-foreground/5" title="Close (Esc)"><X className="w-4 h-4" /></button>
