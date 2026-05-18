@@ -235,6 +235,15 @@ export default function CrmChatThreadPage({ embedded = false }: CrmChatThreadPag
   const snoozeOptions = useMemo(() => snoozePresets(), []);
   // Offline outbox state (filtered by contact later, once thread loads)
   const outbox = useOfflineOutbox();
+
+  // Auto-prune empty-body ghost items left over from older queue versions —
+  // they would otherwise render forever as broken "(empty)" failed bubbles.
+  useEffect(() => {
+    const stale = outbox.items.filter((i) => !i.body || i.body.trim().length === 0);
+    if (stale.length === 0) return;
+    stale.forEach((i) => outbox.remove(i.id));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [outbox.items.length]);
   const isCompact = useIsCompact();
   const dialer = useDialer();
 
