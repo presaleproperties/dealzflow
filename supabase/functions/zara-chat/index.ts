@@ -896,6 +896,23 @@ Deno.serve(async (req) => {
               const callCtx = (tu.name === "draft_email" || tu.name === "draft_sms" || tu.name === "draft_whatsapp") && ragSources
                 ? { ...ctx, consulted_sources: ragSources } : ctx;
               const out = await runTool(tu.name, tu.input, callCtx as any);
+
+              // Auto-resolve {LOOKUP: topic} placeholders left in any draft.
+              // Fires for draft_email / draft_sms / draft_whatsapp only.
+              let lookupReport: { resolved: string[]; unresolved: string[] } | null = null;
+              if (DRAFT_TOOLS.has(tu.name) && (out as any)?.ok && (out as any)?.data?.draft_id) {
+                try {
+                  lookupReport = await autoResolveLookupsInDraft(
+                    (out as any).data.draft_id,
+                    callCtx as any,
+                    runTool,
+                  );
+                } catch (e) {
+                  console.warn("[zara-chat] auto-resolve lookups failed", e);
+                }
+                if (lookupReport) (out as any).lookup_resolution = lookupReport;
+              }
+
               await persistToolResult(conversation_id, tu.id, tu.name, out);
               toolResultsById.set(tu.id, out);
               send("tool_result", { id: tu.id, name: tu.name, output: out });
