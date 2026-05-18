@@ -66,17 +66,30 @@ export function QuickActionBar({ contact }: Props) {
     mode === 'email' || mode === 'text',
   );
 
+  // Canonical signature path — same as ComposeEmailDialog. Inline composer
+  // is a reply-context, so prefer the agent's REPLY signature.
+  const { data: signatures = [] } = useEmailSignatures();
+  const { data: emailSettings } = useEmailSettings();
+  const activeSignatureHtml = useMemo(() => {
+    const picked = pickSignatureForKind(signatures, 'reply')
+      ?? signatures.find((s) => s.is_default)
+      ?? signatures[0];
+    if (picked) return picked.html;
+    return emailSettings?.signature_html ?? presaleAgent?.signatureHtml ?? '';
+  }, [signatures, emailSettings, presaleAgent]);
+
   const sender = useMemo(() => {
-    const fullName = profile?.full_name || presaleAgent?.name || user?.email || '';
+    const fullName =
+      emailSettings?.sender_name || profile?.full_name || presaleAgent?.name || user?.email || '';
     const firstName = fullName.split(' ')[0] || '';
     return {
       first_name: firstName,
       full_name: fullName,
-      email: user?.email || presaleAgent?.email || '',
+      email: emailSettings?.reply_to || user?.email || presaleAgent?.email || '',
       phone: profile?.phone || presaleAgent?.phone || '',
-      signature: presaleAgent?.signatureHtml || '',
+      signature: activeSignatureHtml,
     };
-  }, [profile, presaleAgent, user]);
+  }, [profile, presaleAgent, user, emailSettings, activeSignatureHtml]);
 
   const switchMode = (next: Mode) => {
     setMode(next);
