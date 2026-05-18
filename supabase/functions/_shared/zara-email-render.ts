@@ -101,9 +101,58 @@ export async function renderBrandedEmail(
   const bridgeBase = Deno.env.get("PRESALE_BRIDGE_URL") ?? "https://thvlisplwqhtjpzpedhq.supabase.co/functions/v1";
   if (!bridgeSecret) throw new Error("presale_bridge_secret_missing");
 
-  const templateId = opts.intent === "send_project_details" || opts.intent === "project_match"
-    ? "auto_project_details_docs"
-    : "auto_agent_followup";
+  // ── Enrich with project context from zara_lead_memory ────────────────
+  // Presale's two auto-templates both expect projectName + optional
+  // city/developer/price/deposit/completion/projectUrl/brochureUrl/
+  // floorplanUrl/pricingUrl/heroImage. Pulling these from the lead's
+  // memory + matching crm_projects row turns the otherwise-empty
+  // "Curated projects for {name}" header into a real recommendation.
+  let projectCtx: Record<string, unknown> = {};
+  try {
+    const { data: mem } = await sb.from("zara_lead_memory")
+      .select("facts").eq("contact_id", opts.contactId).maybeSingle();
+    const facts = ((mem as any)?.facts ?? {}) as Record<string, unknown>;
+    const interest = String(facts.project_interest ?? "").trim();
+    if (interest) {
+      const { data: proj } = await sb.from("crm_projects")
+        .select("name,city,developer,price_from,price_to,completion_date,website_url,marketing_url,brochure_url,floor_plans_url,pricing_url,hero_image_url")
+        .or(`name.ilike.%${interest.replace(/[%,]/g, "")}%,aliases.cs.{${interest}}`)
+        .eq("is_active", true)
+        .order("usage_count", { ascending: false })
+        .limit(1).maybeSingle();
+      if (proj) {
+        const p = proj as any;
+        projectCtx = {
+          projectName: p.name,
+          city: p.city ?? undefined,
+          developerName: p.developer ?? undefined,
+          startingPrice: p.price_from ? `$${Number(p.price_from).toLocaleString()}` : undefined,
+          completion: p.completion_date ?? undefined,
+          projectUrl: p.marketing_url ?? p.website_url ?? undefined,
+          brochureUrl: p.brochure_url ?? undefined,
+          floorplanUrl: p.floor_plans_url ?? undefined,
+          pricingUrl: p.pricing_url ?? undefined,
+          heroImage: p.hero_image_url ?? undefined,
+        };
+      } else {
+        projectCtx = { projectName: interest };
+      }
+    }
+  } catch (_) { /* enrichment is best-effort */ }
+
+  // Pick Presale auto-template. Only TWO exist upstream:
+  //   A. auto_project_details_docs  → use when we have brochure/floorplan
+  //   B. auto_agent_followup        → personal follow-up, no docs needed
+  // Intent hint upgrades to Template A whenever the lead asked for
+  // project details OR we have a brochure/floorplan to attach.
+  const hasDocs = Boolean(
+    (projectCtx as any).brochureUrl || (projectCtx as any).floorplanUrl || (projectCtx as any).pricingUrl,
+  );
+  const intent = String(opts.intent ?? "").toLowerCase();
+  const wantsDetails = intent === "send_project_details" || intent === "project_details" ||
+    intent === "project_match" || intent === "project_info";
+  const templateId = wantsDetails || hasDocs ? "auto_project_details_docs" : "auto_agent_followup";
+
   const recipientName = (contact as any)?.first_name || "there";
   const cleanBody = String(opts.bodyText ?? "").trim();
   const fallbackHtml = paragraphsToHtml(cleanBody);
@@ -124,6 +173,7 @@ export async function renderBrandedEmail(
       email: (contact as any)?.email ?? undefined,
       city: (contact as any)?.city ?? undefined,
     },
+    ...projectCtx,
   };
 
   const res = await fetch(`${bridgeBase.replace(/\/$/, "")}/serve-auto-templates`, {
