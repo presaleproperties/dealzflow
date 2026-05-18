@@ -166,9 +166,95 @@ async function getOrCreateConversation(presale_user_id: string, contact_id: stri
 async function loadHistory(convId: string) {
   const sb = svc();
   const { data } = await sb.from("zara_messages")
-    .select("role,content,tool_calls,tool_call_id,tool_result,tool_name")
-    .eq("conversation_id", convId).order("created_at", { ascending: true }).limit(30);
-  return data ?? [];
+    .select("role,content,tool_calls,tool_call_id,tool_result,tool_name,created_at")
+    .eq("conversation_id", convId).order("created_at", { ascending: false }).limit(HISTORY_WINDOW);
+  return (data ?? []).reverse();
+}
+
+// ── Brain parity: RAG retrieval (same shape as zara-chat) ────────────
+async function embedQuery(text: string): Promise<number[] | null> {
+  if (!OPENAI_API_KEY) return null;
+  try {
+    const r = await fetch("https://api.openai.com/v1/embeddings", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${OPENAI_API_KEY}` },
+      body: JSON.stringify({ model: "text-embedding-3-small", input: text.slice(0, 8000) }),
+    });
+    if (!r.ok) return null;
+    const j = await r.json();
+    return j?.data?.[0]?.embedding ?? null;
+  } catch { return null; }
+}
+
+async function retrieveContext(userText: string) {
+  const empty = { block: "", sources: { chunks: [], wins: [], projects: [], market: [], principles: [] } };
+  const emb = await embedQuery(userText);
+  if (!emb) return empty;
+  const sb = svc();
+  const [chunkRes, winRes, projRes, marketRes, principlesRes] = await Promise.all([
+    sb.rpc("zara_match_knowledge_chunks", { query_embedding: emb as any, match_threshold: RAG_CHUNK_THRESHOLD, match_count: RAG_CHUNK_COUNT }),
+    sb.rpc("zara_match_winning_conversations", { query_embedding: emb as any, match_threshold: RAG_WIN_THRESHOLD, match_count: RAG_WIN_COUNT }),
+    sb.rpc("zara_match_project_deep_dives", { query_embedding: emb as any, match_threshold: RAG_PROJECT_THRESHOLD, match_count: RAG_PROJECT_COUNT }),
+    sb.from("market_intel").select("id,week_of,headline,summary").order("week_of", { ascending: false }).limit(2),
+    sb.rpc("zara_founder_retrieve", { _query: userText, _module_slug: null, _limit: 4 }).then((r: any) => r, () => ({ data: [] })),
+  ]);
+  const chunks = (chunkRes.data ?? []) as any[];
+  const wins = (winRes.data ?? []) as any[];
+  const projects = (projRes.data ?? []) as any[];
+  const market = (marketRes.data ?? []) as any[];
+  const principles = (principlesRes.data ?? []) as any[];
+  if (!chunks.length && !wins.length && !projects.length && !market.length && !principles.length) return empty;
+
+  const parts: string[] = ["<retrieved_context>"];
+  parts.push("Grounding from Uzair's playbooks and project notes. Use silently — never quote source ids back to the visitor.");
+  if (chunks.length) { parts.push("\n## Playbook\n"); chunks.forEach((c, i) => parts.push(`[K${i+1}] ${String(c.content).slice(0, 700)}`)); }
+  if (wins.length) { parts.push("\n## Past wins\n"); wins.forEach((w, i) => parts.push(`[W${i+1}] ${w.lead_profile ?? "?"} — turning: ${w.turning_message ?? "?"}`)); }
+  if (projects.length) { parts.push("\n## Project deep-dives\n"); projects.forEach((p, i) => parts.push(`[P${i+1}] ${p.name}${p.city ? ` (${p.city})` : ""} — ${String(p.uzair_pitch ?? "").slice(0, 300)}`)); }
+  if (market.length) { parts.push("\n## Market\n"); market.forEach((m, i) => parts.push(`[M${i+1}] ${m.week_of}: ${m.headline ?? ""}`)); }
+  if (principles.length) { parts.push("\n## Founder principles\n"); principles.forEach((p: any, i) => parts.push(`[F${i+1}] ${p.title ?? ""} — ${String(p.body ?? "").slice(0, 280)}`)); }
+  parts.push("</retrieved_context>");
+
+  return {
+    block: parts.join("\n"),
+    sources: {
+      chunks: chunks.map((c) => ({ id: c.id, document_id: c.document_id, similarity: c.similarity })),
+      wins: wins.map((w) => ({ id: w.id, similarity: w.similarity })),
+      projects: projects.map((p) => ({ id: p.id, name: p.name, similarity: p.similarity })),
+      market: market.map((m) => ({ id: m.id, week_of: m.week_of })),
+      principles: principles.map((p: any) => ({ id: p.id, title: p.title })),
+    },
+  };
+}
+
+async function buildLeadMemoryBlock(contactId: string): Promise<string> {
+  const sb = svc();
+  const [contactRes, memRes] = await Promise.all([
+    sb.from("crm_contacts")
+      .select("id, first_name, last_name, email, phone, status, language_preference, city, tags, project, projects")
+      .eq("id", contactId).maybeSingle(),
+    sb.from("zara_lead_memory")
+      .select("summary, relationship_stage, last_topics, continuity_openers")
+      .eq("contact_id", contactId).maybeSingle(),
+  ]);
+  const c: any = contactRes.data; if (!c) return "";
+  const m: any = memRes.data ?? {};
+  const name = [c.first_name, c.last_name].filter(Boolean).join(" ").trim() || c.email || "Visitor";
+  const lines = ["<lead_memory>"];
+  lines.push("This visitor is already a known CRM contact. Use silently for continuity. Never recap CRM internals.");
+  lines.push(`Name: ${name}`);
+  if (c.language_preference) lines.push(`Language: ${c.language_preference}`);
+  if (c.city) lines.push(`City: ${c.city}`);
+  if (Array.isArray(c.tags) && c.tags.length) lines.push(`Tags: ${c.tags.slice(0, 6).join(", ")}`);
+  const projs = [...(c.project ? [c.project] : []), ...(Array.isArray(c.projects) ? c.projects : [])].filter((v, i, a) => v && a.indexOf(v) === i).slice(0, 3);
+  if (projs.length) lines.push(`Projects of interest: ${projs.join(" · ")}`);
+  if (m.relationship_stage) lines.push(`Relationship stage: ${m.relationship_stage}`);
+  if (Array.isArray(m.last_topics) && m.last_topics.length) lines.push(`Last topics: ${m.last_topics.slice(0, 4).join(" · ")}`);
+  if (Array.isArray(m.continuity_openers) && m.continuity_openers.length) {
+    lines.push(`Possible openers: ${m.continuity_openers.slice(0, 2).map((s: string) => `"${s}"`).join(" / ")}`);
+  }
+  if (m.summary) lines.push(`Summary: ${String(m.summary).slice(0, 400)}`);
+  lines.push("</lead_memory>");
+  return lines.join("\n");
 }
 
 function toAnthropicMessages(rows: any[]) {
