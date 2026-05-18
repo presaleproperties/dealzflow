@@ -209,7 +209,7 @@ Draft Zara's reply now. Return ONLY the JSON object.`;
         body: JSON.stringify({
           model,
           max_tokens: 1024,
-          system: buildZaraSystemPrompt(intent),
+          system: buildZaraSystemPrompt(intent, { neverQuote, mode: (memoryRow as any)?.signals?.mode ?? null }),
           messages: [{ role: 'user', content: userPrompt }],
         }),
       });
