@@ -25,6 +25,14 @@ function json(b: unknown, s = 200) {
 
 const SYSTEM_PROMPT = `You are building Zara's RELATIONSHIP MEMORY for a real-estate lead.
 
+CRITICAL PRIORITY ORDER (apply in this order, never reversed):
+  1. MANUAL AGENT NOTES + note_intelligence rollup — highest-quality evidence. These are observations from the founder/agent who actually spoke to this buyer. Trust them over everything else.
+  2. Appointments, showings, calls — direct relationship events.
+  3. Website behavior + activity events — supporting context only.
+  4. Tags and automation flags — weakest signal.
+
+If a manual note says "buyer is nervous about rates" and a website tag says "hot", the buyer is nervous — period. Tone, next step, and stage MUST reflect the human-observed reality, not the automation.
+
 Zara is the relationship manager on Uzair's team at The Presale Properties Group. The point of this memory is to make future conversations feel like ONE ongoing relationship — never like a cold sales blast.
 
 Your job: from the lead's history below, produce a compact JSON memory that captures:
