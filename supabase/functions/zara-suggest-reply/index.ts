@@ -56,15 +56,26 @@ Deno.serve(async (req) => {
       return json({ error: 'anthropic_key_missing', message: 'Add ANTHROPIC_API_KEY to project secrets.' }, 500);
     }
 
-    // 3. Context
-    const [{ data: memoryRow }, { data: events }] = await Promise.all([
-      admin.from('zara_lead_memory').select('summary, signals, facts, turn_count, version, last_rolled_at').eq('contact_id', contactId).maybeSingle(),
+    // 3. Context — including agent-note intelligence (HIGHEST-priority signal)
+    const [{ data: memoryRow }, { data: events }, { data: noteIntel }, { data: recentNotes }] = await Promise.all([
+      admin.from('zara_lead_memory').select('summary, signals, facts, turn_count, version, last_rolled_at, intelligence_summary, recommended_style, recommended_next_step').eq('contact_id', contactId).maybeSingle(),
       admin
         .from('crm_engagement_events')
         .select('event_type, source, direction, occurred_at, metadata')
         .eq('contact_id', contactId)
         .order('occurred_at', { ascending: false })
         .limit(10),
+      admin.from('zara_note_intelligence')
+        .select('emotional_state, trust_level, buying_readiness, objections, motivations, financial_concerns, family_context, timing_signals, recommended_style, recommended_next_step, key_quote, summary, analyzed_at')
+        .eq('contact_id', contactId)
+        .order('analyzed_at', { ascending: false })
+        .limit(5),
+      admin.from('crm_notes')
+        .select('content, note_type, event_at, created_at')
+        .eq('contact_id', contactId)
+        .not('note_type', 'in', '(import_archive,ai_summary,system,website_behavior)')
+        .order('created_at', { ascending: false })
+        .limit(3),
     ]);
 
     // 3b. Tone sample — last 1-2 inbound messages so the draft matches the
