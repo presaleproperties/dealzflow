@@ -10,6 +10,7 @@ import { RecentCallsCard } from '@/components/crm/leads/RecentCallsCard';
 import type { CrmContact } from '@/hooks/useCrmContacts';
 import type { LeadScore } from './types';
 import { ZaraLeadCard } from './ZaraLeadCard';
+import { ZaraRemembersCard } from '@/components/crm/leads/ZaraRemembersCard';
 
 interface Props {
   contact: CrmContact;
@@ -71,6 +72,9 @@ export function RightSidebar({
         onAddTask={onAddTask}
         onAddShowing={onAddShowing}
       />
+
+      {/* Zara remembers — structured facts from rolling memory */}
+      <ZaraRemembersCard contactId={contact.id} />
 
       {/* Zara — AI assistant memory & draft toggle */}
       <ZaraLeadCard
