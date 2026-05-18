@@ -492,7 +492,7 @@ export function ZaraDock() {
           className="fixed z-[60] zara-halo"
           style={{
             bottom: 'calc(max(24px, env(safe-area-inset-bottom)) + var(--bottom-nav-pad, 0px))',
-            right: 24,
+            right: 80,
             borderRadius: 9999,
           }}
         >
