@@ -422,8 +422,8 @@ function TeachPane({ modules }: { modules: Module[] }) {
           <Textarea
             value={text}
             onChange={(e) => setText(e.target.value)}
-            onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); send(); } }}
-            placeholder="Speak naturally to Zara… (⌘/Ctrl + Enter to send)"
+            onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); send(); } }}
+            placeholder="Speak naturally to Zara… (Enter to send, Shift+Enter for newline)"
             rows={2}
             className="resize-none"
           />
