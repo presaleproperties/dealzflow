@@ -209,6 +209,24 @@ export function SendProjectDialog({ contact, open, onOpenChange }: Props) {
     toast({ title: 'Saved', description: 'These CTA defaults will apply to your future sends.' });
   };
 
+  const handleSyncProjects = async () => {
+    setSyncingProjects(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('sync-presale-projects', { body: {} });
+      if (error) throw error;
+      await queryClient.invalidateQueries({ queryKey: ['send-project.projects'] });
+      await queryClient.invalidateQueries({ queryKey: ['crm-projects'] });
+      toast({
+        title: 'Projects synced',
+        description: `${data?.unique_projects ?? 'All'} Presale projects checked · ${data?.inserted ?? 0} new · ${data?.updated ?? 0} updated.`,
+      });
+    } catch (e) {
+      toast({ title: 'Project sync failed', description: e instanceof Error ? e.message : 'Try again.', variant: 'destructive' });
+    } finally {
+      setSyncingProjects(false);
+    }
+  };
+
   // ─── Presale signup-style funnels (seeded in crm_automations) ────────────
   const { data: funnels = [] } = useQuery<Funnel[]>({
     queryKey: ['send-project.funnels'],
@@ -285,9 +303,13 @@ export function SendProjectDialog({ contact, open, onOpenChange }: Props) {
     if (projectSlug) return;
     const contactProjects = (contact as unknown as { projects?: string[] }).projects ?? [];
     const match = projects.find(p =>
-      contactProjects.some(cp => cp && p.slug && cp.toLowerCase() === p.slug.toLowerCase()),
+      contactProjects.some(cp => {
+        if (!cp) return false;
+        const v = cp.toLowerCase();
+        return [p.slug, p.presale_slug, p.name].some((candidate) => candidate?.toLowerCase() === v);
+      }),
     );
-    setProjectSlug(match?.slug ?? projects[0].slug);
+    setProjectSlug(projectOptionValue(match ?? projects[0]));
   }, [open, projects, contact, projectSlug]);
 
   useEffect(() => {
