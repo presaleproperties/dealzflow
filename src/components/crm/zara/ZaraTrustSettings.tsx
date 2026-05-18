@@ -31,9 +31,10 @@ export function ZaraTrustSettings() {
         .eq('id', 1)
         .maybeSingle();
       if (data) {
-        setS(data as Settings);
-        setPhrasesText((data.never_quote?.phrases ?? []).join('\n'));
-        setTopicsText((data.never_quote?.topics ?? []).join('\n'));
+        const nq = (data.never_quote ?? {}) as { phrases?: string[]; topics?: string[] };
+        setS({ ...(data as any), never_quote: nq });
+        setPhrasesText((nq.phrases ?? []).join('\n'));
+        setTopicsText((nq.topics ?? []).join('\n'));
       }
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
