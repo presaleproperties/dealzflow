@@ -352,7 +352,7 @@ async function list_projects(args: any) {
   const qStr = typeof args.q === "string" ? args.q.trim() : "";
   let q = sb
     .from("crm_projects")
-    .select("name,slug,city,status", { count: "exact" })
+    .select("name,slug,city,status,property_type,price_from,price_to,completion_date,incentives,assignment_rules,last_viewed_at", { count: "exact" })
     .order("name", { ascending: true })
     .range(offset, offset + limit - 1);
   if (args.city) q = q.ilike("city", `%${args.city}%`);
@@ -609,6 +609,8 @@ async function get_pricing(args: any, _ctx: Ctx) {
     price_range_high: p?.price_range_high ?? c?.price_to ?? null,
     starting_psf: p?.starting_psf ?? null,
     deposit_structure: p?.deposit_structure ?? null,
+    incentives: (p?.incentives ?? c?.incentives ?? []) as any[],
+    assignment_rules: p?.assignment_rules ?? c?.assignment_rules ?? null,
     pricing_url: c?.pricing_url ?? null,
     pricing_filename: c?.pricing_filename ?? null,
     status: p?.status ?? c?.status ?? null,
@@ -946,6 +948,276 @@ async function get_floor_plans(args: any, _ctx: any) {
   return ok({ project_slug: slug, count: plans.length, ttl_seconds: ttl, floor_plans: plans });
 }
 
+// ── Website Intelligence Layer ─────────────────────────────────────────
+
+// Classify a raw activity-events row (or nested behavior_batch view) into a
+// human-readable behaviour category Zara can reason about.
+function classifyEvent(type: string, meta: any): string {
+  const t = String(type || "").toLowerCase();
+  const path = String(meta?.page_path ?? meta?.path ?? meta?.url ?? "").toLowerCase();
+  const label = String(meta?.event_label ?? meta?.label ?? "").toLowerCase();
+  if (t.includes("form_abandon") || label.includes("abandon")) return "booking_abandon";
+  if (t.includes("form_start") || t === "form" || t.includes("booking_start")) return "booking_start";
+  if (t.includes("contact_form") || t.includes("vip_registration")) return "form_submission";
+  if (t.includes("return_visit")) return "repeat_visit";
+  if (t.includes("email_open")) return "email_open";
+  if (t.includes("email_click")) return "email_click";
+  if (t.includes("email_sent") || t.includes("email.sent") || t.includes("auto_response")) return "email_sent";
+  if (t.includes("sms_inbound")) return "sms_inbound";
+  if (t.includes("sms_outbound")) return "sms_outbound";
+  if (path.includes("/floorplan") || label.includes("floorplan") || label.includes("floor plan")) return "floor_plan_download";
+  if (path.includes("/pricing") || label.includes("pricing")) return "pricing_request";
+  if (path.includes("/brochure") || path.includes("/deck") || label.includes("brochure") || label.includes("deck")) return "brochure_download";
+  if (path.includes("/assignment") || label.includes("assignment")) return "assignment_page_view";
+  if (path.includes("/calculator") || label.includes("calculator") || label.includes("mortgage")) return "calculator_usage";
+  if (path.includes("/compare") || label.includes("compare")) return "comparison_view";
+  if (path.includes("/guide") || path.includes("/buyer") || path.includes("/process")) return "buyer_guide_view";
+  if (path.includes("/blog") || path.includes("/news")) return "blog_view";
+  if (path.includes("/projects/") || meta?.project_slug) return "project_view";
+  if (path.includes("/cities/") || path.includes("/neighborhood")) return "city_page_view";
+  if (label.includes("cta") || meta?.cta) return "cta_click";
+  if (t === "page_view" || t.includes("visitor.presence")) return "page_view";
+  return t || "unknown";
+}
+
+async function get_lead_website_behavior(args: any, _ctx: Ctx) {
+  const sb = svc();
+  const since = Math.min(Math.max(Number(args.since_days ?? 90), 1), 365);
+  const sinceIso = new Date(Date.now() - since * 24 * 3600 * 1000).toISOString();
+
+  // Resolve contact
+  let contactId: string | null = args.contact_id ?? null;
+  let email: string | null = args.email ? String(args.email).toLowerCase().trim() : null;
+  let phone: string | null = args.phone ? String(args.phone).trim() : null;
+  if (contactId && (!email || !phone)) {
+    const { data: c } = await sb.from("crm_contacts").select("email,phone").eq("id", contactId).maybeSingle();
+    email = email ?? (c as any)?.email ?? null;
+    phone = phone ?? (c as any)?.phone ?? null;
+  }
+  if (!contactId && !email && !phone) return fail("contact_id, email, or phone required");
+
+  // Pull events — by contact_id OR email OR phone
+  let q = sb.from("crm_activity_events")
+    .select("id,type,project_slug,metadata,occurred_at")
+    .gte("occurred_at", sinceIso)
+    .order("occurred_at", { ascending: false })
+    .limit(500);
+  if (contactId) q = q.eq("contact_id", contactId);
+  else if (email) q = q.eq("lead_email", email);
+  else if (phone) q = q.eq("lead_phone", phone);
+
+  const { data, error } = await q;
+  if (error) return fail(error.message);
+
+  // Flatten: each row becomes 1+ classified events. behavior_batch unpacks nested views/sessions/forms.
+  type FlatEv = { kind: string; project_slug: string | null; page_path: string | null; occurred_at: string; raw_type: string };
+  const flat: FlatEv[] = [];
+  for (const row of (data ?? [])) {
+    const meta: any = row.metadata ?? {};
+    const baseTime = row.occurred_at;
+    if (row.type === "behavior_batch") {
+      const b = meta?.behavior ?? {};
+      for (const v of (b.views ?? [])) {
+        flat.push({
+          kind: classifyEvent("page_view", { ...meta, ...(v as any) }),
+          project_slug: (v as any)?.project_slug ?? row.project_slug ?? null,
+          page_path: (v as any)?.page_path ?? (v as any)?.path ?? meta?.page_path ?? null,
+          occurred_at: (v as any)?.viewed_at ?? baseTime,
+          raw_type: "page_view",
+        });
+      }
+      for (const f of (b.forms ?? [])) {
+        const kind = (f as any)?.abandoned ? "booking_abandon" : "booking_start";
+        flat.push({
+          kind,
+          project_slug: (f as any)?.project_slug ?? row.project_slug ?? null,
+          page_path: (f as any)?.page_path ?? null,
+          occurred_at: (f as any)?.occurred_at ?? baseTime,
+          raw_type: "form",
+        });
+      }
+      for (const s of (b.sessions ?? [])) {
+        flat.push({
+          kind: "session",
+          project_slug: row.project_slug ?? null,
+          page_path: (s as any)?.landing_page ?? null,
+          occurred_at: (s as any)?.started_at ?? baseTime,
+          raw_type: "session",
+        });
+      }
+    } else {
+      flat.push({
+        kind: classifyEvent(row.type, meta),
+        project_slug: row.project_slug ?? meta?.project_slug ?? null,
+        page_path: meta?.page_path ?? meta?.path ?? null,
+        occurred_at: baseTime,
+        raw_type: row.type,
+      });
+    }
+  }
+
+  // Optional type filter
+  let filtered = flat;
+  if (Array.isArray(args.types) && args.types.length) {
+    const allow = new Set(args.types.map((t: any) => String(t).toLowerCase()));
+    filtered = flat.filter((e) => allow.has(e.kind));
+  }
+
+  // Aggregate counts
+  const counts: Record<string, number> = {};
+  const projectViews: Record<string, { count: number; last_viewed_at: string }> = {};
+  for (const e of filtered) {
+    counts[e.kind] = (counts[e.kind] ?? 0) + 1;
+    if (e.project_slug && (e.kind === "project_view" || e.kind === "floor_plan_download" || e.kind === "page_view")) {
+      const cur = projectViews[e.project_slug];
+      if (!cur || cur.last_viewed_at < e.occurred_at) {
+        projectViews[e.project_slug] = { count: (cur?.count ?? 0) + 1, last_viewed_at: e.occurred_at };
+      } else {
+        cur.count += 1;
+      }
+    }
+  }
+
+  // Sessions in last 30d (repeat_visits)
+  const sessions30d = filtered.filter((e) => e.kind === "session" && e.occurred_at > new Date(Date.now() - 30 * 24 * 3600 * 1000).toISOString()).length;
+
+  // Bridge fallback if local is empty
+  let bridge: any = null;
+  if (!filtered.length && (email || phone)) {
+    try {
+      bridge = await presaleBridge.getLeadBehavior({ email: email ?? undefined, phone: phone ?? undefined });
+    } catch (e) {
+      console.warn("[get_lead_website_behavior] bridge fallback failed", (e as Error).message);
+    }
+  }
+
+  return ok({
+    contact_id: contactId,
+    since_days: since,
+    counts,
+    project_views: Object.entries(projectViews).map(([slug, v]) => ({ project_slug: slug, count: v.count, last_viewed_at: v.last_viewed_at }))
+      .sort((a, b) => b.count - a.count).slice(0, 20),
+    sessions_last_30d: sessions30d,
+    recent_timeline: filtered.slice(0, 20),
+    bridge_fallback: bridge,
+    has_data: filtered.length > 0 || !!bridge,
+  });
+}
+
+async function search_website_content(args: any) {
+  const sb = svc();
+  const q = String(args.query ?? "").trim();
+  if (!q) return fail("query required");
+  const topK = Math.min(Math.max(Number(args.top_k ?? 5), 1), 10);
+  const embedding = await embedQuery(q);
+  const allowed = Array.isArray(args.types) && args.types.length
+    ? args.types
+    : ["buyer_guide", "assignment_page", "city_page", "calculator", "comparison", "blog_post", "process_page"];
+
+  // Try vector search via existing RPC if available; fall back to ilike on title/excerpt.
+  if (embedding) {
+    try {
+      const { data, error } = await sb.rpc("match_zara_knowledge", {
+        query_embedding: embedding as any,
+        match_count: topK * 3,
+        filter_types: allowed,
+      });
+      if (!error && data) {
+        return ok({ results: (data as any[]).slice(0, topK) });
+      }
+    } catch (_) { /* fall through */ }
+  }
+  const { data } = await sb.from("zara_knowledge_documents")
+    .select("id,title,type,source_url,last_crawled_at")
+    .in("type", allowed)
+    .or(`title.ilike.%${q}%`)
+    .limit(topK);
+  return ok({ results: data ?? [], note: embedding ? "fallback_text_search" : "no_embedding_model" });
+}
+
+async function lookup_topic(args: any, ctx: Ctx) {
+  const sb = svc();
+  const topic = String(args.topic ?? "").trim();
+  const slug = args.project_slug ?? null;
+  if (!topic) return fail("topic required");
+
+  // Dispatch to the right structured tool
+  let resolved: any = null;
+  try {
+    switch (topic) {
+      case "pricing":
+      case "deposit_structure":
+      case "incentives": {
+        const p = await get_pricing(args, ctx);
+        resolved = (p as any)?.ok ? p : null;
+        break;
+      }
+      case "availability":
+      case "unit_count":
+      case "unit_types": {
+        const p = await get_unit_availability(args, ctx);
+        resolved = (p as any)?.ok ? p : null;
+        break;
+      }
+      case "completion_date":
+      case "assignment_rules":
+      case "brochure": {
+        const p = await project_details(args);
+        resolved = (p as any)?.ok ? p : null;
+        break;
+      }
+      case "floor_plans": {
+        const p = await get_floor_plans({ project_slug: slug }, ctx);
+        resolved = (p as any)?.ok ? p : null;
+        break;
+      }
+      default:
+        return fail(`unsupported topic: ${topic}`);
+    }
+  } catch (e) {
+    console.warn("[lookup_topic] dispatch failed", (e as Error).message);
+  }
+
+  // Decide whether resolved data is "verified" — must have a non-null value for the topic.
+  const verified = (() => {
+    if (!resolved) return false;
+    switch (topic) {
+      case "pricing": return resolved.price_range_low != null || resolved.price_range_high != null || !!resolved.pricing_url;
+      case "deposit_structure": return !!resolved.deposit_structure;
+      case "incentives": return Array.isArray(resolved.incentives) && resolved.incentives.length > 0;
+      case "availability": return !!resolved.status;
+      case "unit_count": return resolved.unit_count != null;
+      case "unit_types": return Array.isArray(resolved.unit_types) && resolved.unit_types.length > 0;
+      case "completion_date": return !!resolved?.project?.completion_date || !!resolved.completion_year;
+      case "assignment_rules": return !!resolved?.project?.assignment_rules;
+      case "brochure": return !!resolved?.project?.brochure_url;
+      case "floor_plans": return (resolved.count ?? 0) > 0;
+      default: return false;
+    }
+  })();
+
+  if (!verified) {
+    // Log the miss so admins can prioritise data hygiene
+    try {
+      await sb.from("zara_lookup_misses").insert({
+        topic,
+        project_slug: slug,
+        contact_id: args.contact_id ?? null,
+        details: { args, resolved_summary: summarize(resolved) },
+      });
+    } catch (_) { /* non-fatal */ }
+    return ok({
+      status: "unavailable",
+      topic,
+      project_slug: slug,
+      reason: "no verified data on file",
+      action_for_agent: `Pull the latest ${topic.replace(/_/g, " ")} from the developer and rerun this draft, or escalate to Uzair.`,
+    });
+  }
+
+  return ok({ status: "verified", topic, project_slug: slug, data: resolved });
+}
+
 // ── Dispatch ───────────────────────────────────────────────────────────
 
 const REGISTRY: Record<string, (args: any, ctx: Ctx) => Promise<unknown>> = {
@@ -961,6 +1233,8 @@ const REGISTRY: Record<string, (args: any, ctx: Ctx) => Promise<unknown>> = {
   book_calendly, get_pricing, attach_floorplan, schedule_follow_up_smart, enrich_lead,
   // Public-site
   capture_lead, get_unit_availability, escalate_to_human, get_floor_plans, send_brochure,
+  // Website Intelligence Layer
+  get_lead_website_behavior, search_website_content, lookup_topic,
 };
 
 
@@ -980,6 +1254,7 @@ Deno.serve(async (req) => {
       "show_engagement_score", "search_knowledge", "get_winning_pattern",
       "get_project_deep_dive", "get_market_context", "get_pricing", "enrich_lead",
       "send_briefing_summary", "get_unit_availability", "get_floor_plans",
+      "get_lead_website_behavior", "search_website_content", "lookup_topic",
     ]);
     if (READ_ONLY.has(tool)) {
       await logAction(ctx, tool, args ?? {}, result, args?.contact_id ?? null);

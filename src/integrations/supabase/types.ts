@@ -3039,6 +3039,7 @@ export type Database = {
       crm_projects: {
         Row: {
           aliases: string[] | null
+          assignment_rules: string | null
           bedrooms_offered: number[] | null
           brochure_filename: string | null
           brochure_url: string | null
@@ -3053,6 +3054,7 @@ export type Database = {
           floor_plans_url: string | null
           hero_image_url: string | null
           id: string
+          incentives: Json
           is_active: boolean
           last_viewed_at: string | null
           lead_count: number
@@ -3077,6 +3079,7 @@ export type Database = {
         }
         Insert: {
           aliases?: string[] | null
+          assignment_rules?: string | null
           bedrooms_offered?: number[] | null
           brochure_filename?: string | null
           brochure_url?: string | null
@@ -3091,6 +3094,7 @@ export type Database = {
           floor_plans_url?: string | null
           hero_image_url?: string | null
           id?: string
+          incentives?: Json
           is_active?: boolean
           last_viewed_at?: string | null
           lead_count?: number
@@ -3115,6 +3119,7 @@ export type Database = {
         }
         Update: {
           aliases?: string[] | null
+          assignment_rules?: string | null
           bedrooms_offered?: number[] | null
           brochure_filename?: string | null
           brochure_url?: string | null
@@ -3129,6 +3134,7 @@ export type Database = {
           floor_plans_url?: string | null
           hero_image_url?: string | null
           id?: string
+          incentives?: Json
           is_active?: boolean
           last_viewed_at?: string | null
           lead_count?: number
@@ -6286,6 +6292,7 @@ export type Database = {
       }
       presale_projects: {
         Row: {
+          assignment_rules: string | null
           brochure_url: string | null
           building_type: string | null
           city: string | null
@@ -6301,6 +6308,7 @@ export type Database = {
           hero_image_url: string | null
           honest_caveats: string | null
           id: string
+          incentives: Json
           key_features: Json
           last_synced_at: string | null
           last_synced_source: string | null
@@ -6321,6 +6329,7 @@ export type Database = {
           who_this_fits: string | null
         }
         Insert: {
+          assignment_rules?: string | null
           brochure_url?: string | null
           building_type?: string | null
           city?: string | null
@@ -6336,6 +6345,7 @@ export type Database = {
           hero_image_url?: string | null
           honest_caveats?: string | null
           id?: string
+          incentives?: Json
           key_features?: Json
           last_synced_at?: string | null
           last_synced_source?: string | null
@@ -6356,6 +6366,7 @@ export type Database = {
           who_this_fits?: string | null
         }
         Update: {
+          assignment_rules?: string | null
           brochure_url?: string | null
           building_type?: string | null
           city?: string | null
@@ -6371,6 +6382,7 @@ export type Database = {
           hero_image_url?: string | null
           honest_caveats?: string | null
           id?: string
+          incentives?: Json
           key_features?: Json
           last_synced_at?: string | null
           last_synced_source?: string | null
@@ -7725,16 +7737,19 @@ export type Database = {
       }
       zara_knowledge_documents: {
         Row: {
+          crawl_etag: string | null
           error_message: string | null
           file_name: string | null
           file_size_bytes: number | null
           id: string
           indexed_at: string | null
+          last_crawled_at: string | null
           last_retrieved_at: string | null
           raw_content: string
           retrieval_count: number
           source: string | null
           source_type: string
+          source_url: string | null
           status: string
           tags: string[]
           title: string
@@ -7744,16 +7759,19 @@ export type Database = {
           uploaded_by: string | null
         }
         Insert: {
+          crawl_etag?: string | null
           error_message?: string | null
           file_name?: string | null
           file_size_bytes?: number | null
           id?: string
           indexed_at?: string | null
+          last_crawled_at?: string | null
           last_retrieved_at?: string | null
           raw_content: string
           retrieval_count?: number
           source?: string | null
           source_type: string
+          source_url?: string | null
           status?: string
           tags?: string[]
           title: string
@@ -7763,16 +7781,19 @@ export type Database = {
           uploaded_by?: string | null
         }
         Update: {
+          crawl_etag?: string | null
           error_message?: string | null
           file_name?: string | null
           file_size_bytes?: number | null
           id?: string
           indexed_at?: string | null
+          last_crawled_at?: string | null
           last_retrieved_at?: string | null
           raw_content?: string
           retrieval_count?: number
           source?: string | null
           source_type?: string
+          source_url?: string | null
           status?: string
           tags?: string[]
           title?: string
@@ -7842,6 +7863,50 @@ export type Database = {
             foreignKeyName: "zara_lead_memory_contact_id_fkey"
             columns: ["contact_id"]
             isOneToOne: true
+            referencedRelation: "crm_contacts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      zara_lookup_misses: {
+        Row: {
+          contact_id: string | null
+          created_at: string
+          details: Json | null
+          draft_id: string | null
+          id: string
+          project_slug: string | null
+          resolved_at: string | null
+          surface: string | null
+          topic: string
+        }
+        Insert: {
+          contact_id?: string | null
+          created_at?: string
+          details?: Json | null
+          draft_id?: string | null
+          id?: string
+          project_slug?: string | null
+          resolved_at?: string | null
+          surface?: string | null
+          topic: string
+        }
+        Update: {
+          contact_id?: string | null
+          created_at?: string
+          details?: Json | null
+          draft_id?: string | null
+          id?: string
+          project_slug?: string | null
+          resolved_at?: string | null
+          surface?: string | null
+          topic?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "zara_lookup_misses_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
             referencedRelation: "crm_contacts"
             referencedColumns: ["id"]
           },

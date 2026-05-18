@@ -1,123 +1,92 @@
-# Zara — CRM Experience & Interaction System
+# Zara Website Intelligence Extraction Layer
 
-Goal: make Zara feel like the invisible intelligence layer of Dealz Flow — Linear/Notion AI/Superhuman vibe, never an Intercom bubble. Build on top of the layers we just cleaned (active prompt, founder principles, playbooks, lead memory, winning conversations, `zara_retrieve_context` RPC) — no new prompt bloat.
+## What's already in place (verified)
+- **Project inventory**: `crm_projects` (slug/city/neighborhood/developer/property_type/price_from-to/completion_date/bedrooms_offered/brochure/floorplans/pricing URLs/hero_image) + `presale_projects` extended (unit_types, unit_count, deposit_structure, completion_year/quarter, status, vip_access, key_features, uzair_pitch, caveats, fit profile). Daily sync from Presale via `sync-presale-projects`.
+- **Lead context**: `crm_contacts` + identities + tags + assigned agent + project_interest. Tools `get_lead_context`, `enrich_lead`, `recommend_projects_for_lead`, `capture_lead` already exist.
+- **Behaviour ingest**: `bridge-ingest-behavior` + `receive-presale-activity` write to `crm_activity_events` (type, contact_id, project_slug, metadata, occurred_at).
+- **RAG store**: `zara_knowledge_documents` + `zara_knowledge_chunks` for playbooks/scripts/FAQs, queried via `search_knowledge`.
+- **Existing tools (partial coverage)**: list_projects, project_details, get_pricing, get_floor_plans, get_unit_availability, send_brochure, attach_floorplan, get_project_deep_dive, capture_lead, escalate_to_human.
 
-## Phase 1 — Global access (the spine)
+## What's missing (the gaps this build closes)
 
-**1. `ZaraCommandBar` (⌘K / `/`)**
-- Mounted once in `App.NativeBootstrap`, available on every CRM route.
-- shadcn `Command` palette, editorial styling (gold accent, Plus Jakarta).
-- Context-aware: reads current route, selected lead (from a new `useZaraContext()` hook that watches `/crm/leads/:id`, `/crm/chats/:id`, `/crm/projects/:slug`, etc.).
-- Actions adapt to context:
-  - On a lead → Draft follow-up, Analyze lead, Summarize objections, Suggest next step, Predict readiness, Generate investor angle, Rewrite like Uzair.
-  - On a chat/thread → Rewrite (softer / less salesy / more trust / investor).
-  - On a project → Generate pitch (investor / family / risk / compare nearby).
-  - Always: Open Zara Intelligence, Jump to draft queue, Show hot signals.
+### 1. Project inventory completeness
+Add two missing columns on `crm_projects` + `presale_projects`:
+- `incentives` (jsonb — list of current incentives: VIP bonus, deposit defer, decor credit, etc.)
+- `assignment_rules` (text — "no assignments / closing-only / open after deposit 2", etc.)
 
-**2. Floating `ZaraDock` (corner, not a bubble)**
-- Tiny status pill in the bottom-right above the floating nav pill — pulse when Zara has a proactive nudge for the current lead/page.
-- Click expands to a slide-over panel (`Sheet`, not modal), not a chat balloon.
-- Inside: current-context insights + inline action buttons that route through the same handlers as ⌘K.
-- Mobile: replaces the per-page action with a single "Zara" item in the Quick Actions sheet (respects the bottom-nav-iOS-pill rule — no extra FAB).
+Surface in `list_projects` and `project_details` responses, and include in `get_pricing` so the never-quote guardrail can pull verified incentive data.
 
-**3. Keyboard**
-- `⌘K` opens command bar.
-- `/` from anywhere not focused in an input opens it too.
-- `g z` jumps to Zara Intelligence.
-- `⌘.` triggers the top inline action for the current context (e.g. Draft follow-up on a lead).
+### 2. Website behaviour query tool (currently NO read-side tool exists)
+New tool **`get_lead_website_behavior`** with input `{contact_id?, email?, phone?, since_days?, types?[]}` returning a structured summary from `crm_activity_events`:
+- page_views, project_views (per slug, with count + last viewed)
+- repeat_visits (sessions in last 30d)
+- floor_plan_downloads, pricing_sheet_requests, brochure_downloads
+- calculator_usage (mortgage/deposit), comparison_page_views
+- assignment_page_views, buyer_guide_views, blog_views, city_page_views
+- booking_starts, booking_abandons, CTA clicks
+- raw_timeline (last 20 events for transparency)
 
-## Phase 2 — Zara Intelligence workspace (`/crm/zara`)
+Falls back to Presale bridge `getLeadBehavior` when contact has no local events yet.
 
-Replace the current scattered Zara admin pages with one calm hub. Left rail navigates between sections; main area is a single quiet column, no sidebars of widgets.
+### 3. Content intelligence layer (currently NO content access)
+Two-part:
 
-Sections (all backed by existing tables — no new schema):
-- **Today** — daily standup card (`zara_daily_standup` output): hot signals, ghosted opportunities, appointment-ready leads, stalled momentum.
-- **Inbox Intelligence** — unified inbound triage with Zara's suggested reply per item (`zara_suggested_replies`).
-- **Draft Queue** — `crm_zara_drafts` pending list, inline Approve / Edit / Reject / Rewrite like Uzair.
-- **Lead Momentum** — sorted by Zara's momentum score, tiered (rising / stalling / cooling) — never just hot/cold.
-- **Hot Signals** — `crm_activity_events` burst feed (floorplan downloads, deck revisits, repeat views).
-- **Escalation Queue** — drafts/leads Zara flagged for Uzair handoff (`zara_handoff_briefs`).
-- **Founder Brain** — keeps the existing `/crm/zara/founder` page, slotted in as a section.
-- **Winning Conversations** — library view with upload + tag.
-- **Rewrite Like Uzair** — diff history (`zara_rewrite_diffs`) + style patterns.
-- **Conversation Analysis** — analyze any thread → extract trust moments / reply triggers.
-- **Settings** — autonomy, kill switch, quiet hours, never-quote topics (data-driven, not prompts).
+**a. Crawler edge fn `presale-content-sync`** (admin/cron, daily). Pulls PresaleProperties.com sitemap and selectively ingests:
+- buyer guides / process pages
+- assignment sales pages
+- city pages (Fraser Valley)
+- mortgage/deposit calculator descriptions
+- comparison pages
+- blog posts (last 90 days)
 
-Top-strip across every section: tiny mode indicator (sandbox/live), autonomy level, kill-switch state — calm, monospace small caps, no warning red unless kill-switch is on.
+Writes to `zara_knowledge_documents` with `type` in `('buyer_guide','assignment_page','city_page','calculator','comparison','blog_post','process_page')`, `source_url`, `title`, `last_crawled_at`. Reuses existing chunk+embed pipeline (`zara-embed`/`zara-process-embed-queue`).
 
-## Phase 3 — Inline experience on existing pages
+**b. New tool `search_website_content`** — semantic search over `zara_knowledge_documents` filtered to website types. Distinct from `search_knowledge` (which is for internal playbooks) so Zara picks the right corpus.
 
-No new pages — surfaces inside the pages users already live in.
+### 4. Never-Quote Guardrails + `{LOOKUP: topic}` convention
+Update `_shared/zara-guardrails.ts:ZARA_BASE_PROMPT` with a hard block:
 
-**Lead detail (`/crm/leads/:id`)**
-- New `<LeadIntelligencePanel />` slotted into the right column above existing cards.
-- Pulls from `zara_retrieve_context(contact_id)` (the RPC we just built) — one fetch, no extra round trips.
-- Renders, in order:
-  - Emotional state + relationship stage (from `zara_lead_memory.relationship_stage` + signals).
-  - Momentum chip (rising / steady / stalling / cooling) — derived, not stored.
-  - Investor vs end-user, trust depth, engagement depth.
-  - Recommended next step + recommended tone (from matching playbook).
-  - "Pick up where you left off" — the continuity openers (already wired).
-  - Escalation recommendation if Zara would flag.
-- Below: inline action row — Draft follow-up · Analyze · Summarize objections · Suggest next step · Investor angle. Each posts to existing edge fns.
-- No "AI" / "bot" labels anywhere. Wordmark is just "Zara" with a tiny gold dot.
+> NEVER quote prices, deposit structures, incentives, availability, completion dates, or unit counts from memory. ALWAYS call `get_pricing`, `get_unit_availability`, `project_details`, or `attach_floorplan` first. If a tool returns missing/stale data, leave a `{LOOKUP: <topic>}` placeholder in the draft and add a note for the agent.
 
-**Conversation views (chat thread, email composer)**
-- Above the composer: a row of quiet rewrite chips — Softer · Less salesy · More trust · Investor framing · Rewrite like Uzair. Each calls `zara-analyze-rewrite`-adjacent rewriter and drops the result into the composer with diff highlights, accept/reject.
-- Mention `@zara` in the composer to pull a draft suggestion inline.
+Add tool **`lookup_topic`** as a unified dispatcher — agent or downstream prompt can call `lookup_topic({topic:'incentives', project_slug:'eden'})` and it routes to the right structured fetch (pricing / availability / floor plans / incentives / completion). Returns either verified data or `{status:'unavailable', reason, action_for_agent}`.
 
-**Project view (`/crm/projects/:slug`)**
-- Side card: Generate pitch (Investor / Family buyer / Risk analysis / Compare nearby). Stores output in a per-project notes scratchpad.
+In `zara-chat` and `zara-public-chat`, post-process outbound drafts: scan for `{LOOKUP:...}` placeholders and either auto-resolve via `lookup_topic` or block send and flag the draft.
 
-## Phase 4 — Proactive intelligence (no notification spam)
+### 5. Relationship logic prompt update
+Extend `ZARA_BASE_PROMPT` "OUTBOUND VOICE" section to require Zara to pull `get_lead_website_behavior` + `get_lead_context` + `recommend_projects_for_lead` before drafting any follow-up to a website lead, and to weave in (without quoting numbers): what they viewed, which floorplans they downloaded, what they compared, plus their emotional state cue from message tone.
 
-- `ZaraDock` pulses + shows a soft sentence only when:
-  - The current lead has a momentum shift (rising/cooling) in the last 24h, OR
-  - A new `crm_activity_events` burst landed, OR
-  - A new `zara_proactive_nudges` row was inserted for the assigned agent.
-- Examples surfaced verbatim from existing nudge generators:
-  - "Lead revisited Surrey projects 4× this week."
-  - "Investor intent increasing."
-  - "Conversation momentum dropping — consider a value-led re-open."
-- Dismiss / snooze 24h / open lead. Dismissals logged so the same nudge does not re-surface.
-- All routing goes through `crm_recipients_for_contact` so we never spam owner — assigned agent only.
+### 6. Admin visibility (lightweight)
+Add a `/crm/zara/intelligence` admin pane showing:
+- Project data freshness (last_synced_at per project, count of projects missing pricing / floorplans / incentives)
+- Website content freshness (counts per type, oldest crawl)
+- Behaviour event volume last 7d (events/day, top events)
+- "Lookup misses" — surface `{LOOKUP: ...}` placeholders flagged by guardrails
 
-## Phase 5 — Visual language
+## Technical changes (files / migrations)
 
-- Typography: Plus Jakarta Sans; intelligence labels in 11px uppercase letter-spaced micro-caps.
-- Accent: existing gold #D7A542 — used sparingly (one gold dot, one gold hairline), never as a button fill on Zara surfaces.
-- Surfaces: hairline borders, no shadows, no gradients, no glow.
-- Motion: 120–180ms ease-out on panel open, no entrance bounce, no shimmer except on streaming text in the command bar.
-- Empty states: short sentence in muted-foreground, no illustrations.
+| Area | Change |
+|---|---|
+| Migration | `ALTER TABLE crm_projects ADD COLUMN incentives jsonb DEFAULT '[]', assignment_rules text;` same on `presale_projects`. New table `zara_lookup_misses(id, topic, project_slug, contact_id, created_at)`. |
+| Edge fn (new) | `presale-content-sync` (sitemap → fetch → embed queue) |
+| Edge fn (new) | `zara-tool-get-lead-website-behavior` (or inline in `zara-tool-execute`) |
+| Edge fn (new) | `zara-tool-lookup-topic` (inline) |
+| Edge fn (new) | `zara-tool-search-website-content` (inline) |
+| `_shared/zara-tool-defs.ts` | Add 4 new tool definitions |
+| `zara-tool-execute/index.ts` | Add handlers for the 4 new tools |
+| `_shared/zara-guardrails.ts` | NEVER-QUOTE block + `{LOOKUP: topic}` convention + website-context preamble |
+| `zara-chat/index.ts` + `zara-public-chat/index.ts` | Post-process drafts: detect `{LOOKUP:}`, auto-resolve via `lookup_topic`, log unresolved misses |
+| Frontend | `/crm/zara/intelligence` admin pane (data freshness + lookup misses) |
+| Cron | `presale-content-sync` daily at 03:00 UTC (off-peak, after projects sync at 05:00) |
 
-## Phase 6 — What we are NOT building
+## Out of scope (explicit)
+- Editing Presale-side bridge endpoints. The crawler reads public HTML; we don't depend on Presale shipping new endpoints.
+- Backfilling old behaviour events — we only enhance forward.
+- Calculator interactive embed inside Zara — she'll reference, not replicate.
 
-- No floating chat bubble.
-- No "Ask AI" button labels.
-- No giant assistant panel that takes over the screen.
-- No new tables or edge functions in Phases 1–3 — everything reuses what cleanup phase put in place.
-- No reintroduction of removed integrations (WhatsApp/Meta Ads/etc.).
+## Acceptance checks (post-build)
+1. Run `get_lead_website_behavior` on a known active website lead → returns project views + downloads + last-7-day session counts.
+2. Ask Zara "what's the deposit on Eden by Zentera?" → she calls `get_pricing` (verified data) or returns `{LOOKUP: deposit_structure}` not a fabricated number.
+3. Ask Zara "summarize our buyer process page" → she calls `search_website_content` and answers grounded in crawled content.
+4. Admin `/crm/zara/intelligence` shows >0 buyer_guides and city_pages crawled, and lists any unresolved `{LOOKUP:}` misses from the last 7d.
 
-## Build order (suggested for first ship)
-
-```text
-1. useZaraContext() hook + ZaraCommandBar (⌘K, / shortcut, ~150 LOC)
-2. ZaraDock corner pill + slide-over (~200 LOC)
-3. LeadIntelligencePanel on /crm/leads/:id wired to zara_retrieve_context
-4. Inline rewrite chips on ComposeEmailDialog + SMS thread
-5. /crm/zara hub shell + Today / Draft Queue / Hot Signals (reuse existing data)
-6. Project pitch generator side-card
-7. Proactive dock pulses from zara_proactive_nudges realtime
-```
-
-Each step is independently shippable and tested against the calm-not-chatty bar before moving on.
-
-## Technical notes
-
-- Single retrieval contract: every Zara surface fetches via `zara_retrieve_context(contact_id, trigger, query)` — already deployed. No surface re-implements playbook/principle/memory loading.
-- Active prompt stays slim — scenario nuance lives in playbooks (Layer 5) and founder principles (Layer 2) and is injected at call time, never duplicated in components.
-- `useZaraContext()` returns `{ surface: 'lead' | 'chat' | 'project' | 'inbox' | 'global', leadId?, projectSlug?, threadId? }` from route params + lightweight Zustand store. Every inline action and the command bar read from this one source.
-- Realtime: subscribe `ZaraDock` to `zara_proactive_nudges` filtered by `assigned_agent_id`; debounce surface updates to once per 5s.
-- Accessibility: command bar is a labelled dialog; ESC closes; focus returns to trigger; all inline chips are real buttons with `aria-label`.
-
-If you approve I'll start with Step 1 (context hook + ⌘K command bar) so Zara becomes reachable from every page first, then layer the surfaces in.
+Approve and I'll execute the migration first, then ship the edge fns + prompt updates + admin pane.
