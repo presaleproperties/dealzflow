@@ -17,6 +17,7 @@ import {
   ZARA_MODEL_ESCALATION,
   type ZaraIntent,
 } from '../_shared/zara-guardrails.ts';
+import { fetchToneSample } from '../_shared/zara-email-enhance.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
