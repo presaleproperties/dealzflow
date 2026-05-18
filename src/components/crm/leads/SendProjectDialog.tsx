@@ -588,6 +588,15 @@ export function SendProjectDialog({ contact, open, onOpenChange }: Props) {
               </div>
             </Field>
 
+            <Field label="Subject override">
+              <Input
+                value={subjectOverride}
+                onChange={(e) => setSubjectOverride(e.target.value)}
+                placeholder="Use template subject"
+                className="h-9 text-sm"
+              />
+            </Field>
+
             {/* Personal note — agent's own line, injected above the project card */}
             <Field label="Personal note">
               <Textarea
