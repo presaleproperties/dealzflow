@@ -6,23 +6,8 @@
 // Bulk callers fan out (one call per contact_id) — no batching here.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import {
-  escapeHtml,
-  resolveSignatureHtml,
-  interpolate,
-  htmlToPlain,
-  getZaraEmailPrefs,
-} from "../_shared/zara-email-render.ts";
+import { htmlToPlain } from "../_shared/zara-email-render.ts";
 import { coerceUuid, resolveAssignedToUuid } from "../_shared/zara-guardrails.ts";
-import {
-  resolveTemplateForTrigger,
-  buildMergeVars,
-  personalize,
-  preflightQA,
-} from "../_shared/zara-email-enhance.ts";
-
-const TRIGGER_KIND = "project-showcase";
-
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -153,10 +138,8 @@ ${priceRange ? `<div style="color:#14181F;font-size:16px;margin-bottom:10px;">${
     `Worth me sending the deposit structures and comparable sold prices on any of these? Reply with the project name and I'll have it back in your inbox today.`;
 
   // ── Render via Presale auto-templates (same branded template used by
-  //    "Send Project Details" in the Lead Detail page). The Presale side
-  //    owns the layout AND the agent signature, so we never stitch our
-  //    own HTML or append a signature here.
-  const prefs = await getZaraEmailPrefs(sb);
+  //    "Send Project Details" in the Lead Detail page). Presale owns the
+  //    layout and agent signature; Zara never uses local CRM templates here.
 
   // Resolve caller's presale slug so the bridge picks the agent's signature.
   let agentSlug: string | null = null;
@@ -228,58 +211,8 @@ ${priceRange ? `<div style="color:#14181F;font-size:16px;margin-bottom:10px;">${
     }
   }
 
-  // Fallback to local template ONLY if Presale render didn't return HTML.
   if (!html) {
-    let tpl: any = await resolveTemplateForTrigger(sb, TRIGGER_KIND, agentSlug);
-    if (!tpl) {
-      ({ data: tpl } = await sb.from("crm_email_templates")
-        .select("id, body_html, subject")
-        .eq("slug", "project-showcase-zara").maybeSingle());
-    }
-    if (!tpl && prefs.fallback_template_id) {
-      ({ data: tpl } = await sb.from("crm_email_templates")
-        .select("id, body_html, subject").eq("id", prefs.fallback_template_id).maybeSingle());
-    }
-    if (!tpl) return reply({ ok: false, error: "Project Showcase template missing and Presale bridge unavailable" }, 500);
-
-    // Pull rolling memory for personalize context (best-effort).
-    const { data: memoryRow } = await sb.from("zara_lead_memory")
-      .select("summary, facts").eq("contact_id", contactId).maybeSingle();
-
-    // Only append the local signature in fallback mode — the bridge bakes it in.
-    const sigHtml = prefs.append_signature && userId ? await resolveSignatureHtml(sb, userId) : "";
-    const vars: Record<string, string> = {
-      first_name: firstName,
-      intro_html: `<p style="margin:0 0 14px 0;">${intro}</p>`,
-      cards_html,
-      closing_html: `<p style="margin:0 0 14px 0;">${escapeHtml(closing)}</p>`,
-      signature_html: sigHtml,
-      unsubscribe: "{{unsubscribe}}",
-    };
-    html = interpolate((tpl as any).body_html, vars);
-    subject = interpolate((tpl as any).subject ?? "Curated projects for {{first_name}}", vars);
-    const mergeVars = buildMergeVars({
-      contact: contact as any,
-      memory: memoryRow as any,
-      matched_project: lead ? { name: lead.name, city: lead.city, price_from: lead.price_from, price_to: lead.price_to } : null,
-    });
-    html = personalize(html, mergeVars);
-    subject = personalize(subject, mergeVars);
-    templateId = (tpl as any).id ?? null;
-
-    const qa = preflightQA({
-      to: (contact as any).email ?? null,
-      subject,
-      html,
-      channel: "email",
-      projectsCount: top.length,
-      signaturePresent: !!sigHtml,
-      requireProjects: true,
-    });
-    const blockers = qa.filter((i) => i.severity === "block");
-    if (blockers.length > 0) {
-      return reply({ ok: false, error: "preflight_qa_blocked", issues: qa }, 422);
-    }
+    return reply({ ok: false, error: "presale_template_render_failed", detail: "Presale auto-template did not return HTML" }, 502);
   }
 
   const text = htmlToPlain(html);

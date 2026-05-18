@@ -160,7 +160,7 @@ async function draft_email(args: any, ctx: Ctx) {
     draft_subject: rendered.subject ?? args.subject ?? null,
     draft_text: rendered.text,
     draft_html: rendered.html,
-    template_id_used: rendered.template_id_used,
+    template_id_used: rendered.template_id_used && /^[0-9a-f-]{36}$/i.test(rendered.template_id_used) ? rendered.template_id_used : null,
     inbound_text: args.purpose ?? "(agent-initiated via Zara cockpit)",
     inbound_at: now,
     intent: args.purpose ?? null,
@@ -173,7 +173,7 @@ async function draft_email(args: any, ctx: Ctx) {
   return ok({
     draft_id: data.id,
     preview: rendered.text.slice(0, 200),
-    template_id_used: rendered.template_id_used,
+    template_id_used: rendered.template_id_used && /^[0-9a-f-]{36}$/i.test(rendered.template_id_used) ? rendered.template_id_used : null,
     has_html: true,
   });
 }
