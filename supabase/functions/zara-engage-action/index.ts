@@ -124,6 +124,18 @@ Deno.serve(async (req) => {
           .select('summary, facts, last_rolled_at')
           .eq('contact_id', action.contactId)
           .maybeSingle();
+        await admin.from('crm_engagement_events').insert({
+          contact_id: action.contactId,
+          event_type: 'zara_handoff',
+          source: 'zara',
+          actor_id: user.id,
+          occurred_at: new Date().toISOString(),
+          metadata: {
+            intent: 'summarize_lead',
+            summary_preview: (memory as any)?.summary?.slice(0, 240) ?? null,
+            rolled_at: (memory as any)?.last_rolled_at ?? null,
+          },
+        });
         return json({ ok: true, memory });
       }
     }
