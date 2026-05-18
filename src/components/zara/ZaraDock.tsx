@@ -15,6 +15,13 @@ import { useZaraPageContext } from '@/hooks/useZaraPageContext';
 import { useZaraDockChat, useZaraConversations, type Conv } from '@/hooks/useZaraDockChat';
 import { getChipsForSurface } from '@/lib/zaraDockChips';
 import { ZaraQueuedEmailsPanel } from '@/components/crm/leads/ZaraQueuedEmailsPanel';
+import { ZaraDraftCard } from '@/components/zara/ZaraDraftCard';
+
+const DRAFT_TOOL_CHANNEL: Record<string, 'email' | 'sms' | 'whatsapp'> = {
+  draft_email: 'email',
+  draft_sms: 'sms',
+  draft_whatsapp: 'whatsapp',
+};
 
 const HIDDEN_PATTERNS: RegExp[] = [
   /^\/crm\/zara\/?$/, // cockpit
@@ -174,7 +181,7 @@ function splitNextBlock(text: string): { body: string; nextActions: string[] } {
   return { body, nextActions: lines.slice(0, 3) };
 }
 
-function MessageBubble({ m, onChip }: { m: any; onChip?: (text: string) => void }) {
+function MessageBubble({ m, onChip, decide }: { m: any; onChip?: (text: string) => void; decide?: (pending_id: string, decision: 'approve' | 'deny') => Promise<void> }) {
   const links = useNameLinks(m.referencedContactIds ?? [], m.referencedProjectIds ?? []);
   const fullTime = format(new Date(m.created_at), 'PPpp');
   const tokenStr = m.tokens ? `${m.tokens.input ?? '?'}→${m.tokens.output ?? '?'} · ${m.tokens.model ?? ''}` : '';
@@ -198,12 +205,18 @@ function MessageBubble({ m, onChip }: { m: any; onChip?: (text: string) => void 
   return (
     <div className="flex justify-start group">
       <div className="max-w-full w-full space-y-1.5">
-        {(m.tools ?? []).map((t: any) => (
-          <div key={t.id} className="rounded-md border border-border/60 bg-card text-[11px] px-2 py-1 inline-flex items-center gap-1.5">
-            <Pill size="sm" tone={t.status === 'error' ? 'danger' : t.status === 'pending' ? 'warning' : 'success'}>{t.status}</Pill>
-            <span className="font-mono">{t.name}</span>
-          </div>
-        ))}
+        {(m.tools ?? []).map((t: any) => {
+          const channel = DRAFT_TOOL_CHANNEL[t.name];
+          if (channel && decide && onChip) {
+            return <ZaraDraftCard key={t.id} tool={t} channel={channel} decide={decide} onChip={onChip} />;
+          }
+          return (
+            <div key={t.id} className="rounded-md border border-border/60 bg-card text-[11px] px-2 py-1 inline-flex items-center gap-1.5">
+              <Pill size="sm" tone={t.status === 'error' ? 'danger' : t.status === 'pending' ? 'warning' : 'success'}>{t.status}</Pill>
+              <span className="font-mono">{t.name}</span>
+            </div>
+          );
+        })}
         {body && (
           <div className="relative text-[13.5px] leading-relaxed text-foreground prose prose-sm prose-neutral dark:prose-invert max-w-none prose-p:my-1.5 prose-ul:my-1.5 prose-ol:my-1.5 prose-headings:font-semibold prose-headings:tracking-tight prose-a:text-primary">
             <ReactMarkdown
@@ -594,12 +607,12 @@ export function ZaraDock() {
                   )}
                 </div>
               )}
-              {rendered.map((m) => <MessageBubble key={m.id} m={m} onChip={(t) => onSend(t)} />)}
+              {rendered.map((m) => <MessageBubble key={m.id} m={m} onChip={(t) => onSend(t)} decide={decide} />)}
               {streaming && (
                 <MessageBubble m={{
                   kind: 'assistant', id: 'stream', text: streamText, tools: streamTools, sources: streamSources,
                   created_at: new Date().toISOString(), referencedContactIds: [], referencedProjectIds: [],
-                }} onChip={(t) => onSend(t)} />
+                }} onChip={(t) => onSend(t)} decide={decide} />
               )}
               {streaming && !streamText && streamTools.length === 0 && (
                 <div className="flex items-center gap-2 text-[12px] text-muted-foreground py-1">
