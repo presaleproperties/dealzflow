@@ -352,7 +352,7 @@ async function list_projects(args: any) {
   const qStr = typeof args.q === "string" ? args.q.trim() : "";
   let q = sb
     .from("crm_projects")
-    .select("name,slug,city,status", { count: "exact" })
+    .select("name,slug,city,status,property_type,price_from,price_to,completion_date,incentives,assignment_rules,last_viewed_at", { count: "exact" })
     .order("name", { ascending: true })
     .range(offset, offset + limit - 1);
   if (args.city) q = q.ilike("city", `%${args.city}%`);
