@@ -489,26 +489,27 @@ export function ZaraDock() {
           it sits above any preview/native chrome at the bottom. */}
       {!open && (
         <div
-          className="fixed z-[60] zara-halo"
+          className="fixed z-[60]"
           style={{
             bottom: 'calc(max(24px, env(safe-area-inset-bottom)) + var(--bottom-nav-pad, 0px))',
             right: 80,
-            borderRadius: 9999,
           }}
         >
-          <button
-            onClick={() => setOpen(true)}
-            title="Talk to Zara (Cmd/Ctrl+J)"
-            className="zara-launcher !relative !top-0 !right-0 !bottom-0"
-            style={{ position: 'relative' }}
-          >
-            <Sparkles className="w-5 h-5" />
-            {pendingCount > 0 && (
-              <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-[16px] rounded-full bg-destructive text-destructive-foreground text-[9.5px] font-semibold flex items-center justify-center px-1">
-                {pendingCount}
-              </span>
-            )}
-          </button>
+          <div className="zara-halo" style={{ borderRadius: 9999 }}>
+            <button
+              onClick={() => setOpen(true)}
+              title="Talk to Zara (Cmd/Ctrl+J)"
+              className="zara-launcher !relative !top-0 !right-0 !bottom-0"
+              style={{ position: 'relative' }}
+            >
+              <Sparkles className="w-5 h-5" />
+              {pendingCount > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-[16px] rounded-full bg-destructive text-destructive-foreground text-[9.5px] font-semibold flex items-center justify-center px-1">
+                  {pendingCount}
+                </span>
+              )}
+            </button>
+          </div>
         </div>
       )}
 
