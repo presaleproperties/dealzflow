@@ -4380,6 +4380,8 @@ export type Database = {
           title: string | null
           updated_at: string
           user_id: string | null
+          zara_autonomy_override: number | null
+          zara_quiet_hours: Json | null
         }
         Insert: {
           agent_onboarded_at?: string | null
@@ -4416,6 +4418,8 @@ export type Database = {
           title?: string | null
           updated_at?: string
           user_id?: string | null
+          zara_autonomy_override?: number | null
+          zara_quiet_hours?: Json | null
         }
         Update: {
           agent_onboarded_at?: string | null
@@ -4452,6 +4456,8 @@ export type Database = {
           title?: string | null
           updated_at?: string
           user_id?: string | null
+          zara_autonomy_override?: number | null
+          zara_quiet_hours?: Json | null
         }
         Relationships: []
       }
@@ -7154,6 +7160,47 @@ export type Database = {
         }
         Relationships: []
       }
+      zara_handoff_briefs: {
+        Row: {
+          brief: Json
+          contact_id: string
+          created_at: string
+          from_agent_user_id: string | null
+          id: string
+          read_at: string | null
+          summary: string | null
+          to_agent_user_id: string | null
+        }
+        Insert: {
+          brief?: Json
+          contact_id: string
+          created_at?: string
+          from_agent_user_id?: string | null
+          id?: string
+          read_at?: string | null
+          summary?: string | null
+          to_agent_user_id?: string | null
+        }
+        Update: {
+          brief?: Json
+          contact_id?: string
+          created_at?: string
+          from_agent_user_id?: string | null
+          id?: string
+          read_at?: string | null
+          summary?: string | null
+          to_agent_user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "zara_handoff_briefs_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "crm_contacts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       zara_knowledge_chunks: {
         Row: {
           chunk_index: number
@@ -7447,6 +7494,53 @@ export type Database = {
           },
         ]
       }
+      zara_proactive_nudges: {
+        Row: {
+          agent_user_id: string | null
+          body: string | null
+          contact_id: string | null
+          created_at: string
+          dedupe_key: string
+          id: string
+          kind: string
+          payload: Json
+          resolved_at: string | null
+          title: string
+        }
+        Insert: {
+          agent_user_id?: string | null
+          body?: string | null
+          contact_id?: string | null
+          created_at?: string
+          dedupe_key: string
+          id?: string
+          kind: string
+          payload?: Json
+          resolved_at?: string | null
+          title: string
+        }
+        Update: {
+          agent_user_id?: string | null
+          body?: string | null
+          contact_id?: string | null
+          created_at?: string
+          dedupe_key?: string
+          id?: string
+          kind?: string
+          payload?: Json
+          resolved_at?: string | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "zara_proactive_nudges_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "crm_contacts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       zara_prompt_evolution: {
         Row: {
           applied_at: string | null
@@ -7510,7 +7604,13 @@ export type Database = {
           enabled_at: string | null
           enabled_by: string | null
           id: number
+          kill_switch: boolean
+          kill_switch_at: string | null
+          kill_switch_by: string | null
+          kill_switch_reason: string | null
           mode: string
+          never_quote: Json
+          standup_hour_local: number
           test_phone_numbers: string[]
           updated_at: string
           voice_enabled: boolean
@@ -7523,7 +7623,13 @@ export type Database = {
           enabled_at?: string | null
           enabled_by?: string | null
           id?: number
+          kill_switch?: boolean
+          kill_switch_at?: string | null
+          kill_switch_by?: string | null
+          kill_switch_reason?: string | null
           mode?: string
+          never_quote?: Json
+          standup_hour_local?: number
           test_phone_numbers?: string[]
           updated_at?: string
           voice_enabled?: boolean
@@ -7536,7 +7642,13 @@ export type Database = {
           enabled_at?: string | null
           enabled_by?: string | null
           id?: number
+          kill_switch?: boolean
+          kill_switch_at?: string | null
+          kill_switch_by?: string | null
+          kill_switch_reason?: string | null
           mode?: string
+          never_quote?: Json
+          standup_hour_local?: number
           test_phone_numbers?: string[]
           updated_at?: string
           voice_enabled?: boolean
@@ -8615,6 +8727,7 @@ export type Database = {
         Returns: undefined
       }
       zara_can_send_to: { Args: { _contact_id: string }; Returns: Json }
+      zara_effective_autonomy: { Args: { _user_id: string }; Returns: number }
       zara_enqueue_project_embeddings: {
         Args: { _force?: boolean }
         Returns: number

@@ -27,6 +27,7 @@ import { SystemActivityCluster, isSystemishNote } from './SystemActivityCluster'
 import { EmailThreadStack, SmsRunStack, normalizeSubject } from './ThreadStack';
 import { Pin } from 'lucide-react';
 import { ZaraReplyChip } from '@/components/crm/leads/ZaraReplyChip';
+import { HandoffBriefBanner } from '@/components/crm/zara/HandoffBriefBanner';
 
 
 type FilterType = 'all' | 'manual' | 'email' | 'sms' | 'call_log' | 'web' | 'system';
@@ -350,6 +351,7 @@ export function CenterColumn({ contact, onCall, onText, onEmail, onTask, onShowi
         </div>
 
         <div className="px-3 md:px-0">
+          <HandoffBriefBanner contactId={contact.id} />
           <ZaraReplyChip contactId={contact.id} />
         </div>
 

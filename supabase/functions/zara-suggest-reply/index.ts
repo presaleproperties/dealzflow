@@ -32,9 +32,15 @@ Deno.serve(async (req) => {
     const { contactId, channel, inboundText, inboundAt, inboundEventId } = await req.json();
     if (!contactId || !channel || !inboundText) return json({ error: 'contactId, channel, inboundText required' }, 400);
 
-    // 1. Mode gate
-    const { data: settings } = await admin.from('zara_settings').select('mode').eq('id', 1).maybeSingle();
+    // 1. Mode + kill switch gate
+    const { data: settings } = await admin
+      .from('zara_settings')
+      .select('mode, kill_switch, kill_switch_reason, never_quote')
+      .eq('id', 1)
+      .maybeSingle();
     if (!settings || settings.mode === 'off') return json({ skipped: true, reason: 'zara_off' });
+    if (settings.kill_switch) return json({ skipped: true, reason: 'kill_switch', detail: settings.kill_switch_reason ?? null });
+    const neverQuote = (settings as any).never_quote ?? null;
 
     // 2. Contact gate
     const { data: contact } = await admin.from('crm_contacts').select('*').eq('id', contactId).maybeSingle();
@@ -203,7 +209,7 @@ Draft Zara's reply now. Return ONLY the JSON object.`;
         body: JSON.stringify({
           model,
           max_tokens: 1024,
-          system: buildZaraSystemPrompt(intent),
+          system: buildZaraSystemPrompt(intent, { neverQuote, mode: (memoryRow as any)?.signals?.mode ?? null }),
           messages: [{ role: 'user', content: userPrompt }],
         }),
       });
