@@ -67,6 +67,11 @@ Deno.serve(async (req) => {
         .limit(10),
     ]);
 
+    // 3b. Tone sample — last 1-2 inbound messages so the draft matches the
+    // lead's register (formal/casual, short/long, language) instead of
+    // reading as a form letter.
+    const toneSample = await fetchToneSample(admin, contactId, 2);
+
     // 4. Language detect
     const detectedLang = detectLanguage(inboundText);
 
