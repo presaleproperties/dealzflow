@@ -9,9 +9,7 @@ import { UpcomingMini } from '@/components/crm/leads/UpcomingMini';
 import { RecentCallsCard } from '@/components/crm/leads/RecentCallsCard';
 import type { CrmContact } from '@/hooks/useCrmContacts';
 import type { LeadScore } from './types';
-import { ZaraLeadCard } from './ZaraLeadCard';
-import { ZaraRemembersCard } from '@/components/crm/leads/ZaraRemembersCard';
-import { ZaraEngagePanel } from '@/components/crm/leads/ZaraEngagePanel';
+import { ZaraSection } from './ZaraSection';
 
 interface Props {
   contact: CrmContact;
