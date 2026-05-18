@@ -528,20 +528,20 @@ export function ZaraDock() {
 
   return (
     <>
-      {/* Launcher (closed state) — glassy halo pill, lifted off the edge so
-          it sits above any preview/native chrome at the bottom. */}
+      {/* Launcher (closed state) — lifts above bottom-nav pill on mobile. */}
       {!open && (
         <div
           className="fixed z-[60]"
           style={{
-            bottom: 'calc(max(24px, env(safe-area-inset-bottom)) + var(--bottom-nav-pad, 0px))',
-            right: 80,
+            bottom: 'calc(max(20px, env(safe-area-inset-bottom)) + var(--bottom-nav-pad, 0px))',
+            right: 'max(20px, env(safe-area-inset-right))',
           }}
         >
           <div className="zara-halo" style={{ borderRadius: 9999 }}>
             <button
               onClick={() => setOpen(true)}
               title="Talk to Zara (Cmd/Ctrl+J)"
+              aria-label="Open Zara"
               className="zara-launcher !relative !top-0 !right-0 !bottom-0"
               style={{ position: 'relative' }}
             >
@@ -557,14 +557,17 @@ export function ZaraDock() {
       )}
 
 
-      {/* Open panel — glass slide-over, no hard border */}
+      {/* Open panel — glass slide-over. Full-bleed on mobile/tablet, side panel on desktop. */}
       {open && (
         <div
-          className="fixed inset-y-0 right-0 z-40 w-full md:w-[400px] zara-glass-strong flex flex-col animate-slide-in-right"
-          style={{ top: 0, borderRadius: 0 }}
+          className="fixed inset-0 md:inset-y-0 md:right-0 md:left-auto z-40 w-full md:w-[400px] zara-glass-strong flex flex-col animate-slide-in-right"
+          style={{ borderRadius: 0 }}
         >
-          {/* Header */}
-          <header className="h-12 px-3 flex items-center justify-between shrink-0">
+          {/* Header — respects iOS notch */}
+          <header
+            className="px-3 flex items-center justify-between shrink-0 min-h-12"
+            style={{ paddingTop: 'max(8px, env(safe-area-inset-top))' }}
+          >
             <div className="flex items-center gap-2 min-w-0">
               <span className="zara-eyebrow">Zara</span>
               <Pill size="sm" tone={modePill.tone}>{modePill.label}</Pill>
@@ -572,14 +575,15 @@ export function ZaraDock() {
             <div className="flex items-center gap-0.5">
               <button
                 onClick={() => setActionOnly((v) => !v)}
-                className={`p-2 rounded-full transition-colors ${actionOnly ? 'bg-primary/15 text-primary' : 'hover:bg-foreground/5 text-foreground/70'}`}
+                className={`min-h-11 min-w-11 md:min-h-9 md:min-w-9 inline-flex items-center justify-center rounded-full transition-colors ${actionOnly ? 'bg-primary/15 text-primary' : 'hover:bg-foreground/5 text-foreground/70'}`}
                 title={actionOnly ? 'Action-only mode on — click to turn off' : 'Action-only mode: click-to-send actions + one question'}
+                aria-label="Toggle action-only mode"
                 aria-pressed={actionOnly}
               ><Zap className="w-4 h-4" /></button>
-              <button onClick={clearChat} disabled={rendered.length === 0 && !streaming} className="p-2 rounded-full hover:bg-foreground/5 disabled:opacity-30 disabled:hover:bg-transparent" title="Clear chat"><Eraser className="w-4 h-4" /></button>
-              <button onClick={() => navigate('/crm/zara')} className="p-2 rounded-full hover:bg-foreground/5" title="Open full cockpit"><Maximize2 className="w-4 h-4" /></button>
-              <button onClick={() => setShowHistory(true)} className="p-2 rounded-full hover:bg-foreground/5" title="Conversations (/)"><History className="w-4 h-4" /></button>
-              <button onClick={() => setOpen(false)} className="p-2 rounded-full hover:bg-foreground/5" title="Close (Esc)"><X className="w-4 h-4" /></button>
+              <button onClick={clearChat} disabled={rendered.length === 0 && !streaming} aria-label="Clear chat" className="min-h-11 min-w-11 md:min-h-9 md:min-w-9 inline-flex items-center justify-center rounded-full hover:bg-foreground/5 disabled:opacity-30 disabled:hover:bg-transparent" title="Clear chat"><Eraser className="w-4 h-4" /></button>
+              <button onClick={() => { setOpen(false); navigate('/crm/zara'); }} aria-label="Open full cockpit" className="min-h-11 min-w-11 md:min-h-9 md:min-w-9 inline-flex items-center justify-center rounded-full hover:bg-foreground/5" title="Open full cockpit"><Maximize2 className="w-4 h-4" /></button>
+              <button onClick={() => setShowHistory(true)} aria-label="Conversations" className="min-h-11 min-w-11 md:min-h-9 md:min-w-9 inline-flex items-center justify-center rounded-full hover:bg-foreground/5" title="Conversations (/)"><History className="w-4 h-4" /></button>
+              <button onClick={() => setOpen(false)} aria-label="Close Zara" className="min-h-11 min-w-11 md:min-h-9 md:min-w-9 inline-flex items-center justify-center rounded-full hover:bg-foreground/5" title="Close (Esc)"><X className="w-4 h-4" /></button>
             </div>
           </header>
 
@@ -598,12 +602,25 @@ export function ZaraDock() {
                 <ZaraQueuedEmailsPanel contactId={pageContext.contact_id} />
               )}
               {rendered.length === 0 && !streaming && (
-                <div className="text-center pt-16 pb-6 px-2">
+                <div className="text-center pt-10 sm:pt-16 pb-6 px-2">
                   <div className="text-[13px] text-muted-foreground/80 tracking-tight">
                     Ask Zara anything about {pageContext.label.toLowerCase()}.
                   </div>
                   {pageContext.contact_id && (
                     <div className="zara-eyebrow mt-2 opacity-70">Pinned to this lead</div>
+                  )}
+                  {chips.length > 0 && (
+                    <div className="mt-4 flex flex-wrap justify-center gap-1.5 px-1">
+                      {chips.slice(0, 6).map((c) => (
+                        <button
+                          key={c.prompt}
+                          onClick={() => onChip(c.prompt, !!c.needsContact)}
+                          className="text-[11.5px] px-2.5 py-1 rounded-full bg-foreground/[0.05] text-foreground/80 hover:bg-primary/10 hover:text-primary transition-colors"
+                        >
+                          {c.label}
+                        </button>
+                      ))}
+                    </div>
                   )}
                 </div>
               )}
@@ -626,8 +643,11 @@ export function ZaraDock() {
               )}
             </div>
 
-            {/* Composer — borderless, glass-on-glass */}
-            <div className="p-2.5 shrink-0">
+            {/* Composer — borderless, glass-on-glass. Pads safe-area + keyboard inset. */}
+            <div
+              className="px-2.5 pt-2.5 shrink-0"
+              style={{ paddingBottom: 'calc(10px + env(safe-area-inset-bottom) + var(--keyboard-inset-bottom, 0px))' }}
+            >
               <div className="rounded-2xl bg-foreground/[0.05] focus-within:bg-foreground/[0.08] focus-within:ring-1 focus-within:ring-primary/30 transition p-1.5 flex items-end gap-1.5">
                 <textarea
                   ref={inputRef}
@@ -647,17 +667,18 @@ export function ZaraDock() {
                   rows={1}
                   placeholder={streaming ? 'Zara is replying…' : 'Ask Zara…'}
                   disabled={streaming}
-                  className="flex-1 resize-none bg-transparent outline-none text-[13px] px-2 py-1.5 min-h-[28px] max-h-[160px] disabled:opacity-60"
+                  className="flex-1 resize-none bg-transparent outline-none text-[16px] md:text-[13px] px-2 py-1.5 min-h-[32px] max-h-[160px] disabled:opacity-60"
                 />
                 {streaming ? (
-                  <Button size="sm" variant="ghost" onClick={stop}>Stop</Button>
+                  <Button size="sm" variant="ghost" onClick={stop} className="min-h-11 md:min-h-9">Stop</Button>
                 ) : (
                   <button
                     onClick={() => onSend()}
                     disabled={!input.trim()}
-                    className="zara-quiet-action !py-1.5 !px-2.5 disabled:opacity-40"
+                    aria-label="Send message"
+                    className="zara-quiet-action min-h-11 min-w-11 md:min-h-9 md:min-w-9 justify-center !py-1.5 !px-2.5 disabled:opacity-40"
                   >
-                    <Send className="w-3.5 h-3.5" />
+                    <Send className="w-4 h-4" />
                   </button>
                 )}
               </div>
